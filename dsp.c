@@ -4,7 +4,7 @@
 static char *ptr = NULL;
 
 void hello() {
-    fprintf(stdout, "Hello world!\n");
+    fprintf(stdout, "Shared library: Hello world!\n");
 }
 
 void increment() {
