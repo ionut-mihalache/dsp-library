@@ -7,5 +7,6 @@ build:
 	javac -cp $(CLASSPATH) src/Main.java
 
 run:
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/workspaces/ionut/Dev\ Containers/dsp-library
 	java -cp $(CLASSPATH) Main
+
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ionut/git-repos/dsp-library

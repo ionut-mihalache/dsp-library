@@ -1,11 +1,16 @@
 #ifndef __DSP_SERVICE_H
 #define __DSP_SERVICE_H
 
+#include <stdint.h>
 #include <pthread.h>
 
 #define INSTALL_SHD "/install-shared-data"
 #define SERVICES_NUMBER 1024  // needs to be a power of 2
 #define INSTALL_MZONE "/install-zone"
+
+struct InstallCommons {
+    uint8_t m_IsInitialized;
+};
 
 struct InstallSharedData {
     pthread_mutex_t m_InstallMZoneMx;
