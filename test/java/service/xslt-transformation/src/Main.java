@@ -17,12 +17,12 @@ public class Main {
 
         LibDSP.INSTANCE.install();
 
-        while(true) {
-            System.out.println(LibDSP.INSTANCE.getValue());
-            try {
-                Thread.sleep(2500);
-            } catch (InterruptedException e) {
-            }
-        }
+        // while(true) {
+        //     System.out.println(LibDSP.INSTANCE.getValue());
+        //     try {
+        //         Thread.sleep(2500);
+        //     } catch (InterruptedException e) {
+        //     }
+        // }
     }
 };

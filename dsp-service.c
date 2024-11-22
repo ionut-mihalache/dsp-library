@@ -97,15 +97,29 @@ void install() {
 
 find_free_zone:
 ;
-    uint8_t *installMemZone = mmap(0, bytesnr + (SERVICES_NUMBER * sizeof(char *)), PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
+    uint8_t *installMemZone = mmap(0,
+            bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)), 
+            PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     assert(installMemZone != MAP_FAILED);
 
     int32_t freeIdx = -1;
+    uint8_t *freeBytePtr = NULL;
+
     pthread_spin_lock(&installShdata->m_InstallMZoneLk);
     for (uint8_t i = 0; i < bytesnr; ++i) {
+        freeBytePtr = (uint8_t *)installMemZone + i * bytesnr;
         for (uint8_t j = 0; j < 8; ++j) {
-            if ((*((uint8_t *)installMemZone + i * bytesnr) & (1 << j)) == 0) {
-                freeIdx = i * bytesnr + j;
+            /**
+             * Get the index for the correct bit inside the service map
+             * 
+             * E.g: 2 bytes are used for the service map
+             * b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0
+             */
+            if (((*freeBytePtr) & (1 << j)) == 0) {
+                /**
+                 * We set the bit index for the current byte
+                 */
+                freeIdx = j;
                 goto spin_lock_unlock;
             }
         }
@@ -114,7 +128,7 @@ find_free_zone:
 spin_lock_unlock:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
-    LOGF("The index for the free memory zone is: %d\n", freeIdx);
-    // *((uint8_t *)installMemZone + freeIdx * bytesnr) |= (1 << j);
+    LOGF("The index for the free memory zone is: %d\n", *freeBytePtr + freeIdx);
+    (*freeBytePtr) |= 1 << freeIdx;
     LOGF("Service installed.\n");
 }
