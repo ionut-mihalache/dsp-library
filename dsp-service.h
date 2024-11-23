@@ -26,6 +26,8 @@ struct InstallSharedData {
     pthread_spinlock_t m_InstallMZoneLk;
 };
 
+void initService();
+
 int getValue();
 
 void install();

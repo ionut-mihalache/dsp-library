@@ -18,4 +18,4 @@ dsp-client.o: dsp-client.c dsp-client.h
 clean:
 	rm *.o *.so
 
-# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ionut/git-repos/dsp-library
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/user/dsp-library

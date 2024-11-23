@@ -65,6 +65,7 @@ void install() {
     int rc;
     int installShmFd;
     uint8_t shouldTruncate = true;
+    uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
     initService();
 
@@ -88,8 +89,8 @@ void install() {
     // We need a bit map for fast iteration
     // Get the number of bytes for the bit map
     // The information that we need is an array of pointers to the information that we need
-    uint8_t bytesnr = SERVICES_NUMBER >> 3;
-    rc = ftruncate(installShmFd, bytesnr + (SERVICES_NUMBER * sizeof(char *)));
+    LOGF("Number of bytes is %hhu.\n", bytesnr);
+    rc = ftruncate(installShmFd, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)));
     if (rc < 0) {
         ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno), errno);
     }
@@ -98,7 +99,7 @@ void install() {
 find_free_zone:
 ;
     uint8_t *installMemZone = mmap(0,
-            bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)), 
+            bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
             PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     assert(installMemZone != MAP_FAILED);
 
@@ -107,15 +108,18 @@ find_free_zone:
 
     pthread_spin_lock(&installShdata->m_InstallMZoneLk);
     for (uint8_t i = 0; i < bytesnr; ++i) {
-        freeBytePtr = (uint8_t *)installMemZone + i * bytesnr;
-        for (uint8_t j = 0; j < 8; ++j) {
+        freeBytePtr = installMemZone + i;
+        LOGF("(byte index, free byte value): (%hhu, %hhu).\n", i, *freeBytePtr);
+        for (uint8_t j = 7; j > 0; --j) {
+            // LOGF("Bit index is: %hhu.\n", j);
             /**
              * Get the index for the correct bit inside the service map
-             * 
+             *
              * E.g: 2 bytes are used for the service map
              * b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0
              */
             if (((*freeBytePtr) & (1 << j)) == 0) {
+                LOGF("Found free index %hhu.\n", j);
                 /**
                  * We set the bit index for the current byte
                  */
@@ -126,9 +130,18 @@ find_free_zone:
     }
 
 spin_lock_unlock:
+    if (freeIdx < 0) {
+        LOGF("Cannot install a new service!\n");
+        goto end;
+    }
+
+    // LOGF("The index for the free memory zone is: %d\n", freeIdx);
+    // (*freeBytePtr) |= 1 << freeIdx;
+    *freeBytePtr = (*freeBytePtr) | (1 << freeIdx);
+    // LOGF("Service installed.\n");
+
+end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
-    LOGF("The index for the free memory zone is: %d\n", *freeBytePtr + freeIdx);
-    (*freeBytePtr) |= 1 << freeIdx;
-    LOGF("Service installed.\n");
+    return;
 }
