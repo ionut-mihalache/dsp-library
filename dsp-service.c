@@ -40,9 +40,7 @@ void initService() {
         goto map_info;
     }
 
-    LOGF("Install shared file descriptor is %d.\n", installShdFd);
     rc = ftruncate(installShdFd, sizeof(struct InstallSharedData));
-    LOGF("Install shared data structure file descriptor is %d.\n", sizeof(struct InstallSharedData));
     if (rc < 0) {
         ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno), errno);
     }
@@ -57,19 +55,16 @@ map_info:
 
     rc = pthread_spin_init(&installShdata->m_InstallMZoneLk, PTHREAD_PROCESS_SHARED);
     assert(rc == 0);
-    ELOGF("The error message is %s(%d).\n", strerror(errno), errno);
     LOGF("Service initialized.\n");
 }
 
-void install() {
+void dspInstall(const char *p_StrId, const char *p_Version) {
     int rc;
     int installShmFd;
     uint8_t shouldTruncate = true;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
     initService();
-
-    LOGF("Installing new service...\n");
 
     // shm_unlink(INSTALL_MZONE); // TODO: This should not happen all the time.
     installShmFd = shm_open(INSTALL_MZONE, O_CREAT | O_EXCL | O_RDWR, 0600);
@@ -89,7 +84,6 @@ void install() {
     // We need a bit map for fast iteration
     // Get the number of bytes for the bit map
     // The information that we need is an array of pointers to the information that we need
-    LOGF("Number of bytes is %hhu.\n", bytesnr);
     rc = ftruncate(installShmFd, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)));
     if (rc < 0) {
         ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno), errno);
@@ -105,13 +99,14 @@ find_free_zone:
 
     int32_t freeIdx = -1;
     uint8_t *freeBytePtr = NULL;
+    uint32_t freeByteIdx = 0;
 
     pthread_spin_lock(&installShdata->m_InstallMZoneLk);
     for (uint8_t i = 0; i < bytesnr; ++i) {
         freeBytePtr = installMemZone + i;
-        LOGF("(byte index, free byte value): (%hhu, %hhu).\n", i, *freeBytePtr);
+
         for (uint8_t j = 7; j > 0; --j) {
-            // LOGF("Bit index is: %hhu.\n", j);
+            freeByteIdx++;
             /**
              * Get the index for the correct bit inside the service map
              *
@@ -119,7 +114,6 @@ find_free_zone:
              * b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0
              */
             if (((*freeBytePtr) & (1 << j)) == 0) {
-                LOGF("Found free index %hhu.\n", j);
                 /**
                  * We set the bit index for the current byte
                  */
@@ -135,13 +129,33 @@ spin_lock_unlock:
         goto end;
     }
 
-    // LOGF("The index for the free memory zone is: %d\n", freeIdx);
-    // (*freeBytePtr) |= 1 << freeIdx;
     *freeBytePtr = (*freeBytePtr) | (1 << freeIdx);
-    // LOGF("Service installed.\n");
+
+    struct InstallInformation *installInfo = installMemZone + freeByteIdx * (sizeof(struct InstallInformation));
+    installInfo->m_ProcId = getpid();
+    uint64_t strIdLen = strlen(p_StrId);
+    if (strIdLen > STRING_ID_MAX_LENGTH - 1) {
+        ELOGF("Service string id %s is too long. Max length is %i.\n", p_StrId, STRING_ID_MAX_LENGTH - 1);
+        return;
+    }
+    memset(installInfo->m_StrId, 0, STRING_ID_MAX_LENGTH);
+    memcpy(installInfo->m_StrId, p_StrId, strIdLen);
+
+    uint64_t versionLen = strlen(p_Version);
+    if (versionLen > VERSION_MAX_LENGTH - 1) {
+        ELOGF("Version string %s is too long. Max length is %u.\n", p_Version, VERSION_MAX_LENGTH - 1);
+        return;
+    }
+    memset(installInfo->m_Version, 0, VERSION_MAX_LENGTH);
+    memcpy(installInfo->m_Version, p_Version, versionLen);
 
 end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
+    LOGF("Successfully installed new service: (%s, %s).\n", p_StrId, p_Version);
+
     return;
+}
+
+void dspReturn() {
 }

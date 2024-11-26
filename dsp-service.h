@@ -9,7 +9,7 @@
 #define INSTALL_MZONE "/install-zone"
 
 #define STRING_ID_MAX_LENGTH 128
-#define VERSION_MAX_LENGTH 8
+#define VERSION_MAX_LENGTH 16
 
 struct InstallInformation {
     char m_StrId[STRING_ID_MAX_LENGTH];
@@ -30,6 +30,8 @@ void initService();
 
 int getValue();
 
-void install();
+void dspInstall(const char *p_StrId, const char *p_Version);
+
+void dspReturn();
 
 #endif // __DSP_SERVICE_H
