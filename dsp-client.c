@@ -4,31 +4,51 @@
 
 #include "log/log.h"
 
-#include <sys/ipc.h>
 #include <sys/shm.h>
+#include <string.h>
+#include <stdbool.h>
 
 static char *ptr = NULL;
 
-void connect() {
-    key_t key;
-    int shmId;
+void dspConnect(const char *p_ServiceStrId) {
+    int rc;
+    int installShmFd;
+    uint8_t connected = false;
+    uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
-    fprintf(stdout, "Connecting...");
-    key = ftok(SHMEM_PATH, 123);
-    assert(key > 0);
+    // shm_unlink(INSTALL_MZONE); // TODO: This should not happen all the time.
+    installShmFd = shm_open(INSTALL_MZONE, O_CREAT | O_EXCL | O_RDONLY, 0600);
+    if (installShmFd < 0) {
+        if (errno == EEXIST) {
+            installShmFd = shm_open(INSTALL_MZONE, O_RDONLY, 0600);
+            assert(installShmFd >= 0);
+        } else {
+            LOGF("Could not connect. The install memory zone is not initialized.\n");
+            return;
+        }
+    }
 
-    shmId = shmget(key, 4096, 0600 | IPC_CREAT);
-    assert(shmId > 0);
+    uint8_t *installMemZone = mmap(0,
+            bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
+            PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
+    assert(installMemZone != MAP_FAILED);
 
-    ptr = shmat(shmId, NULL, 0);
-    assert(ptr != NULL);
+    for (uint16_t i = 0; i < SERVICES_NUMBER; ++i) {
+        struct InstallInformation *installInfo = installMemZone + bytesnr + i * sizeof(struct InstallInformation);
 
-    // int shmfd = shm_open(SHMEM_PATH, O_CREAT | O_RDWR, 0600);
-    // assert(shmfd >= 0);
-    // ftruncate(shmfd, 4096);
-    // fprintf(stdout, "Shared object ID: %d\n", shmfd);
-    // ptr = mmap(NULL, 4096, PROT_READ | PROT_WRITE, MAP_SHARED, shmfd, 0);
-    // assert(ptr != NULL);
-    // close(shmfd);
-    fprintf(stdout, "Connected.\n");
+        if (!strcmp(installInfo->m_StrId, p_ServiceStrId)) {
+            if (installInfo->m_Available) {
+                connected = true;
+            }
+            break;
+        }
+    }
+
+    if (!connected) {
+        LOGF("Could not connect. Service is not installed or unavailable");
+    }
+
+    /**
+     * TODO: Implement successfull connection functionality
+     */
 }

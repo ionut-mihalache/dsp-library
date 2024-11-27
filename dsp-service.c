@@ -133,6 +133,7 @@ spin_lock_unlock:
 
     struct InstallInformation *installInfo = installMemZone + freeByteIdx * (sizeof(struct InstallInformation));
     installInfo->m_ProcId = getpid();
+    installInfo->m_Available = true;
     uint64_t strIdLen = strlen(p_StrId);
     if (strIdLen > STRING_ID_MAX_LENGTH - 1) {
         ELOGF("Service string id %s is too long. Max length is %i.\n", p_StrId, STRING_ID_MAX_LENGTH - 1);

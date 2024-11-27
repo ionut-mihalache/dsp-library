@@ -2,6 +2,6 @@
 #define __DSP_CLIENT_H
 
 void increment();
-void connect();
+void dspConnect();
 
 #endif // __DSP_CLIENT_H
