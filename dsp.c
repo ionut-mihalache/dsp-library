@@ -4,7 +4,7 @@
 #include "dsp-service.h"
 #include "dsp-client.h"
 
-#include "log/log.h"
+#include "utils/log/log.h"
 
 // static int value = 0;
 static char *ptr = NULL;

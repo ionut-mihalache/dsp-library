@@ -1,41 +1,35 @@
-#include "dsp.h"
 #include "dsp-client.h"
+#include "dsp.h"
 #include "protocol.h"
+#include "utils/commons.h"
 
-#include "log/log.h"
+#include "utils/log/log.h"
 
-#include <sys/shm.h>
-#include <string.h>
 #include <stdbool.h>
+#include <string.h>
+#include <sys/shm.h>
 
-static char *ptr = NULL;
+static char* ptr = NULL;
 
-void dspConnect(const char *p_ServiceStrId) {
+void dspConnect(const char* p_ServiceStrId)
+{
     int rc;
     int installShmFd;
+    struct InstallInformation* installInfo;
     uint8_t connected = false;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
-    // shm_unlink(INSTALL_MZONE); // TODO: This should not happen all the time.
-    installShmFd = shm_open(INSTALL_MZONE, O_CREAT | O_EXCL | O_RDONLY, 0600);
-    if (installShmFd < 0) {
-        if (errno == EEXIST) {
-            installShmFd = shm_open(INSTALL_MZONE, O_RDONLY, 0600);
-            assert(installShmFd >= 0);
-        } else {
-            LOGF("Could not connect. The install memory zone is not initialized.\n");
-            return;
-        }
-    }
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDONLY, 0600, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)));
 
-    uint8_t *installMemZone = mmap(0,
-            bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
-            PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
+    uint8_t* installMemZone = mmap(0,
+        bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
+        PROT_READ, MAP_SHARED, installShmFd, 0);
     assert(installMemZone != MAP_FAILED);
 
     for (uint16_t i = 0; i < SERVICES_NUMBER; ++i) {
-        struct InstallInformation *installInfo = installMemZone + bytesnr + i * sizeof(struct InstallInformation);
+        installInfo = installMemZone + bytesnr + i * sizeof(struct InstallInformation);
 
+        LOGF("The current service string id is %s.\n", installInfo->m_StrId);
         if (!strcmp(installInfo->m_StrId, p_ServiceStrId)) {
             if (installInfo->m_Available) {
                 connected = true;
@@ -45,10 +39,12 @@ void dspConnect(const char *p_ServiceStrId) {
     }
 
     if (!connected) {
-        LOGF("Could not connect. Service is not installed or unavailable");
+        LOGF("Could not connect. Service is not installed or unavailable.\n");
+        return;
     }
 
     /**
      * TODO: Implement successfull connection functionality
      */
+    LOGF("Connected to \'%s\' with version \'%s\'.\n", p_ServiceStrId, installInfo->m_Version);
 }

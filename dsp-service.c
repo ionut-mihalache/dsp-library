@@ -1,8 +1,9 @@
 #include "dsp.h"
 #include "dsp-service.h"
 #include "protocol.h"
+#include "utils/commons.h"
 
-#include "log/log.h"
+#include "utils/log/log.h"
 
 #include <sys/ipc.h>
 #include <sys/shm.h>
@@ -61,37 +62,14 @@ map_info:
 void dspInstall(const char *p_StrId, const char *p_Version) {
     int rc;
     int installShmFd;
+    int callQFd;
     uint8_t shouldTruncate = true;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
     initService();
 
-    // shm_unlink(INSTALL_MZONE); // TODO: This should not happen all the time.
-    installShmFd = shm_open(INSTALL_MZONE, O_CREAT | O_EXCL | O_RDWR, 0600);
-    if (installShmFd < 0) {
-        if (errno == EEXIST) {
-            shouldTruncate = false;
-            installShmFd = shm_open(INSTALL_MZONE, O_RDWR, 0600);
-            assert(installShmFd >= 0);
-        }
-    }
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)));
 
-    if (!shouldTruncate) {
-        goto find_free_zone;
-    }
-
-    // Prepare space to allow installation for SERVICES_NUMBER services at most
-    // We need a bit map for fast iteration
-    // Get the number of bytes for the bit map
-    // The information that we need is an array of pointers to the information that we need
-    rc = ftruncate(installShmFd, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)));
-    if (rc < 0) {
-        ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno), errno);
-    }
-    assert(rc == 0);
-
-find_free_zone:
-;
     uint8_t *installMemZone = mmap(0,
             bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
             PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
@@ -131,7 +109,7 @@ spin_lock_unlock:
 
     *freeBytePtr = (*freeBytePtr) | (1 << freeIdx);
 
-    struct InstallInformation *installInfo = installMemZone + freeByteIdx * (sizeof(struct InstallInformation));
+    struct InstallInformation *installInfo = installMemZone + bytesnr + freeByteIdx * (sizeof(struct InstallInformation));
     installInfo->m_ProcId = getpid();
     installInfo->m_Available = true;
     uint64_t strIdLen = strlen(p_StrId);
@@ -149,6 +127,27 @@ spin_lock_unlock:
     }
     memset(installInfo->m_Version, 0, VERSION_MAX_LENGTH);
     memcpy(installInfo->m_Version, p_Version, versionLen);
+
+
+    /**
+     * Map memory for the call and return queues
+     */
+    char *callQName, *returnQName;
+    asprintf(&callQName, "%s-%s-call-q", p_StrId, p_Version);
+    assert(callQName != NULL);
+    asprintf(&returnQName, "%s-%s-return-q", p_StrId, p_Version);
+    assert(returnQName != NULL);
+
+    installInfo->m_CallQPushIdx = 0;
+    installInfo->m_CallQPopIdx = 0;
+    installInfo->m_ReturnQPushIdx = 0;
+    installInfo->m_ReturnQPopIdx = 0;
+
+    callQFd = createShmObject(callQName, O_RDWR, 0600, CALLQ_MAX_SIZE * sizeof(struct HMBCall));
+    createShmObject(returnQName, O_RDWR, 0600, RETURNQ_MAX_SIZE * sizeof(struct QMBCall));
+
+    installInfo->m_CallQ = mmap(NULL, CALLQ_MAX_SIZE * sizeof(struct HMBCall), PROT_READ, MAP_SHARED, callQFd, 0);
+    assert(installInfo->m_CallQ != MAP_FAILED);
 
 end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);

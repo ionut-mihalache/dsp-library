@@ -2,6 +2,6 @@
 #define __DSP_CLIENT_H
 
 void increment();
-void dspConnect();
+void dspConnect(const char* p_ServiceStrId);
 
 #endif // __DSP_CLIENT_H
