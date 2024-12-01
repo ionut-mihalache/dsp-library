@@ -256,7 +256,7 @@ int createShmObject(const char* p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Siz
     uint8_t shouldTruncate = true;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
-    // shm_unlink(p_Name); // TODO: This should not happen all the time.
+    shm_unlink(p_Name); // TODO: This should not happen all the time.
     installShmFd = shm_open(p_Name, O_CREAT | O_EXCL | p_Oflag, p_Mode);
     if (installShmFd < 0) {
         if (errno == EEXIST) {

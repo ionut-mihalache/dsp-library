@@ -1,17 +1,14 @@
 #include "dsp.h"
 
-#include "protocol.h"
-#include "dsp-service.h"
 #include "dsp-client.h"
-
+#include "dsp-service.h"
+#include "protocol.h"
 #include "utils/log/log.h"
 
 // static int value = 0;
 static char *ptr = NULL;
 
-void hello() {
-    fprintf(stdout, "Shared library: Hello world!\n");
-}
+void hello() { fprintf(stdout, "Shared library: Hello world!\n"); }
 
 void increment() {
     if (ptr == NULL) {

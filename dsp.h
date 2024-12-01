@@ -33,14 +33,18 @@
 
 #define CALLQ_MAX_SIZE 1024
 #define RETURNQ_MAX_SIZE 1024
+#define CALLQ_NAME_MAX_SIZE 1056
+#define RETURNQ_NAME_MAX_SIZE 1056
 
 struct InstallInformation {
     char m_StrId[STRING_ID_MAX_LENGTH];
     char m_Version[VERSION_MAX_LENGTH];
+    char m_CallQName[CALLQ_NAME_MAX_SIZE];
+    char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     pthread_mutex_t m_CallQMutex;
     pthread_mutex_t m_ReturnQMutex;
-    char* m_CallQ;
-    char* m_ReturnQ;
+    // char *m_CallQ;
+    // char *m_ReturnQ;
     uint32_t m_CallQPushIdx, m_CallQPopIdx;
     uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx;
     pid_t m_ProcId;
@@ -77,9 +81,9 @@ struct GBCall {
     uint32_t m_Size;
 };
 
-struct DSPCall { };
+struct DSPCall {};
 
-struct DSPReturn { };
+struct DSPReturn {};
 
 void hello();
 
