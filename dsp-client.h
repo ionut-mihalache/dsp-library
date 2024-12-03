@@ -2,10 +2,11 @@
 #define __DSP_CLIENT_H
 
 struct ClientCallInfo {
-    int (*m_CallFn)(char *);
+    struct DSPQueue p_Queue;
+    int32_t (*m_CallFn)(char *);
 };
 
 void increment();
-void dspConnect(const char* p_ServiceStrId);
+void dspConnect(struct ClientCallInfo *p_CallInfo, const char* p_ServiceStrId);
 
 #endif // __DSP_CLIENT_H

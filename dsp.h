@@ -85,6 +85,12 @@ struct DSPCall {};
 
 struct DSPReturn {};
 
+struct DSPQueue {
+    uint32_t *m_PushIdxPtr;
+    uint32_t *m_PopIdxPtr;
+    char *m_Start;
+};
+
 void hello();
 
 #endif // __DSP_H_

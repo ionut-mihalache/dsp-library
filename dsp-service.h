@@ -1,7 +1,7 @@
 #ifndef __DSP_SERVICE_H
 #define __DSP_SERVICE_H
 
-#define _GNU_SOURCE
+#include "dsp.h"
 
 #include <pthread.h>
 #include <stdint.h>
@@ -18,8 +18,8 @@ struct InstallSharedData {
 };
 
 struct ServiceCallInfo {
+    struct DSPQueue m_Queue;
     int32_t (*m_CallFn)(void);
-    uint32_t m_CallQPushIdx, m_CallQPopIdx;
 };
 
 void initService();

@@ -11,7 +11,11 @@
 
 static char* ptr = NULL;
 
-void dspConnect(const char* p_ServiceStrId)
+static int32_t s_QPush(struct DSPQueue *p_Queue) {
+    return 0;
+}
+
+void dspConnect(struct ClientCallInfo *p_CallInfo, const char* p_ServiceStrId)
 {
     int rc;
     int installShmFd;

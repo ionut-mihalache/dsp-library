@@ -2,9 +2,11 @@
 
 #include <stdbool.h>
 #include <string.h>
+#include <stdlib.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/shm.h>
+
 
 #include "dsp.h"
 #include "protocol.h"
@@ -62,8 +64,11 @@ map_info:
     LOGF("Service initialized.\n");
 }
 
-static int32_t s_QPush(void) {
-    fprintf(stdout, "Hello World!\n");
+static int32_t s_QPush(struct DSPQueue *p_Queue) {
+    LOGF("m_Start: %p, m_PushIdxPtr: %p, m_PopIdxPtr: %p\n", p_Queue->m_PushIdxPtr, p_Queue->m_PopIdxPtr, p_Queue->m_Start);
+
+    *p_Queue->m_PushIdxPtr++;
+    *p_Queue->m_PopIdxPtr++;
 
     return 0;
 }
@@ -179,8 +184,9 @@ spin_lock_unlock:
     assert(callQ != MAP_FAILED);
 
     p_CallInfo->m_CallFn = s_QPush;
-    p_CallInfo->m_CallQPushIdx = installInfo->m_CallQPushIdx;
-    p_CallInfo->m_CallQPopIdx = installInfo->m_CallQPopIdx;
+    p_CallInfo->m_Queue.m_Start = callQ;
+    p_CallInfo->m_Queue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
+    p_CallInfo->m_Queue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
 
 end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
