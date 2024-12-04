@@ -43,8 +43,6 @@ struct InstallInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     pthread_mutex_t m_CallQMutex;
     pthread_mutex_t m_ReturnQMutex;
-    // char *m_CallQ;
-    // char *m_ReturnQ;
     uint32_t m_CallQPushIdx, m_CallQPopIdx;
     uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx;
     pid_t m_ProcId;

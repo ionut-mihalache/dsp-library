@@ -249,20 +249,21 @@ int fullWritev(const int p_FD, struct iovec* p_IOVec, const int p_IOVCount)
     return 0;
 }
 
-int createShmObject(const char* p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Size)
+int createShmObject(const char* p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Size, uint8_t p_Unlink)
 {
     int rc;
-    int installShmFd;
+    int shmFd;
     uint8_t shouldTruncate = true;
-    uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
-    shm_unlink(p_Name); // TODO: This should not happen all the time.
-    installShmFd = shm_open(p_Name, O_CREAT | O_EXCL | p_Oflag, p_Mode);
-    if (installShmFd < 0) {
+    if (p_Unlink) {
+        shm_unlink(p_Name); // TODO: This should not happen all the time.
+    }
+    shmFd = shm_open(p_Name, O_CREAT | O_EXCL | p_Oflag, p_Mode);
+    if (shmFd < 0) {
         if (errno == EEXIST) {
             shouldTruncate = false;
-            installShmFd = shm_open(p_Name, p_Oflag, p_Mode);
-            assert(installShmFd >= 0);
+            shmFd = shm_open(p_Name, p_Oflag, p_Mode);
+            assert(shmFd >= 0);
         }
     }
 
@@ -274,12 +275,12 @@ int createShmObject(const char* p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Siz
     // We need a bit map for fast iteration
     // Get the number of bytes for the bit map
     // The information that we need is an array of pointers to the information that we need
-    rc = ftruncate(installShmFd, p_Size);
+    rc = ftruncate(shmFd, p_Size);
     if (rc < 0) {
         ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno), errno);
     }
     assert(rc == 0);
 
 end:
-    return installShmFd;
+    return shmFd;
 }

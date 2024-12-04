@@ -16,7 +16,14 @@ public class Main {
 
         LibDSP.INSTANCE.dspInstall(callInfo, "xslt-transformation", "v0.0.1");
 
-        System.out.println(callInfo);
-        System.out.println(callInfo.getCallFn().receiveCall(callInfo.m_Queue));
+        while (true) {
+            try {
+                System.out.println(callInfo);
+                System.out.println(callInfo.getCallFn().receiveCall(callInfo.m_Queue));
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 };

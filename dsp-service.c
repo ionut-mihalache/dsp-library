@@ -67,8 +67,8 @@ map_info:
 static int32_t s_QPush(struct DSPQueue *p_Queue) {
     LOGF("m_Start: %p, m_PushIdxPtr: %p, m_PopIdxPtr: %p\n", p_Queue->m_PushIdxPtr, p_Queue->m_PopIdxPtr, p_Queue->m_Start);
 
-    *p_Queue->m_PushIdxPtr++;
-    *p_Queue->m_PopIdxPtr++;
+    (*p_Queue->m_PushIdxPtr)++;
+    (*p_Queue->m_PopIdxPtr)++;
 
     return 0;
 }
@@ -85,10 +85,10 @@ void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
 
     installShmFd = createShmObject(
         INSTALL_MZONE, O_RDWR, 0600,
-        bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)));
+        bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)), true);
 
     uint8_t *installMemZone =
-        mmap(0, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
+        mmap(NULL, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
              PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     assert(installMemZone != MAP_FAILED);
 
@@ -175,9 +175,9 @@ spin_lock_unlock:
     installInfo->m_ReturnQPopIdx = 0;
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
-                              CALLQ_MAX_SIZE * sizeof(struct HMBCall));
+                              CALLQ_MAX_SIZE * sizeof(struct HMBCall), true);
     createShmObject(installInfo->m_ReturnQName, O_RDWR, 0600,
-                    RETURNQ_MAX_SIZE * sizeof(struct QMBCall));
+                    RETURNQ_MAX_SIZE * sizeof(struct QMBCall), true);
 
     char *callQ = mmap(NULL, CALLQ_MAX_SIZE * sizeof(struct HMBCall), PROT_READ,
                        MAP_SHARED, callQFd, 0);

@@ -34,6 +34,6 @@ int fullReadv(int p_FD, struct iovec *p_IOVec, int p_IOVCount);
 
 int fullWritev(int p_FD, struct iovec *p_IOVec, int p_IOVCount);
 
-int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Size);
+int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Size, uint8_t p_Unlink);
 
 #endif //DSP_COMMONS_H

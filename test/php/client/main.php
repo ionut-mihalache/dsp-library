@@ -1,21 +1,31 @@
 <?php
     $ffi = FFI::cdef("
-        void hello();
-        void increment();
+        struct DSPQueue {
+            uint32_t *m_PushIdxPtr;
+            uint32_t *m_PopIdxPtr;
+            char *m_Start;
+        };
 
-        void dspConnect(const char* p_ServiceStrId);
+        struct ClientCallInfo {
+            struct DSPQueue m_Queue;
+            int32_t (*m_CallFn)(char *);
+        };
+
+        void pushQ(struct ClientCallInfo *callInfo);
+        void dspConnect(struct ClientCallInfo *p_CallInfo, const char* p_ServiceStrId);
     ",
     "/home/user/dsp-library/libdsp.so");
 
+    $callInfo = $ffi->new("struct ClientCallInfo");
+    $callInfoPtr = FFI::addr($callInfo);
 
-    // $ffi->hello();
+    $ffi->dspConnect($callInfoPtr, "xslt-transformation");
 
-    $ffi->dspConnect("xslt-transformation");
+    // $callInfo->m_CallFn($callInfo->m_Queue);
+    $ffi->pushQ($callInfoPtr);
 
-    // $i = 0;
-    // while ($i < 10) {
-    //     $ffi->increment();
-    //     sleep(3);
-    //     $i++;
-    // }
-?>
+    echo $callInfo->m_Queue->m_PushIdxPtr[0] . "\n";
+    echo $callInfo->m_Queue->m_PopIdxPtr[0] . "\n";
+
+    // $callInfo->m_Queue->m_PushIdxPtr[0]++;
+    // $callInfo->m_Queue->m_PopIdxPtr[0]++;
