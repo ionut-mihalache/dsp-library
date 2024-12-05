@@ -1,22 +1,18 @@
 #include "dsp-service.h"
 
 #include <stdbool.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
 #include <sys/shm.h>
-
 
 #include "dsp.h"
 #include "protocol.h"
 #include "utils/commons.h"
 #include "utils/log/log.h"
 
-static struct InstallCommons *installCommons = NULL;
 static struct InstallSharedData *installShdata = NULL;
-
-static char *ptr = NULL;
 
 void initService() {
     int rc;
@@ -65,20 +61,19 @@ map_info:
 }
 
 static int32_t s_QPush(struct DSPQueue *p_Queue) {
-    LOGF("m_Start: %p, m_PushIdxPtr: %p, m_PopIdxPtr: %p\n", p_Queue->m_PushIdxPtr, p_Queue->m_PopIdxPtr, p_Queue->m_Start);
+    LOGF("m_Start: %p, m_PushIdxPtr: %p, m_PopIdxPtr: %p\n",
+         p_Queue->m_PushIdxPtr, p_Queue->m_PopIdxPtr, p_Queue->m_Start);
 
-    (*p_Queue->m_PushIdxPtr)++;
-    (*p_Queue->m_PopIdxPtr)++;
+    // (*p_Queue->m_PushIdxPtr)++;
+    // (*p_Queue->m_PopIdxPtr)++;
 
     return 0;
 }
 
 void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
                 const char *p_Version) {
-    int rc;
     int installShmFd;
     int callQFd;
-    uint8_t shouldTruncate = true;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
     initService();
@@ -87,9 +82,9 @@ void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
         INSTALL_MZONE, O_RDWR, 0600,
         bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)), true);
 
-    uint8_t *installMemZone =
-        mmap(NULL, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
-             PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
+    uint8_t *installMemZone = mmap(
+        NULL, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
+        PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     assert(installMemZone != MAP_FAILED);
 
     int32_t freeIdx = -1;
@@ -127,8 +122,9 @@ spin_lock_unlock:
     *freeBytePtr = (*freeBytePtr) | (1 << freeIdx);
 
     struct InstallInformation *installInfo =
-        installMemZone + bytesnr +
-        freeByteIdx * (sizeof(struct InstallInformation));
+        (struct InstallInformation *)(installMemZone + bytesnr +
+                                      freeByteIdx *
+                                          (sizeof(struct InstallInformation)));
 
     installInfo->m_ProcId = getpid();
     installInfo->m_Available = true;
@@ -187,6 +183,30 @@ spin_lock_unlock:
     p_CallInfo->m_Queue.m_Start = callQ;
     p_CallInfo->m_Queue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
     p_CallInfo->m_Queue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
+
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+
+    pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+
+    pthread_mutex_init(&installInfo->m_CallQMutex, &attr);
+    pthread_mutex_init(&installInfo->m_ReturnQMutex, &attr);
+
+    pthread_mutexattr_destroy(&attr);
+
+    pthread_condattr_t condAttr;
+    pthread_condattr_init(&condAttr);
+
+    pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
+
+    pthread_cond_init(&installInfo->m_CallQFullCond, &condAttr);
+    pthread_cond_init(&installInfo->m_CallQEmptyCond, &condAttr);
+
+    pthread_condattr_destroy(&condAttr);
+
+    p_CallInfo->m_Queue.m_Lock = &installInfo->m_CallQMutex;
+    p_CallInfo->m_Queue.m_FullCond = &installInfo->m_CallQFullCond;
+    p_CallInfo->m_Queue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
 
 end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);

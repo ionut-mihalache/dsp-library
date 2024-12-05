@@ -6,6 +6,7 @@ import com.sun.jna.Structure;
 /**
  * Based on the C library version:
     struct Queue {
+        pthread_mutex_t *m_Lock;
         uint32_t *m_PushIdxPtr;
         uint32_t *m_PopIdxPtr;
         char *m_Start;
@@ -13,8 +14,9 @@ import com.sun.jna.Structure;
 */
 
 public class DSPQueue extends Structure {
-    public static final List<String> FIELDS = createFieldsOrder("m_PushIdxPtr", "m_PopIdxPtr", "m_Start");
+    public static final List<String> FIELDS = createFieldsOrder("m_Lock", "m_PushIdxPtr", "m_PopIdxPtr", "m_Start");
 
+    public Pointer m_Lock;
     public Pointer m_PushIdxPtr;
     public Pointer m_PopIdxPtr;
     public Pointer m_Start;
@@ -33,6 +35,6 @@ public class DSPQueue extends Structure {
 
     @Override
     public String toString() {
-        return "DSPQueue: " + m_PushIdxPtr.getInt(0) + " " + m_PopIdxPtr.getInt(4) + " " + m_Start;
+        return "DSPQueue: " + m_PushIdxPtr.getInt(0) + " " + m_PopIdxPtr.getInt(0) + " " + m_Start;
     }
 }

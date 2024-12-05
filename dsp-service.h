@@ -19,7 +19,7 @@ struct InstallSharedData {
 
 struct ServiceCallInfo {
     struct DSPQueue m_Queue;
-    int32_t (*m_CallFn)(void);
+    int32_t (*m_CallFn)(struct DSPQueue *);
 };
 
 void initService();

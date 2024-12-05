@@ -41,12 +41,23 @@ struct InstallInformation {
     char m_Version[VERSION_MAX_LENGTH];
     char m_CallQName[CALLQ_NAME_MAX_SIZE];
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
+    pthread_cond_t m_CallQFullCond;
+    pthread_cond_t m_CallQEmptyCond;
     pthread_mutex_t m_CallQMutex;
     pthread_mutex_t m_ReturnQMutex;
     uint32_t m_CallQPushIdx, m_CallQPopIdx;
     uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx;
     pid_t m_ProcId;
     uint8_t m_Available;
+};
+
+struct DSPQueue {
+    pthread_cond_t *m_FullCond;
+    pthread_cond_t *m_EmptyCond;
+    pthread_mutex_t *m_Lock;
+    uint32_t *m_PushIdxPtr;
+    uint32_t *m_PopIdxPtr;
+    char *m_Start;
 };
 
 struct QMBCall {
@@ -82,12 +93,6 @@ struct GBCall {
 struct DSPCall {};
 
 struct DSPReturn {};
-
-struct DSPQueue {
-    uint32_t *m_PushIdxPtr;
-    uint32_t *m_PopIdxPtr;
-    char *m_Start;
-};
 
 void hello();
 

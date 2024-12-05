@@ -4,6 +4,7 @@
 struct ClientCallInfo {
     struct DSPQueue m_Queue;
     int32_t (*m_CallFn)(struct DSPQueue *);
+    int32_t (*m_CallFnHMB)(struct DSPQueue *, struct HMBCall *p_Info);
 };
 
 void pushQ(struct ClientCallInfo *callInfo);
