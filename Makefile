@@ -9,10 +9,10 @@ build: dsp.o dsp-service.o dsp-client.o commons.o
 dsp.o: dsp.c dsp.h utils/log/log.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
 	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) -c dsp.c -fPIC
 
-dsp-service.o: dsp-service.c dsp-service.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
+dsp-service.o: dsp-service.c dsp-service.h dsp.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
 	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) -c dsp-service.c -fPIC
 
-dsp-client.o: dsp-client.c dsp-client.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
+dsp-client.o: dsp-client.c dsp-client.h dsp.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
 	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) -c dsp-client.c -fPIC
 
 commons.o: utils/commons.c utils/commons.h dsp.h utils/macros/macros.h

@@ -19,14 +19,19 @@ struct InstallSharedData {
 
 struct ServiceCallInfo {
     struct DSPQueue m_Queue;
+    struct QMBDSPQueue m_QMBQueue;
+    struct HMBDSPQueue m_HMBQueue;
     int32_t (*m_CallFn)(struct DSPQueue *);
+    int32_t (*m_ReceiveCallFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
+    int32_t (*m_ReceiveCallFnHMB)(struct HMBCall *, struct HMBDSPQueue *);
 };
 
 void initService();
 
 int getValue();
 
-void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId, const char *p_Version);
+void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
+                const char *p_Version);
 
 void dspReturn();
 

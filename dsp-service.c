@@ -11,48 +11,70 @@
 #include "protocol.h"
 #include "utils/commons.h"
 #include "utils/log/log.h"
+#include "utils/macros/macros.h"
 
 static struct InstallSharedData *installShdata = NULL;
+
+static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
+                         struct QMBDSPQueue *p_Queue) {
+    int32_t rc = 0;
+
+    pthread_mutex_lock(p_Queue->m_Lock);
+    while (*p_Queue->m_Size == 0) {
+        pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
+    }
+
+    memcpy(p_CallInfo, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
+           sizeof(struct QMBCall));
+
+    (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % QMB_Q_MAX_SIZE;
+    (*p_Queue->m_Size)--;
+
+    pthread_cond_broadcast(p_Queue->m_EmptyCond);
+
+    pthread_mutex_unlock(p_Queue->m_Lock);
+
+    return rc;
+}
+
+__attribute_used__ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
+                                            struct HMBDSPQueue *p_Queue) {
+    int32_t rc = 0;
+
+    pthread_mutex_lock(p_Queue->m_Lock);
+    while (*p_Queue->m_Size == 0) {
+        pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
+    }
+
+    memcpy(p_CallInfo, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
+           sizeof(struct HMBCall));
+
+    LOGF("%s: Message length: %u. Message: %s.\n", __func__,
+         p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_Size,
+         p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo);
+
+    (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % HMB_Q_MAX_SIZE;
+    (*p_Queue->m_Size)--;
+
+    pthread_cond_broadcast(p_Queue->m_EmptyCond);
+
+    pthread_mutex_unlock(p_Queue->m_Lock);
+
+    return rc;
+}
 
 void initService() {
     int rc;
     int installShdFd;
-    int shouldReturn = false;
 
     LOGF("Service init...\n");
 
-    // shm_unlink(INSTALL_SHD); // TODO: This should not happen all the time.
-    installShdFd = shm_open(INSTALL_SHD, O_CREAT | O_EXCL | O_RDWR, 0600);
-    if (installShdFd < 0) {
-        if (errno == EEXIST) {
-            shouldReturn = true;
-            installShdFd = shm_open(INSTALL_SHD, O_RDWR, 0600);
-            if (installShdFd < 0) {
-                ELOGF("Error when creating shared object: %s(%d).\n",
-                      strerror(errno), errno);
-            }
-            assert(installShdFd >= 0);
-        }
-    }
+    installShdFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600,
+                                   sizeof(struct InstallSharedData), true);
 
-    if (shouldReturn) {
-        goto map_info;
-    }
-
-    rc = ftruncate(installShdFd, sizeof(struct InstallSharedData));
-    if (rc < 0) {
-        ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno),
-              errno);
-    }
-    assert(rc == 0);
-
-map_info:
     installShdata = mmap(0, sizeof(struct InstallSharedData),
                          PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd, 0);
     assert(installShdata != MAP_FAILED && installShdata != NULL);
-
-    // rc = pthread_mutex_init(&installShdata->m_InstallMZoneMx, NULL);
-    // assert(rc == 0);
 
     rc = pthread_spin_init(&installShdata->m_InstallMZoneLk,
                            PTHREAD_PROCESS_SHARED);
@@ -60,18 +82,9 @@ map_info:
     LOGF("Service initialized.\n");
 }
 
-static int32_t s_QPush(struct DSPQueue *p_Queue) {
-    LOGF("m_Start: %p, m_PushIdxPtr: %p, m_PopIdxPtr: %p\n",
-         p_Queue->m_PushIdxPtr, p_Queue->m_PopIdxPtr, p_Queue->m_Start);
-
-    // (*p_Queue->m_PushIdxPtr)++;
-    // (*p_Queue->m_PopIdxPtr)++;
-
-    return 0;
-}
-
 void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
                 const char *p_Version) {
+    int rc;
     int installShmFd;
     int callQFd;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
@@ -154,11 +167,7 @@ spin_lock_unlock:
         return;
     }
     sprintf(installInfo->m_CallQName, "%s-%s-call-q", p_StrId, p_Version);
-    // char *callQName, *returnQName;
-    // asprintf(&callQName, "%s-%s-call-q", p_StrId, p_Version);
-    // assert(callQName != NULL);
-    // asprintf(&returnQName, "%s-%s-return-q", p_StrId, p_Version);
-    // assert(returnQName != NULL);
+
     if (strIdLen + versionLen + 10 > RETURNQ_NAME_MAX_SIZE) {
         ELOGF("Could not create call queue.\n");
         return;
@@ -167,32 +176,47 @@ spin_lock_unlock:
 
     installInfo->m_CallQPushIdx = 0;
     installInfo->m_CallQPopIdx = 0;
+    installInfo->m_CallQSize = 0;
     installInfo->m_ReturnQPushIdx = 0;
     installInfo->m_ReturnQPopIdx = 0;
+    installInfo->m_ReturnQSize = 0;
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
-                              CALLQ_MAX_SIZE * sizeof(struct HMBCall), true);
+                              QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
     createShmObject(installInfo->m_ReturnQName, O_RDWR, 0600,
                     RETURNQ_MAX_SIZE * sizeof(struct QMBCall), true);
 
-    char *callQ = mmap(NULL, CALLQ_MAX_SIZE * sizeof(struct HMBCall), PROT_READ,
-                       MAP_SHARED, callQFd, 0);
+    struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct QMBCall),
+                                 PROT_READ, MAP_SHARED, callQFd, 0);
     assert(callQ != MAP_FAILED);
 
-    p_CallInfo->m_CallFn = s_QPush;
-    p_CallInfo->m_Queue.m_Start = callQ;
-    p_CallInfo->m_Queue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
-    p_CallInfo->m_Queue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
+    p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
+    p_CallInfo->m_QMBQueue.m_Data = callQ;
+    p_CallInfo->m_QMBQueue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
+    p_CallInfo->m_QMBQueue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
+    p_CallInfo->m_QMBQueue.m_Size = &installInfo->m_CallQSize;
+
+    // p_CallInfo->m_ReceiveCallFnHMB = s_QPopHMB;
+    // p_CallInfo->m_HMBQueue.m_Data = callQ;
+    // p_CallInfo->m_HMBQueue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
+    // p_CallInfo->m_HMBQueue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
+    // p_CallInfo->m_HMBQueue.m_Size = &installInfo->m_CallQSize;
 
     pthread_mutexattr_t attr;
-    pthread_mutexattr_init(&attr);
+    rc = pthread_mutexattr_init(&attr);
+    DIE(rc != 0, "Could not init mutex attribute.");
 
-    pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    DIE(rc != 0, "Could not set pshread for mutex attribute");
 
-    pthread_mutex_init(&installInfo->m_CallQMutex, &attr);
-    pthread_mutex_init(&installInfo->m_ReturnQMutex, &attr);
+    rc = pthread_mutex_init(&installInfo->m_CallQMutex, &attr);
+    DIE(rc != 0, "Could not init call mutex!");
 
-    pthread_mutexattr_destroy(&attr);
+    rc = pthread_mutex_init(&installInfo->m_ReturnQMutex, &attr);
+    DIE(rc != 0, "Could not init return mutex!");
+
+    rc = pthread_mutexattr_destroy(&attr);
+    DIE(rc != 0, "Coudl not destroy mutex attribute");
 
     pthread_condattr_t condAttr;
     pthread_condattr_init(&condAttr);
@@ -204,16 +228,18 @@ spin_lock_unlock:
 
     pthread_condattr_destroy(&condAttr);
 
-    p_CallInfo->m_Queue.m_Lock = &installInfo->m_CallQMutex;
-    p_CallInfo->m_Queue.m_FullCond = &installInfo->m_CallQFullCond;
-    p_CallInfo->m_Queue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
+    p_CallInfo->m_QMBQueue.m_Lock = &installInfo->m_CallQMutex;
+    p_CallInfo->m_QMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
+    p_CallInfo->m_QMBQueue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
+
+    // p_CallInfo->m_HMBQueue.m_Lock = &installInfo->m_CallQMutex;
+    // p_CallInfo->m_HMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
+    // p_CallInfo->m_HMBQueue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
 
 end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
     LOGF("Successfully installed new service: (%s, %s).\n", p_StrId, p_Version);
-
-    return;
 }
 
 void dspReturn() {}
