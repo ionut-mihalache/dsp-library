@@ -32,7 +32,7 @@
 #define GB 1 << 30
 #define DGB 1LL << 31
 
-#define QMB_Q_MAX_SIZE 256
+#define QMB_Q_MAX_SIZE 8
 #define HMB_Q_MAX_SIZE 4
 #define MB_Q_MAX_SIZE 2
 #define DMB_Q_MAX_SIZE 1

@@ -105,9 +105,11 @@ void dspConnect(struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId) {
         PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap installMemZone");
 
+    installMemZone += bytesnr;
+
     for (uint16_t i = 0; i < SERVICES_NUMBER; ++i) {
         installInfo =
-            (struct InstallInformation *)(installMemZone + bytesnr +
+            (struct InstallInformation *)(installMemZone +
                                           i * sizeof(
                                                   struct InstallInformation));
 

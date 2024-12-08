@@ -76,6 +76,9 @@ void initService() {
                          PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd, 0);
     assert(installShdata != MAP_FAILED && installShdata != NULL);
 
+    rc = close(installShdFd);
+    DIE(rc != 0, "Could not close installShdFd");
+
     rc = pthread_spin_init(&installShdata->m_InstallMZoneLk,
                            PTHREAD_PROCESS_SHARED);
     assert(rc == 0);
@@ -99,6 +102,9 @@ void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
         NULL, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
         PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     assert(installMemZone != MAP_FAILED);
+
+    rc = close(installShmFd);
+    DIE(rc != 0, "Could not close installShmFd");
 
     int32_t freeIdx = -1;
     uint8_t *freeBytePtr = NULL;
@@ -183,12 +189,15 @@ spin_lock_unlock:
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
-    createShmObject(installInfo->m_ReturnQName, O_RDWR, 0600,
-                    RETURNQ_MAX_SIZE * sizeof(struct QMBCall), true);
+    // createShmObject(installInfo->m_ReturnQName, O_RDWR, 0600,
+    //                 QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
 
     struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct QMBCall),
                                  PROT_READ, MAP_SHARED, callQFd, 0);
     assert(callQ != MAP_FAILED);
+
+    rc = close(callQFd);
+    DIE(rc != 0, "Could not close callQFd");
 
     p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
     p_CallInfo->m_QMBQueue.m_Data = callQ;
