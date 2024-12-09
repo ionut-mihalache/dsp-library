@@ -71,17 +71,19 @@ void initService() {
 
     installShdFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600,
                                    sizeof(struct InstallSharedData), true);
+    DIE(installShdFd < 0, "Could not create install shared memory object");
 
     installShdata = mmap(0, sizeof(struct InstallSharedData),
                          PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd, 0);
-    assert(installShdata != MAP_FAILED && installShdata != NULL);
+    DIE(installShdata == MAP_FAILED || installShdata == NULL,
+        "Could not mmap install shared data object");
 
     rc = close(installShdFd);
     DIE(rc != 0, "Could not close installShdFd");
 
     rc = pthread_spin_init(&installShdata->m_InstallMZoneLk,
                            PTHREAD_PROCESS_SHARED);
-    assert(rc == 0);
+    DIE(rc != 0, "Could not init install shared spinlock");
     LOGF("Service initialized.\n");
 }
 
@@ -94,14 +96,15 @@ void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
 
     initService();
 
-    installShmFd = createShmObject(
-        INSTALL_MZONE, O_RDWR, 0600,
-        bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)), true);
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600,
+                                   sizeof(struct InstallInfo), true);
+    DIE(installShmFd < 0,
+        "Could not open install memory zone shared memory object");
 
-    uint8_t *installMemZone = mmap(
-        NULL, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
-        PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
-    assert(installMemZone != MAP_FAILED);
+    struct InstallInfo *installMemZone =
+        mmap(NULL, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
+             MAP_SHARED, installShmFd, 0);
+    DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 
     rc = close(installShmFd);
     DIE(rc != 0, "Could not close installShmFd");
@@ -112,16 +115,11 @@ void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
 
     pthread_spin_lock(&installShdata->m_InstallMZoneLk);
     for (uint8_t i = 0; i < bytesnr; ++i) {
-        freeBytePtr = installMemZone + i;
+        freeBytePtr = &installMemZone->m_InstallMap[i];
 
         for (uint8_t j = 7; j > 0; --j) {
             freeByteIdx++;
-            /**
-             * Get the index for the correct bit inside the service map
-             *
-             * E.g: 2 bytes are used for the service map
-             * b7 b6 b5 b4 b3 b2 b1 b0 | b7 b6 b5 b4 b3 b2 b1 b0
-             */
+
             if (((*freeBytePtr) & (1 << j)) == 0) {
                 /**
                  * We set the bit index for the current byte
@@ -141,9 +139,7 @@ spin_lock_unlock:
     *freeBytePtr = (*freeBytePtr) | (1 << freeIdx);
 
     struct InstallInformation *installInfo =
-        (struct InstallInformation *)(installMemZone + bytesnr +
-                                      freeByteIdx *
-                                          (sizeof(struct InstallInformation)));
+        &installMemZone->m_Info[freeByteIdx];
 
     installInfo->m_ProcId = getpid();
     installInfo->m_Available = true;
@@ -189,12 +185,10 @@ spin_lock_unlock:
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
-    // createShmObject(installInfo->m_ReturnQName, O_RDWR, 0600,
-    //                 QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
 
     struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct QMBCall),
                                  PROT_READ, MAP_SHARED, callQFd, 0);
-    assert(callQ != MAP_FAILED);
+    DIE(callQ == MAP_FAILED, "Could not map call queue memory");
 
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");

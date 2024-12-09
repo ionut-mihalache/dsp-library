@@ -89,29 +89,29 @@ int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data,
 }
 
 void dspConnect(struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId) {
+    int rc;
     int installShmFd;
     int callQFd;
     struct InstallInformation *installInfo;
     uint8_t connected = false;
-    uint8_t bytesnr = SERVICES_NUMBER >> 3;
+    uint16_t i;
 
-    installShmFd = createShmObject(
-        INSTALL_MZONE, O_RDWR, 0600,
-        bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)), false);
-    DIE(installShmFd < 0, "Could not open shared memory object!");
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600,
+                                   sizeof(struct InstallInfo), false);
+    DIE(installShmFd < 0,
+        "Could not open install memory zone shared memory object");
 
-    uint8_t *installMemZone = mmap(
-        NULL, bytesnr + (SERVICES_NUMBER * sizeof(struct InstallInformation)),
-        PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
-    DIE(installMemZone == MAP_FAILED, "Could not mmap installMemZone");
+    struct InstallInfo *installMemZone =
+        mmap(NULL, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
+             MAP_SHARED, installShmFd, 0);
+    DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 
-    installMemZone += bytesnr;
+    for (i = 0; i < SERVICES_NUMBER; ++i) {
+        if (!installMemZone->m_Info[i].m_Available) {
+            continue;
+        }
 
-    for (uint16_t i = 0; i < SERVICES_NUMBER; ++i) {
-        installInfo =
-            (struct InstallInformation *)(installMemZone +
-                                          i * sizeof(
-                                                  struct InstallInformation));
+        installInfo = (struct InstallInformation *)&(installMemZone->m_Info[i]);
 
         LOGF("The current service string id is %s.\n", installInfo->m_StrId);
         if (!strcmp(installInfo->m_StrId, p_ServiceStrId)) {
@@ -126,6 +126,17 @@ void dspConnect(struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId) {
         LOGF("Could not connect. Service is not installed or unavailable.\n");
         return;
     }
+
+    rc = munmap(installMemZone, sizeof(struct InstallInfo));
+    DIE(rc != 0, "Could not unmap install memory zone");
+
+    /**
+     * Map only the information of the service
+     */
+    installInfo = (struct InstallInformation *)mmap(
+        NULL, sizeof(struct InstallInformation), PROT_READ | PROT_WRITE,
+        MAP_SHARED, installShmFd, i * sizeof(struct InstallInformation));
+    DIE(installInfo == MAP_FAILED, "Could not map service information");
 
     /**
      * TODO: Implement successfull connection functionality

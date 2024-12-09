@@ -13,10 +13,9 @@
 
 #include "exit/exit_header.h"
 #include "log/log.h"
+#include "macros/macros.h"
 
-uint64_t
-strHashFn(const char* p_Str)
-{
+uint64_t strHashFn(const char *p_Str) {
     static const uint32_t p = 23;
     static const uint32_t m = 1000000009;
 
@@ -32,9 +31,7 @@ strHashFn(const char* p_Str)
     return hashValue;
 }
 
-uint64_t
-hash64bit(unsigned long key)
-{
+uint64_t hash64bit(unsigned long key) {
     key = (~key) + (key << 21); // key = (key << 21) - key - 1;
     key = key ^ (key >> 24);
     key = (key + (key << 3)) + (key << 8); // key * 265
@@ -53,16 +50,17 @@ hash64bit(unsigned long key)
  * @param p_NBytes
  * @return
  */
-int fullRead(const int p_FD, void* p_Buf, const size_t p_NBytes)
-{
+int fullRead(const int p_FD, void *p_Buf, const size_t p_NBytes) {
     size_t currBytes = 0;
 
     while (currBytes < p_NBytes) {
-        const ssize_t rdBytes = read(p_FD, p_Buf + currBytes, p_NBytes - currBytes);
+        const ssize_t rdBytes =
+            read(p_FD, p_Buf + currBytes, p_NBytes - currBytes);
 
         if (rdBytes > 0) {
             currBytes += rdBytes;
-            LOGF("Current read bytes: %lu. Expected read bytes: %lu\n", currBytes, p_NBytes);
+            LOGF("Current read bytes: %lu. Expected read bytes: %lu\n",
+                 currBytes, p_NBytes);
             continue;
         }
 
@@ -89,16 +87,17 @@ int fullRead(const int p_FD, void* p_Buf, const size_t p_NBytes)
  * @param p_NBytes
  * @return
  */
-int fullWrite(const int p_FD, const void* p_Buf, const size_t p_NBytes)
-{
+int fullWrite(const int p_FD, const void *p_Buf, const size_t p_NBytes) {
     size_t currBytes = 0;
 
     while (currBytes < p_NBytes) {
-        const ssize_t wrBytes = write(p_FD, p_Buf + currBytes, p_NBytes - currBytes);
+        const ssize_t wrBytes =
+            write(p_FD, p_Buf + currBytes, p_NBytes - currBytes);
 
         if (wrBytes > 0) {
             currBytes += wrBytes;
-            LOGF("Current written bytes: %lu. Expected written bytes: %lu\n", currBytes, p_NBytes);
+            LOGF("Current written bytes: %lu. Expected written bytes: %lu\n",
+                 currBytes, p_NBytes);
             continue;
         }
 
@@ -119,12 +118,13 @@ int fullWrite(const int p_FD, const void* p_Buf, const size_t p_NBytes)
  * @param p_NBytes
  * @return
  */
-int fullPipeSplice(const int p_InFd, const int p_OutFd, const size_t p_NBytes)
-{
+int fullPipeSplice(const int p_InFd, const int p_OutFd, const size_t p_NBytes) {
     size_t currBytes = 0;
 
     while (currBytes < p_NBytes) {
-        const ssize_t trBytes = splice(p_InFd, NULL, p_OutFd, NULL, p_NBytes - currBytes, SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
+        const ssize_t trBytes =
+            splice(p_InFd, NULL, p_OutFd, NULL, p_NBytes - currBytes,
+                   SPLICE_F_MOVE | SPLICE_F_NONBLOCK);
 
         if (trBytes > 0) {
             currBytes += trBytes;
@@ -151,8 +151,7 @@ int fullPipeSplice(const int p_InFd, const int p_OutFd, const size_t p_NBytes)
  * @param p_PipeName
  * @param p_Mode
  */
-void createPipe(const char* p_PipeName, const __mode_t p_Mode)
-{
+void createPipe(const char *p_PipeName, const __mode_t p_Mode) {
     if (access(p_PipeName, F_OK) == 0) {
         LOGF("Pipe at path \'%s\' already exists.\n", p_PipeName);
     } else {
@@ -166,8 +165,7 @@ void createPipe(const char* p_PipeName, const __mode_t p_Mode)
     }
 }
 
-void openPipe(char* p_PipeName, const int p_Flags, int* p_OutFd)
-{
+void openPipe(char *p_PipeName, const int p_Flags, int *p_OutFd) {
     *p_OutFd = open(p_PipeName, p_Flags);
     CHECK_AND_EXIT_ERR(*p_OutFd < 0);
     LOGF("Opened file %s(%d).\n", p_PipeName, *p_OutFd);
@@ -180,8 +178,7 @@ void openPipe(char* p_PipeName, const int p_Flags, int* p_OutFd)
  * @param p_IOVCount
  * @return
  */
-int fullReadv(const int p_FD, struct iovec* p_IOVec, const int p_IOVCount)
-{
+int fullReadv(const int p_FD, struct iovec *p_IOVec, const int p_IOVCount) {
     int currCnt = 0;
 
     while (true) {
@@ -193,9 +190,11 @@ int fullReadv(const int p_FD, struct iovec* p_IOVec, const int p_IOVCount)
             if (currCnt == p_IOVCount) {
                 break;
             }
-            p_IOVec[currCnt].iov_base = (char*)p_IOVec[currCnt].iov_base + rdBytes;
+            p_IOVec[currCnt].iov_base =
+                (char *)p_IOVec[currCnt].iov_base + rdBytes;
             p_IOVec[currCnt].iov_len -= rdBytes;
-            LOGF("Current read iovecs: %d. Expected read iovecs: %d\n", currCnt, p_IOVCount);
+            LOGF("Current read iovecs: %d. Expected read iovecs: %d\n", currCnt,
+                 p_IOVCount);
             continue;
         }
 
@@ -222,8 +221,7 @@ int fullReadv(const int p_FD, struct iovec* p_IOVec, const int p_IOVCount)
  * @param p_IOVCount
  * @return
  */
-int fullWritev(const int p_FD, struct iovec* p_IOVec, const int p_IOVCount)
-{
+int fullWritev(const int p_FD, struct iovec *p_IOVec, const int p_IOVCount) {
     int currCnt = 0;
 
     while (true) {
@@ -234,7 +232,8 @@ int fullWritev(const int p_FD, struct iovec* p_IOVec, const int p_IOVCount)
                 wrBytes -= p_IOVec[currCnt++].iov_len;
             if (currCnt == p_IOVCount)
                 break;
-            p_IOVec[currCnt].iov_base = (char*)p_IOVec[currCnt].iov_base + wrBytes;
+            p_IOVec[currCnt].iov_base =
+                (char *)p_IOVec[currCnt].iov_base + wrBytes;
             p_IOVec[currCnt].iov_len -= wrBytes;
             continue;
         }
@@ -249,8 +248,8 @@ int fullWritev(const int p_FD, struct iovec* p_IOVec, const int p_IOVCount)
     return 0;
 }
 
-int createShmObject(const char* p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Size, uint8_t p_Unlink)
-{
+int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
+                    loff_t p_Size, uint8_t p_Unlink) {
     int rc;
     int shmFd;
     uint8_t shouldTruncate = true;
@@ -263,7 +262,7 @@ int createShmObject(const char* p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Siz
         if (errno == EEXIST) {
             shouldTruncate = false;
             shmFd = shm_open(p_Name, p_Oflag, p_Mode);
-            assert(shmFd >= 0);
+            DIE(shmFd < 0, "Could not open shared memory object");
         }
     }
 
@@ -274,12 +273,14 @@ int createShmObject(const char* p_Name, int p_Oflag, mode_t p_Mode, loff_t p_Siz
     // Prepare space to allow installation for SERVICES_NUMBER services at most
     // We need a bit map for fast iteration
     // Get the number of bytes for the bit map
-    // The information that we need is an array of pointers to the information that we need
+    // The information that we need is an array of pointers to the information
+    // that we need
     rc = ftruncate(shmFd, p_Size);
     if (rc < 0) {
-        ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno), errno);
+        ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno),
+              errno);
     }
-    assert(rc == 0);
+    DIE(rc != 0, "Could not truncate shared memory object");
 
 end:
     return shmFd;

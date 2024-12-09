@@ -3,7 +3,6 @@
 
 #define _GNU_SOURCE
 
-#include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -93,7 +92,13 @@ struct InstallInformation {
     uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
     pid_t m_ProcId;
     uint8_t m_Available;
-};
+} __attribute__((aligned(PAGE_SIZE)));
+
+struct InstallInfo {
+    struct InstallInformation m_Info[SERVICES_NUMBER >> 3];
+    uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
+    uint8_t m_BytesNr;
+} __attribute__((aligned(PAGE_SIZE)));
 
 struct QMBDSPQueue {
     struct QMBCall *m_Data;
