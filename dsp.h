@@ -17,31 +17,34 @@
 #define SHMEM_PATH "/shared_memory"
 #define CONNECT_REQS "/conn-reqs"
 #define INSTALL_MZONE "/install-zone"
-#define SERVICES_NUMBER 1024 // needs to be a power of 2
+#define SERVICES_NUMBER ((uint32_t)1024) // needs to be a power of 2
 
-#define STRING_ID_MAX_LENGTH 128
-#define VERSION_MAX_LENGTH 16
+#define STRING_ID_MAX_LENGTH ((uint32_t)128)
+#define VERSION_MAX_LENGTH ((uint32_t)16)
 
-#define FUNC_NAME_MAX_LENGTH 32
+#define FUNC_NAME_MAX_LENGTH ((uint32_t)32)
 
 #define QMB 1 << 18
 #define HMB 1 << 19
 #define MB 1 << 20
 #define DMB 1 << 21
 #define GB 1 << 30
-#define DGB 1LL << 31
+#define DGB 1ULL << 31
 
-#define QMB_Q_MAX_SIZE 8
-#define HMB_Q_MAX_SIZE 4
-#define MB_Q_MAX_SIZE 2
-#define DMB_Q_MAX_SIZE 1
-#define GB_Q_MAX_SIZE 1
-#define DGB_Q_MAX_SIZE 1
+#define QMB_Q_MAX_SIZE ((uint32_t)8)
+#define HMB_Q_MAX_SIZE ((uint32_t)4)
+#define MB_Q_MAX_SIZE ((uint32_t)2)
+#define DMB_Q_MAX_SIZE ((uint32_t)1)
+#define GB_Q_MAX_SIZE ((uint32_t)1)
+#define DGB_Q_MAX_SIZE ((uint32_t)1)
 
-#define CALLQ_MAX_SIZE 1024
-#define RETURNQ_MAX_SIZE 1024
-#define CALLQ_NAME_MAX_SIZE 1056
-#define RETURNQ_NAME_MAX_SIZE 1056
+#define CALLQ_MAX_SIZE ((uint32_t)1024)
+#define CONNECTQ_MAX_SIZE ((uint32_t)64)
+#define RETURNQ_MAX_SIZE ((uint32_t)1024)
+
+#define CALLQ_NAME_MAX_SIZE ((uint32_t)1056)
+#define CONNECTQ_NAME_MAX_SIZE ((uint32_t)1056)
+#define RETURNQ_NAME_MAX_SIZE ((uint32_t)1056)
 
 struct QMBCall {
     uint8_t m_CallInfo[QMB];
@@ -83,13 +86,15 @@ struct InstallInformation {
     char m_StrId[STRING_ID_MAX_LENGTH];
     char m_Version[VERSION_MAX_LENGTH];
     char m_CallQName[CALLQ_NAME_MAX_SIZE];
-    char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
+    char m_ConnectQName[CONNECTQ_NAME_MAX_SIZE];
     pthread_cond_t m_CallQFullCond;
     pthread_cond_t m_CallQEmptyCond;
+    pthread_cond_t m_ConnectQFullCond;
+    pthread_cond_t m_ConnectQEmptyCond;
     pthread_mutex_t m_CallQMutex;
-    pthread_mutex_t m_ReturnQMutex;
+    pthread_mutex_t m_ConnectQMutex;
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
-    uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
+    uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
     pid_t m_ProcId;
     uint8_t m_Available;
 } __attribute__((aligned(PAGE_SIZE)));
@@ -99,6 +104,54 @@ struct InstallInfo {
     uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
     uint8_t m_BytesNr;
 } __attribute__((aligned(PAGE_SIZE)));
+
+struct ConnectResponseInformation {
+    uint32_t m_Id;
+};
+
+struct ConnectResponseQueue {
+    struct ConnectResponseInformation *m_Data;
+    pthread_cond_t *m_FullCond;
+    pthread_cond_t *m_EmptyCond;
+    pthread_mutex_t *m_Lock;
+    uint32_t *m_PushIdxPtr;
+    uint32_t *m_PopIdxPtr;
+    uint32_t *m_Size;
+};
+
+struct ConnectRequestInformation {
+    char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
+    char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];
+    struct ConnectResponseQueue *m_ResponseQ;
+    int32_t *m_ConnectError;
+    int32_t (*m_HandleResponse)(struct ConnectResponseInformation *,
+                                struct ConnectResponseInformation *);
+    bool *m_Connected;
+    uint32_t m_ReturnQSize;
+    uint32_t m_ResponseQSize;
+};
+
+struct ConnectInformation {
+    char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
+    char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];
+    pthread_cond_t m_ReturnResponseQFullCond;
+    pthread_cond_t m_ReturnResponseQEmptyCond;
+    pthread_mutex_t m_ReturnResponseQMutex;
+    uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
+    uint32_t m_ReturnQSize;
+    int32_t m_ConnectionError;
+    bool m_Connected;
+};
+
+struct ConnectQueue {
+    struct ConnectInformation *m_Data;
+    pthread_cond_t *m_FullCond;
+    pthread_cond_t *m_EmptyCond;
+    pthread_mutex_t *m_Lock;
+    uint32_t *m_PushIdxPtr;
+    uint32_t *m_PopIdxPtr;
+    uint32_t *m_Size;
+};
 
 struct QMBDSPQueue {
     struct QMBCall *m_Data;

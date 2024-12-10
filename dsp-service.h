@@ -27,11 +27,15 @@ struct ServiceCallInfo {
     int32_t (*m_SendReturnFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
 };
 
+struct ServiceConnectInfo {
+    struct ConnectQueue m_Queue;
+    int32_t (*m_ReceiveConnectRequest)(struct ConnectRequestInformation *, struct ConnectQueue *);
+};
+
 void initService();
 
-int getValue();
-
-void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
+void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
+                struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
                 const char *p_Version);
 
 void dspReturn();

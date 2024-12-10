@@ -1,67 +1,66 @@
 <?php
-$ffi = FFI::cdef(
-    "
-        #define HMB 1 << 19
+$ffi = FFI::cdef("
+    #define HMB 1 << 19
 
-        #define HMB_Q_MAX_SIZE 4
+    #define HMB_Q_MAX_SIZE 4
 
-        #define CALLQ_MAX_SIZE 1024
-        #define RETURNQ_MAX_SIZE 1024
-        #define CALLQ_NAME_MAX_SIZE 1056
-        #define RETURNQ_NAME_MAX_SIZE 1056
+    #define CALLQ_MAX_SIZE 1024
+    #define RETURNQ_MAX_SIZE 1024
+    #define CALLQ_NAME_MAX_SIZE 1056
+    #define RETURNQ_NAME_MAX_SIZE 1056
 
-        typedef struct { int unused; } pthread_cond_t;
-        typedef struct { int unused; } pthread_mutex_t;
+    typedef struct { int unused; } pthread_cond_t;
+    typedef struct { int unused; } pthread_mutex_t;
 
-        struct QMBCall {
-            uint8_t m_CallInfo[1 << 18];
-            uint32_t m_Size;
-            bool m_DataReady;
-        };
+    struct QMBCall {
+        uint8_t m_CallInfo[1 << 18];
+        uint32_t m_Size;
+        bool m_DataReady;
+    };
 
 
-        struct HMBCall {
-            uint8_t m_CallInfo[1 << 19];
-            uint32_t m_Size;
-            bool m_DataReady;
-        };
+    struct HMBCall {
+        uint8_t m_CallInfo[1 << 19];
+        uint32_t m_Size;
+        bool m_DataReady;
+    };
 
-        struct DSPQueue {
-            pthread_cond_t *m_FullCond;
-            pthread_cond_t *m_EmptyCond;
-            pthread_mutex_t *m_Lock;
-            uint32_t *m_PushIdxPtr;
-            uint32_t *m_PopIdxPtr;
-            uint8_t *m_Start;
-        };
+    struct DSPQueue {
+        pthread_cond_t *m_FullCond;
+        pthread_cond_t *m_EmptyCond;
+        pthread_mutex_t *m_Lock;
+        uint32_t *m_PushIdxPtr;
+        uint32_t *m_PopIdxPtr;
+        uint8_t *m_Start;
+    };
 
-        struct HMBDSPQueue {
-            struct HMBCall *m_Data;
-            pthread_cond_t *m_FullCond;
-            pthread_cond_t *m_EmptyCond;
-            pthread_mutex_t *m_Lock;
-            uint32_t *m_PushIdxPtr;
-            uint32_t *m_PopIdxPtr;
-            uint32_t *m_Size;
-        };
+    struct HMBDSPQueue {
+        struct HMBCall *m_Data;
+        pthread_cond_t *m_FullCond;
+        pthread_cond_t *m_EmptyCond;
+        pthread_mutex_t *m_Lock;
+        uint32_t *m_PushIdxPtr;
+        uint32_t *m_PopIdxPtr;
+        uint32_t *m_Size;
+    };
 
-        struct ClientCallInfo {
-            struct DSPQueue m_Queue;
-            struct HMBDSPQueue m_HMBQueue;
-            int32_t (*m_CallFn)(struct DSPQueue *);
-            int32_t (*m_CallFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
-            int32_t (*m_CallFnHMB)(struct HMBDSPQueue *, struct HMBCall *);
-        };
+    struct ClientCallInfo {
+        struct DSPQueue m_Queue;
+        struct HMBDSPQueue m_HMBQueue;
+        int32_t (*m_CallFn)(struct DSPQueue *);
+        int32_t (*m_CallFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
+        int32_t (*m_CallFnHMB)(struct HMBDSPQueue *, struct HMBCall *);
+    };
 
-        void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
-        void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
+    void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
+    void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
 
-        void dspConnect(struct ClientCallInfo *p_CallInfo, const char* p_ServiceStrId);
+    void dspConnect(struct ClientCallInfo *p_CallInfo, const char* p_ServiceStrId);
 
-        int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
-        int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
-    ",
-    "/home/user/dsp-library/libdsp.so"
+    int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
+    int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
+",
+"/home/user/dsp-library/libdsp.so"
 );
 
 $callInfo = $ffi->new("struct ClientCallInfo");

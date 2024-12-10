@@ -11,7 +11,15 @@ struct ClientCallInfo {
     int32_t (*m_ReturnFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
 };
 
-void pushQ(struct ClientCallInfo *callInfo);
+struct ClientConnectInfo {
+    struct ConnectQueue m_Queue;
+    int32_t (*m_SendConnectRequest)(struct ConnectQueue *,
+                                    struct ConnectRequestInformation *);
+};
+
+void sendConnectRequest(struct ClientConnectInfo *p_ConnectInfo,
+                        struct ConnectRequestInformation *p_RequestInfo);
+void pushQ(struct ClientCallInfo *p_CallInfo);
 void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
 void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
 
@@ -20,6 +28,7 @@ int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data,
 int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data,
                        uint32_t p_Size);
 
-void dspConnect(struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId);
+void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
+                struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId);
 
 #endif // __DSP_CLIENT_H

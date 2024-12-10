@@ -15,6 +15,54 @@
 
 static struct InstallSharedData *installShdata = NULL;
 
+// static int32_t s_
+
+int32_t processConnectRequest(struct ConnectRequestInformation *p_Request) {
+    int32_t rc = 0;
+    (void)p_Request;
+    // int returnQFd;
+
+    // returnQFd = createShmObject(p_Request->m_ReturnQName, O_WRONLY, 0600,
+    //                             p_Request->m_ReturnQSize, true);
+
+    return rc;
+}
+
+static int32_t
+s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
+                        struct ConnectQueue *p_Queue) {
+    int32_t rc = 0;
+    uint32_t idx;
+
+    pthread_mutex_lock(p_Queue->m_Lock);
+    while (*p_Queue->m_Size == 0) {
+        pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
+    }
+
+    idx = *p_Queue->m_PopIdxPtr;
+
+    memcpy(p_Request->m_ReturnQName, p_Queue->m_Data[idx].m_ReturnQName,
+           min(strlen(p_Request->m_ReturnQName), RETURNQ_NAME_MAX_SIZE - 1));
+
+    memcpy(p_Request->m_ReturnRequestQName,
+           p_Queue->m_Data[idx].m_ReturnRequestQName,
+           min(strlen(p_Request->m_ReturnRequestQName),
+               RETURNQ_NAME_MAX_SIZE - 1));
+
+    p_Request->m_ReturnQSize = p_Queue->m_Data[idx].m_ReturnQSize;
+    p_Request->m_Connected = &p_Queue->m_Data[idx].m_Connected;
+    p_Request->m_ConnectError = &p_Queue->m_Data[idx].m_ConnectionError;
+
+    (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
+    (*p_Queue->m_Size)--;
+
+    pthread_cond_broadcast(p_Queue->m_EmptyCond);
+
+    pthread_mutex_unlock(p_Queue->m_Lock);
+
+    return rc;
+}
+
 static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
                          struct QMBDSPQueue *p_Queue) {
     int32_t rc = 0;
@@ -87,11 +135,12 @@ void initService() {
     LOGF("Service initialized.\n");
 }
 
-void dspInstall(struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
+void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
+                struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
                 const char *p_Version) {
     int rc;
     int installShmFd;
-    int callQFd;
+    int callQFd, connectQFd;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
     initService();
@@ -174,14 +223,26 @@ spin_lock_unlock:
         ELOGF("Could not create call queue.\n");
         return;
     }
-    sprintf(installInfo->m_ReturnQName, "%s-%s-return-q", p_StrId, p_Version);
+    sprintf(installInfo->m_ConnectQName, "%s-%s-connect-q", p_StrId, p_Version);
 
     installInfo->m_CallQPushIdx = 0;
     installInfo->m_CallQPopIdx = 0;
     installInfo->m_CallQSize = 0;
-    installInfo->m_ReturnQPushIdx = 0;
-    installInfo->m_ReturnQPopIdx = 0;
-    installInfo->m_ReturnQSize = 0;
+    installInfo->m_ConnectQPushIdx = 0;
+    installInfo->m_ConnectQPopIdx = 0;
+    installInfo->m_ConnectQSize = 0;
+
+    connectQFd = createShmObject(
+        installInfo->m_ConnectQName, O_RDWR, 0600,
+        CONNECTQ_MAX_SIZE * sizeof(struct ConnectInformation), true);
+
+    struct ConnectInformation *connectQ =
+        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectInformation),
+             PROT_READ | PROT_WRITE, MAP_SHARED, connectQFd, 0);
+    DIE(connectQ == MAP_FAILED, "Coudl not map connect queue memory");
+
+    rc = close(connectQFd);
+    DIE(rc != 0, "Could not close connectQFd");
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
@@ -192,6 +253,11 @@ spin_lock_unlock:
 
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");
+
+    p_ConnectInfo->m_ReceiveConnectRequest = s_ReceiveConnectRequest;
+    p_ConnectInfo->m_Queue.m_Data = connectQ;
+    p_ConnectInfo->m_Queue.m_PushIdxPtr = &installInfo->m_ConnectQPushIdx;
+    p_ConnectInfo->m_Queue.m_PopIdxPtr = &installInfo->m_ConnectQPopIdx;
 
     p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
     p_CallInfo->m_QMBQueue.m_Data = callQ;
@@ -215,8 +281,8 @@ spin_lock_unlock:
     rc = pthread_mutex_init(&installInfo->m_CallQMutex, &attr);
     DIE(rc != 0, "Could not init call mutex!");
 
-    rc = pthread_mutex_init(&installInfo->m_ReturnQMutex, &attr);
-    DIE(rc != 0, "Could not init return mutex!");
+    rc = pthread_mutex_init(&installInfo->m_ConnectQMutex, &attr);
+    DIE(rc != 0, "Could not init connect mutex!");
 
     rc = pthread_mutexattr_destroy(&attr);
     DIE(rc != 0, "Coudl not destroy mutex attribute");
@@ -229,7 +295,14 @@ spin_lock_unlock:
     pthread_cond_init(&installInfo->m_CallQFullCond, &condAttr);
     pthread_cond_init(&installInfo->m_CallQEmptyCond, &condAttr);
 
+    pthread_cond_init(&installInfo->m_ConnectQFullCond, &condAttr);
+    pthread_cond_init(&installInfo->m_ConnectQEmptyCond, &condAttr);
+
     pthread_condattr_destroy(&condAttr);
+
+    p_ConnectInfo->m_Queue.m_Lock = &installInfo->m_ConnectQMutex;
+    p_ConnectInfo->m_Queue.m_FullCond = &installInfo->m_ConnectQFullCond;
+    p_ConnectInfo->m_Queue.m_EmptyCond = &installInfo->m_ConnectQEmptyCond;
 
     p_CallInfo->m_QMBQueue.m_Lock = &installInfo->m_CallQMutex;
     p_CallInfo->m_QMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
