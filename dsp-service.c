@@ -15,9 +15,7 @@
 
 static struct InstallSharedData *installShdata = NULL;
 
-// static int32_t s_
-
-int32_t processConnectRequest(struct ConnectRequestInformation *p_Request) {
+int32_t processConnectRequest(struct ConnectRequest *p_Request) {
     int32_t rc = 0;
     (void)p_Request;
     // int returnQFd;
@@ -32,6 +30,7 @@ static int32_t
 s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
                         struct ConnectQueue *p_Queue) {
     int32_t rc = 0;
+    int returnRequestQFd;
     uint32_t idx;
 
     pthread_mutex_lock(p_Queue->m_Lock);
@@ -44,17 +43,39 @@ s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
     memcpy(p_Request->m_ReturnQName, p_Queue->m_Data[idx].m_ReturnQName,
            min(strlen(p_Request->m_ReturnQName), RETURNQ_NAME_MAX_SIZE - 1));
 
-    memcpy(p_Request->m_ReturnRequestQName,
-           p_Queue->m_Data[idx].m_ReturnRequestQName,
-           min(strlen(p_Request->m_ReturnRequestQName),
+    memcpy(p_Request->m_RequestResponseQName,
+           p_Queue->m_Data[idx].m_RequestResponseQName,
+           min(strlen(p_Request->m_RequestResponseQName),
                RETURNQ_NAME_MAX_SIZE - 1));
 
-    p_Request->m_ReturnQSize = p_Queue->m_Data[idx].m_ReturnQSize;
-    p_Request->m_Connected = &p_Queue->m_Data[idx].m_Connected;
-    p_Request->m_ConnectError = &p_Queue->m_Data[idx].m_ConnectionError;
+    returnRequestQFd = createShmObject(
+        p_Request->m_RequestResponseQName, O_RDONLY, 0600,
+        p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
+        true);
 
-    (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
-    (*p_Queue->m_Size)--;
+    struct ConnectResponseInformation *returnRequestQ = mmap(
+        NULL,
+        p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
+        PROT_READ, MAP_SHARED, returnRequestQFd, 0);
+    DIE(returnRequestQ == MAP_FAILED,
+        "Could not map memory for connect request response");
+
+    rc = close(returnRequestQFd);
+    DIE(rc != 0, "Could not close return request file");
+
+    // p_Request->m_ReturnQSize = p_Queue->m_Data[idx].m_ReturnQSize;
+    // p_Request->m_Connected = &p_Queue->m_Data[idx].m_Connected;
+    // p_Request->m_ConnectError = &p_Queue->m_Data[idx].m_ConnectionError;
+
+    // p_Request->m_ResponseQ.m_Data = returnRequestQ;
+    // p_Request->m_ResponseQ.m_FullCond =
+    //     &p_Queue->m_Data[idx].m_ReturnResponseQFullCond;
+    // p_Request->m_ResponseQ.m_EmptyCond =
+    //     &p_Queue->m_Data[idx].m_ReturnResponseQEmptyCond;
+    // p_Request->m_ResponseQ.m_Lock =
+    //     &p_Queue->m_Data[idx].m_ReturnResponseQMutex;
+
+    (*p_Queue->m_Size)++;
 
     pthread_cond_broadcast(p_Queue->m_EmptyCond);
 
@@ -234,10 +255,10 @@ spin_lock_unlock:
 
     connectQFd = createShmObject(
         installInfo->m_ConnectQName, O_RDWR, 0600,
-        CONNECTQ_MAX_SIZE * sizeof(struct ConnectInformation), true);
+        CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
-    struct ConnectInformation *connectQ =
-        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectInformation),
+    struct ConnectRequest *connectQ =
+        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
              PROT_READ | PROT_WRITE, MAP_SHARED, connectQFd, 0);
     DIE(connectQ == MAP_FAILED, "Coudl not map connect queue memory");
 
@@ -258,18 +279,14 @@ spin_lock_unlock:
     p_ConnectInfo->m_Queue.m_Data = connectQ;
     p_ConnectInfo->m_Queue.m_PushIdxPtr = &installInfo->m_ConnectQPushIdx;
     p_ConnectInfo->m_Queue.m_PopIdxPtr = &installInfo->m_ConnectQPopIdx;
+    p_ConnectInfo->m_Queue.m_Size = &installInfo->m_ConnectQSize;
+    p_ConnectInfo->m_Connections = installInfo->m_Connections;
 
     p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
     p_CallInfo->m_QMBQueue.m_Data = callQ;
     p_CallInfo->m_QMBQueue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
     p_CallInfo->m_QMBQueue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
     p_CallInfo->m_QMBQueue.m_Size = &installInfo->m_CallQSize;
-
-    // p_CallInfo->m_ReceiveCallFnHMB = s_QPopHMB;
-    // p_CallInfo->m_HMBQueue.m_Data = callQ;
-    // p_CallInfo->m_HMBQueue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
-    // p_CallInfo->m_HMBQueue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
-    // p_CallInfo->m_HMBQueue.m_Size = &installInfo->m_CallQSize;
 
     pthread_mutexattr_t attr;
     rc = pthread_mutexattr_init(&attr);
@@ -307,10 +324,6 @@ spin_lock_unlock:
     p_CallInfo->m_QMBQueue.m_Lock = &installInfo->m_CallQMutex;
     p_CallInfo->m_QMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
     p_CallInfo->m_QMBQueue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
-
-    // p_CallInfo->m_HMBQueue.m_Lock = &installInfo->m_CallQMutex;
-    // p_CallInfo->m_HMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
-    // p_CallInfo->m_HMBQueue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
 
 end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);

@@ -29,6 +29,7 @@ struct ServiceCallInfo {
 
 struct ServiceConnectInfo {
     struct ConnectQueue m_Queue;
+    struct ConnectionInformation *m_Connections;
     int32_t (*m_ReceiveConnectRequest)(struct ConnectRequestInformation *, struct ConnectQueue *);
 };
 

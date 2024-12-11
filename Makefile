@@ -2,20 +2,24 @@ CC=gcc
 DEBUG_DEFINES=-D__COMPILE_MODE_DEBUG__
 INCLUDES=
 OPTIONS=-Wall -Wextra
+OPTIMIZATIONS=-O3
 
 all: build
 
-build: dsp-service.o dsp-client.o commons.o
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) dsp-service.o dsp-client.o commons.o -shared -o libdsp.so
+build: libdsp.o
+
+libdsp.o: dsp-service.o dsp-client.o commons.o
+	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) dsp-service.o dsp-client.o commons.o -shared -o libdsp.so
+	rm *.o
 
 dsp-service.o: dsp-service.c dsp-service.h dsp.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) -c dsp-service.c -fPIC
+	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c dsp-service.c -fPIC
 
 dsp-client.o: dsp-client.c dsp-client.h dsp.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) -c dsp-client.c -fPIC
+	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c dsp-client.c -fPIC
 
 commons.o: utils/commons.c utils/commons.h dsp.h utils/macros/macros.h
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) -c utils/commons.c -o commons.o -fPIC
+	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c utils/commons.c -o commons.o -fPIC
 
 clean:
 	rm *.o *.so

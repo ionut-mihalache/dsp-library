@@ -46,6 +46,8 @@
 #define CONNECTQ_NAME_MAX_SIZE ((uint32_t)1056)
 #define RETURNQ_NAME_MAX_SIZE ((uint32_t)1056)
 
+#define OPENED_CONNECTIONS ((uint32_t)2048)
+
 struct QMBCall {
     uint8_t m_CallInfo[QMB];
     uint32_t m_Size;
@@ -82,19 +84,48 @@ struct GBCall {
     bool m_DataReady;
 };
 
+struct ConnectResponseInformation {
+    uint32_t m_Id;
+};
+
+struct ConnectionInformation {
+    // char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
+    // char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];
+
+    pthread_cond_t m_ReturnQFullCond;
+    pthread_cond_t m_ReturnQEmptyCond;
+    pthread_cond_t m_ReturnResponseQFullCond;
+    pthread_cond_t m_ReturnResponseQEmptyCond;
+
+    pthread_mutex_t m_ReturnQMutex;
+    pthread_mutex_t m_ReturnResponseQMutex;
+
+    uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
+    uint32_t m_ReturnResponseQCurrIdx, m_ReturnResponseQSize;
+
+    int32_t m_ConnectionError;
+    bool m_Connected;
+};
+
 struct InstallInformation {
-    char m_StrId[STRING_ID_MAX_LENGTH];
-    char m_Version[VERSION_MAX_LENGTH];
+    struct ConnectionInformation m_Connections[OPENED_CONNECTIONS];
+
     char m_CallQName[CALLQ_NAME_MAX_SIZE];
     char m_ConnectQName[CONNECTQ_NAME_MAX_SIZE];
+    char m_StrId[STRING_ID_MAX_LENGTH];
+    char m_Version[VERSION_MAX_LENGTH];
+
     pthread_cond_t m_CallQFullCond;
     pthread_cond_t m_CallQEmptyCond;
     pthread_cond_t m_ConnectQFullCond;
     pthread_cond_t m_ConnectQEmptyCond;
+
     pthread_mutex_t m_CallQMutex;
     pthread_mutex_t m_ConnectQMutex;
+
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
+
     pid_t m_ProcId;
     uint8_t m_Available;
 } __attribute__((aligned(PAGE_SIZE)));
@@ -104,10 +135,6 @@ struct InstallInfo {
     uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
     uint8_t m_BytesNr;
 } __attribute__((aligned(PAGE_SIZE)));
-
-struct ConnectResponseInformation {
-    uint32_t m_Id;
-};
 
 struct ConnectResponseQueue {
     struct ConnectResponseInformation *m_Data;
@@ -121,8 +148,8 @@ struct ConnectResponseQueue {
 
 struct ConnectRequestInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
-    char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];
-    struct ConnectResponseQueue *m_ResponseQ;
+    char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
+    struct ConnectResponseQueue m_ResponseQ;
     int32_t *m_ConnectError;
     int32_t (*m_HandleResponse)(struct ConnectResponseInformation *,
                                 struct ConnectResponseInformation *);
@@ -131,20 +158,13 @@ struct ConnectRequestInformation {
     uint32_t m_ResponseQSize;
 };
 
-struct ConnectInformation {
+struct ConnectRequest {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
-    char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];
-    pthread_cond_t m_ReturnResponseQFullCond;
-    pthread_cond_t m_ReturnResponseQEmptyCond;
-    pthread_mutex_t m_ReturnResponseQMutex;
-    uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
-    uint32_t m_ReturnQSize;
-    int32_t m_ConnectionError;
-    bool m_Connected;
+    char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 };
 
 struct ConnectQueue {
-    struct ConnectInformation *m_Data;
+    struct ConnectRequest *m_Data;
     pthread_cond_t *m_FullCond;
     pthread_cond_t *m_EmptyCond;
     pthread_mutex_t *m_Lock;
@@ -181,11 +201,5 @@ struct DSPQueue {
     uint32_t *m_PopIdxPtr;
     uint8_t *m_Start;
 };
-
-struct DSPCall {};
-
-struct DSPReturn {};
-
-void hello();
 
 #endif // __DSP_H_
