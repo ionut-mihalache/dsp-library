@@ -15,41 +15,36 @@
 
 static struct InstallSharedData *installShdata = NULL;
 
-int32_t processConnectRequest(struct ConnectRequest *p_Request) {
+int32_t processConnectRequest(struct ConnectRequestInformation *p_ResultRequest,
+                              struct ConnectRequest *p_Request,
+                              struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
-    (void)p_Request;
-    // int returnQFd;
-
-    // returnQFd = createShmObject(p_Request->m_ReturnQName, O_WRONLY, 0600,
-    //                             p_Request->m_ReturnQSize, true);
-
-    return rc;
-}
-
-static int32_t
-s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
-                        struct ConnectQueue *p_Queue) {
-    int32_t rc = 0;
+    int returnQFd;
     int returnRequestQFd;
-    uint32_t idx;
+    uint16_t openConnIdx;
 
-    pthread_mutex_lock(p_Queue->m_Lock);
-    while (*p_Queue->m_Size == 0) {
-        pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
+    for (openConnIdx = 0; openConnIdx < OPENED_CONNECTIONS; ++openConnIdx) {
+        if (!p_ConnectInfo->m_Connections[openConnIdx].m_Connected) {
+            break;
+        }
     }
 
-    idx = *p_Queue->m_PopIdxPtr;
-
-    memcpy(p_Request->m_ReturnQName, p_Queue->m_Data[idx].m_ReturnQName,
+    memcpy(p_ResultRequest->m_ReturnQName, p_Request->m_ReturnQName,
            min(strlen(p_Request->m_ReturnQName), RETURNQ_NAME_MAX_SIZE - 1));
 
-    memcpy(p_Request->m_RequestResponseQName,
-           p_Queue->m_Data[idx].m_RequestResponseQName,
+    memcpy(p_ResultRequest->m_RequestResponseQName,
+           p_Request->m_RequestResponseQName,
            min(strlen(p_Request->m_RequestResponseQName),
                RETURNQ_NAME_MAX_SIZE - 1));
 
+    /**
+     * Check implementation
+     */
+    returnQFd = createShmObject(p_Request->m_ReturnQName, O_WRONLY, 0600,
+                                p_Request->m_ReturnQSize * sizeof(struct QMBCall), true);
+
     returnRequestQFd = createShmObject(
-        p_Request->m_RequestResponseQName, O_RDONLY, 0600,
+        p_ResultRequest->m_RequestResponseQName, O_RDONLY, 0600,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
         true);
 
@@ -63,6 +58,26 @@ s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
     rc = close(returnRequestQFd);
     DIE(rc != 0, "Could not close return request file");
 
+    return rc;
+}
+
+static int32_t
+s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
+                        struct ServiceConnectInfo *p_ConnectInfo) {
+    int32_t rc = 0;
+    int returnRequestQFd;
+    uint32_t idx;
+    struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
+
+    pthread_mutex_lock(queue->m_Lock);
+    while (*queue->m_Size == 0) {
+        pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
+    }
+
+    idx = *queue->m_PopIdxPtr;
+
+    processConnectRequest(p_Request, &queue->m_Data[idx], p_ConnectInfo);
+
     // p_Request->m_ReturnQSize = p_Queue->m_Data[idx].m_ReturnQSize;
     // p_Request->m_Connected = &p_Queue->m_Data[idx].m_Connected;
     // p_Request->m_ConnectError = &p_Queue->m_Data[idx].m_ConnectionError;
@@ -75,11 +90,11 @@ s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
     // p_Request->m_ResponseQ.m_Lock =
     //     &p_Queue->m_Data[idx].m_ReturnResponseQMutex;
 
-    (*p_Queue->m_Size)++;
+    (*queue->m_Size)++;
 
-    pthread_cond_broadcast(p_Queue->m_EmptyCond);
+    pthread_cond_broadcast(queue->m_EmptyCond);
 
-    pthread_mutex_unlock(p_Queue->m_Lock);
+    pthread_mutex_unlock(queue->m_Lock);
 
     return rc;
 }

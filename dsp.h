@@ -161,6 +161,8 @@ struct ConnectRequestInformation {
 struct ConnectRequest {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
+    uint32_t m_ReturnQSize;
+    uint32_t m_ResponseQSize;
 };
 
 struct ConnectQueue {
