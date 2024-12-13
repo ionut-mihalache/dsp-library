@@ -20,18 +20,34 @@ static int32_t s_HandleResponse(struct ConnectResponseInformation *p_Response,
     return rc;
 }
 
+/**
+ * TODO
+ *  decide the parameters for the function
+ */
+static int32_t s_ProcessConnectionRequest() {
+    /**
+     * TODO
+     *  search for a free spot in the opened connections for the service
+     *  send the request to the service with the connection index
+     *  WIP: wait for the service to establish the connection on its side
+     */
+}
+
 static int32_t
-s_SendConnectRequest(struct ConnectQueue *p_Queue,
+s_SendConnectRequest(struct ClientConnectInfo *p_ConnectInfo,
                      struct ConnectRequestInformation *p_RequestInfo) {
     int32_t rc = 0;
     uint32_t idx;
     int returnRequestQFd;
     struct ConnectInformation *connectInfo;
+    struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
 
-    pthread_mutex_lock(p_Queue->m_Lock);
-    while (*p_Queue->m_Size == CONNECTQ_MAX_SIZE) {
-        pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
+    pthread_mutex_lock(queue->m_Lock);
+    while (*queue->m_Size == CONNECTQ_MAX_SIZE) {
+        pthread_cond_wait(queue->m_EmptyCond, queue->m_Lock);
     }
+
+    s_ProcessConnectionRequest();
 
     // idx = *p_Queue->m_PushIdxPtr;
 
@@ -117,9 +133,9 @@ s_SendConnectRequest(struct ConnectQueue *p_Queue,
     //     ((*p_Queue->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     // (*p_Queue->m_Size)++;
 
-    pthread_cond_broadcast(p_Queue->m_FullCond);
+    pthread_cond_broadcast(queue->m_FullCond);
 
-    pthread_mutex_unlock(p_Queue->m_Lock);
+    pthread_mutex_unlock(queue->m_Lock);
 
     return rc;
 }

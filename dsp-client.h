@@ -13,7 +13,8 @@ struct ClientCallInfo {
 
 struct ClientConnectInfo {
     struct ConnectQueue m_Queue;
-    int32_t (*m_SendConnectRequest)(struct ConnectQueue *,
+    struct ConnectionInformation *m_Connections;
+    int32_t (*m_SendConnectRequest)(struct ClientConnectInfo *,
                                     struct ConnectRequestInformation *);
 };
 
