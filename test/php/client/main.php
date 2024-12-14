@@ -18,7 +18,6 @@ $ffi = FFI::cdef("
         bool m_DataReady;
     };
 
-
     struct HMBCall {
         uint8_t m_CallInfo[1 << 19];
         uint32_t m_Size;

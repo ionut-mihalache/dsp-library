@@ -24,13 +24,20 @@ struct ServiceCallInfo {
     int32_t (*m_CallFn)(struct DSPQueue *);
     int32_t (*m_ReceiveCallFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
     int32_t (*m_ReceiveCallFnHMB)(struct HMBCall *, struct HMBDSPQueue *);
+};
+
+struct ServiceReturnInfo {
+    struct ConnectResponseQueue m_ResponseQueue;
+    struct QMBDSPQueue m_QMBQueue;
     int32_t (*m_SendReturnFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
 };
 
 struct ServiceConnectInfo {
     struct ConnectQueue m_Queue;
     struct ConnectionInformation *m_Connections;
-    int32_t (*m_ReceiveConnectRequest)(struct ConnectRequestInformation *, struct ServiceConnectInfo *);
+    int32_t (*m_ReceiveConnectRequest)(struct ServiceReturnInfo *,
+                                       struct ConnectRequestInformation *,
+                                       struct ServiceConnectInfo *);
 };
 
 void initService();

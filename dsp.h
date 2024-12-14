@@ -94,14 +94,15 @@ struct ConnectionInformation {
 
     pthread_cond_t m_ReturnQFullCond;
     pthread_cond_t m_ReturnQEmptyCond;
-    pthread_cond_t m_ReturnResponseQFullCond;
-    pthread_cond_t m_ReturnResponseQEmptyCond;
+    pthread_cond_t m_RequestResponseQFullCond;
+    pthread_cond_t m_RequestResponseQEmptyCond;
 
     pthread_mutex_t m_ReturnQMutex;
-    pthread_mutex_t m_ReturnResponseQMutex;
+    pthread_mutex_t m_RequestResponseQMutex;
 
     uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
-    uint32_t m_ReturnResponseQCurrIdx, m_ReturnResponseQSize;
+    uint32_t m_RequestResponseQPushIdx, m_RequestResponseQPopIdx,
+        m_RequestResponseQSize;
 
     int32_t m_ConnectionError;
     bool m_Connected;
@@ -144,6 +145,7 @@ struct ConnectResponseQueue {
     uint32_t *m_PushIdxPtr;
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;
+    uint32_t m_MaxSize;
 };
 
 struct ConnectRequestInformation {
@@ -163,6 +165,7 @@ struct ConnectRequest {
     char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
     uint32_t m_ReturnQSize;
     uint32_t m_ResponseQSize;
+    uint32_t m_ConnectionIdx;
 };
 
 struct ConnectQueue {
@@ -183,6 +186,7 @@ struct QMBDSPQueue {
     uint32_t *m_PushIdxPtr;
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;
+    uint32_t m_MaxSize;
 };
 
 struct HMBDSPQueue {

@@ -15,86 +15,170 @@
 
 static struct InstallSharedData *installShdata = NULL;
 
-int32_t processConnectRequest(struct ConnectRequestInformation *p_ResultRequest,
+int32_t processConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
                               struct ConnectRequest *p_Request,
                               struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
     int returnQFd;
-    int returnRequestQFd;
-    uint16_t openConnIdx;
+    int requestResponseQFd;
+    uint32_t connectionIdx;
 
-    for (openConnIdx = 0; openConnIdx < OPENED_CONNECTIONS; ++openConnIdx) {
-        if (!p_ConnectInfo->m_Connections[openConnIdx].m_Connected) {
-            break;
-        }
-    }
-
-    memcpy(p_ResultRequest->m_ReturnQName, p_Request->m_ReturnQName,
-           min(strlen(p_Request->m_ReturnQName), RETURNQ_NAME_MAX_SIZE - 1));
-
-    memcpy(p_ResultRequest->m_RequestResponseQName,
-           p_Request->m_RequestResponseQName,
-           min(strlen(p_Request->m_RequestResponseQName),
-               RETURNQ_NAME_MAX_SIZE - 1));
+    connectionIdx = p_Request->m_ConnectionIdx;
 
     /**
-     * Check implementation
+     * WIP: Consider saving the request response and return queues names
      */
-    returnQFd = createShmObject(p_Request->m_ReturnQName, O_WRONLY, 0600,
-                                p_Request->m_ReturnQSize * sizeof(struct QMBCall), true);
 
-    returnRequestQFd = createShmObject(
-        p_ResultRequest->m_RequestResponseQName, O_RDONLY, 0600,
+    returnQFd = createShmObject(
+        p_Request->m_ReturnQName, O_WRONLY, 0600,
+        p_Request->m_ReturnQSize * sizeof(struct QMBCall), false);
+
+    requestResponseQFd = createShmObject(
+        p_Request->m_RequestResponseQName, O_WRONLY, 0600,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
-        true);
+        false);
 
-    struct ConnectResponseInformation *returnRequestQ = mmap(
+    struct QMBCall *returnQ =
+        mmap(NULL, p_Request->m_ReturnQSize * sizeof(struct QMBCall),
+             PROT_WRITE, MAP_SHARED, returnQFd, 0);
+    DIE(returnQ == MAP_FAILED, "Could not map return queue memory");
+
+    struct ConnectResponseInformation *requestResponseQ = mmap(
         NULL,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
-        PROT_READ, MAP_SHARED, returnRequestQFd, 0);
-    DIE(returnRequestQ == MAP_FAILED,
-        "Could not map memory for connect request response");
+        PROT_WRITE, MAP_SHARED, requestResponseQFd, 0);
+    DIE(requestResponseQ == MAP_FAILED,
+        "Could not map request response queue memory");
 
-    rc = close(returnRequestQFd);
-    DIE(rc != 0, "Could not close return request file");
+    rc = close(returnQFd);
+    DIE(rc != 0, "Could not close return queue shared object file descriptor");
+
+    rc = close(requestResponseQFd);
+    DIE(rc != 0,
+        "Could not close request response queue shared object file descriptor");
+
+    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx = 0;
+    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx = 0;
+    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize = 0;
+
+    p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
+
+    p_ReturnInfo->m_QMBQueue.m_FullCond =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQFullCond;
+    p_ReturnInfo->m_QMBQueue.m_EmptyCond =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQEmptyCond;
+    p_ReturnInfo->m_QMBQueue.m_Lock =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex;
+
+    p_ReturnInfo->m_QMBQueue.m_PushIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
+    p_ReturnInfo->m_QMBQueue.m_PopIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
+    p_ReturnInfo->m_QMBQueue.m_Size =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
+
+    p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ReturnQSize;
+
+    p_ReturnInfo->m_SendReturnFnQMB =
+        NULL; // TODO: This has to be a valid value
+
+    pthread_mutexattr_t attr;
+    rc = pthread_mutexattr_init(&attr);
+    DIE(rc != 0, "Could not init mutex attribute");
+
+    rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    DIE(rc != 0, "Could not set pthread shared for mutex attribute");
+
+    rc = pthread_mutex_init(p_ReturnInfo->m_QMBQueue.m_Lock, &attr);
+    DIE(rc != 0, "Could not init connect response lock");
+
+    rc = pthread_mutexattr_destroy(&attr);
+    DIE(rc != 0, "Could not destroy mutex attribute");
+
+    pthread_condattr_t condAttr;
+
+    rc = pthread_condattr_init(&condAttr);
+    DIE(rc != 0, "Could not init condition attribute");
+
+    rc = pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
+    DIE(rc != 0, "Could not set pthread shared for condition attribute");
+
+    rc = pthread_cond_init(p_ReturnInfo->m_QMBQueue.m_FullCond, &condAttr);
+    DIE(rc != 0, "Could not init condition for full connect response queue");
+
+    rc = pthread_cond_init(p_ReturnInfo->m_QMBQueue.m_EmptyCond, &condAttr);
+    DIE(rc != 0, "Could not init condition for empty connect response queue");
+
+    rc = pthread_condattr_destroy(&condAttr);
+    DIE(rc != 0, "Could not destroy condition attribute object");
+
+    p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
+
+    p_ReturnInfo->m_ResponseQueue.m_FullCond =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQFullCond;
+    p_ReturnInfo->m_ResponseQueue.m_EmptyCond =
+        &p_ConnectInfo->m_Connections[connectionIdx]
+             .m_RequestResponseQEmptyCond;
+    p_ReturnInfo->m_ResponseQueue.m_Lock =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMutex;
+
+    p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx;
+    p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx;
+    p_ReturnInfo->m_ResponseQueue.m_Size =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
+    p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ResponseQSize;
 
     return rc;
 }
 
 static int32_t
-s_ReceiveConnectRequest(struct ConnectRequestInformation *p_Request,
+s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
+                        struct ConnectRequestInformation *p_Request,
                         struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
-    int returnRequestQFd;
-    uint32_t idx;
     struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
+    (void)p_Request; // FIXME: This is for silencing the compilation warningS
 
     pthread_mutex_lock(queue->m_Lock);
     while (*queue->m_Size == 0) {
         pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
     }
 
-    idx = *queue->m_PopIdxPtr;
+    processConnectRequest(p_ReturnInfo, &queue->m_Data[*queue->m_PopIdxPtr],
+                          p_ConnectInfo);
 
-    processConnectRequest(p_Request, &queue->m_Data[idx], p_ConnectInfo);
-
-    // p_Request->m_ReturnQSize = p_Queue->m_Data[idx].m_ReturnQSize;
-    // p_Request->m_Connected = &p_Queue->m_Data[idx].m_Connected;
-    // p_Request->m_ConnectError = &p_Queue->m_Data[idx].m_ConnectionError;
-
-    // p_Request->m_ResponseQ.m_Data = returnRequestQ;
-    // p_Request->m_ResponseQ.m_FullCond =
-    //     &p_Queue->m_Data[idx].m_ReturnResponseQFullCond;
-    // p_Request->m_ResponseQ.m_EmptyCond =
-    //     &p_Queue->m_Data[idx].m_ReturnResponseQEmptyCond;
-    // p_Request->m_ResponseQ.m_Lock =
-    //     &p_Queue->m_Data[idx].m_ReturnResponseQMutex;
-
-    (*queue->m_Size)++;
+    (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
+    (*queue->m_Size)--;
 
     pthread_cond_broadcast(queue->m_EmptyCond);
 
     pthread_mutex_unlock(queue->m_Lock);
+
+    /**
+     * Send the response to the client to announce that the communication is
+     * established
+     */
+    pthread_mutex_lock(p_ReturnInfo->m_ResponseQueue.m_Lock);
+    while (*p_ReturnInfo->m_ResponseQueue.m_Size ==
+           p_ReturnInfo->m_ResponseQueue.m_MaxSize) {
+        pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_FullCond,
+                          p_ReturnInfo->m_ResponseQueue.m_Lock);
+    }
+
+    /**
+     * WIP: Add the information to the response queue. Now the signal is enough
+     */
+
+    (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
+        ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %
+        p_ReturnInfo->m_ResponseQueue.m_MaxSize;
+    (*p_ReturnInfo->m_ResponseQueue.m_Size)++;
+
+    pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_EmptyCond);
+
+    pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
 
     return rc;
 }
