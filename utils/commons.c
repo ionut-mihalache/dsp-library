@@ -20,11 +20,14 @@ int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
     if (p_Unlink) {
         shm_unlink(p_Name); // TODO: This should not happen all the time.
     }
+
     shmFd = shm_open(p_Name, O_CREAT | O_EXCL | p_Oflag, p_Mode);
     if (shmFd < 0) {
         if (errno == EEXIST) {
             shouldTruncate = false;
             shmFd = shm_open(p_Name, p_Oflag, p_Mode);
+            DIE(shmFd < 0, "Could not open shared memory object");
+        } else {
             DIE(shmFd < 0, "Could not open shared memory object");
         }
     }

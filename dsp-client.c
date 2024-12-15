@@ -15,17 +15,19 @@ static int32_t s_ProcessConnectionRequest(
     struct ClientReturnInfo *p_ReturnInfo,
     struct ConnectRequest *p_ConnectRequest,
     struct ClientConnectInfo *p_ConnectInfo,
-    struct ConnectRequestInformation *p_ConnectInformation) {
-    /**
-     *  search for a free spot in the opened connections for the service
-     *  send the request to the service with the connection index
-     *  WIP: wait for the service to establish the connection on its side
-     */
+    struct ClientConnectRequestInformation *p_ConnectInformation) {
     int requestResponseQFd;
     int returnQFd;
     int32_t rc = 0;
     uint32_t connectionIdx;
 
+    LOGF("Start processing connection request.\n");
+
+    /**
+     *  search for a free spot in the opened connections for the service
+     *  send the request to the service with the connection index
+     *  WIP: wait for the service to establish the connection on its side
+     */
     for (connectionIdx = 0; connectionIdx < OPENED_CONNECTIONS;
          ++connectionIdx) {
         if (!p_ConnectInfo->m_Connections[connectionIdx].m_Connected) {
@@ -56,6 +58,8 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectRequest->m_ResponseQSize =
         1; // TODO: possibly change this to another (non-hardcoded) value
 
+    LOGF("Opening shared memory object with name %s\n",
+         p_ConnectInformation->m_RequestResponseQName);
     requestResponseQFd = createShmObject(
         p_ConnectInformation->m_RequestResponseQName, O_RDONLY, 0600,
         p_ConnectInformation->m_ResponseQSize *
@@ -157,10 +161,13 @@ static int32_t s_ProcessConnectionRequest(
 static int32_t
 s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                      struct ClientConnectInfo *p_ConnectInfo,
-                     struct ConnectRequestInformation *p_RequestInfo) {
+                     struct ClientConnectRequestInformation *p_RequestInfo) {
     int32_t rc = 0;
     uint32_t idx;
     struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
+
+    LOGF("Start sending connection request. Connect queue pointer is: %p!\n",
+         queue);
 
     pthread_mutex_lock(queue->m_Lock);
     while (*queue->m_Size == CONNECTQ_MAX_SIZE) {
@@ -177,6 +184,8 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     pthread_cond_broadcast(queue->m_FullCond);
 
     pthread_mutex_unlock(queue->m_Lock);
+
+    LOGF("Connect request was sent. Waiting for the request response.\n");
 
     /**
      * Wait for the response from the service to announce that the communication
@@ -201,6 +210,8 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_FullCond);
 
     pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
+
+    LOGF("Request response was received.\n");
 
     return rc;
 }
@@ -251,7 +262,7 @@ __attribute_used__ static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
 
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,
-                        struct ConnectRequestInformation *p_RequestInfo) {
+                        struct ClientConnectRequestInformation *p_RequestInfo) {
     p_ConnectInfo->m_SendConnectRequest(p_ReturnInfo, p_ConnectInfo,
                                         p_RequestInfo);
 }
@@ -356,6 +367,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     DIE(rc != 0, "Could not close connectQFd");
 
     p_ConnectInfo->m_SendConnectRequest = s_SendConnectRequest;
+    p_ConnectInfo->m_Connections = installInfo->m_Connections;
     p_ConnectInfo->m_Queue.m_Data = connectQ;
     p_ConnectInfo->m_Queue.m_PushIdxPtr = &installInfo->m_ConnectQPushIdx;
     p_ConnectInfo->m_Queue.m_PopIdxPtr = &installInfo->m_ConnectQPopIdx;
@@ -396,7 +408,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
          installInfo->m_Version);
 }
 
-void retriveInitInformation(struct ClientCallInfo *p_ConnectInfo,
+void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
                             struct ClientCallInfo *p_CallInfo,
                             const char *p_ServiceStrId) {
     dspConnect(p_ConnectInfo, p_CallInfo, p_ServiceStrId);

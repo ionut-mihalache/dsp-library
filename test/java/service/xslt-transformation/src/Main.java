@@ -27,42 +27,51 @@ interface LibDSP extends Library {
 
     Pointer getCallInfo();
 
-    void dspInstall(ServiceCallInfo p_CallInfo, String p_StrId, String p_Version);
+    void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version);
 
     void dspReturn();
 }
 
 public class Main {
     public static void main(String[] args) {
-        Main main = new Main();
+        // Main main = new Main();
+        ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
+        ServiceReturnInfo returnInfo = new ServiceReturnInfo();
 
-        LibDSP.INSTANCE.dspInstall(callInfo, "xslt-transformation", "v0.0.1");
+        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
-        while (true) {
-            try {
-                QMBCall callData = new QMBCall();
-                callInfo.m_ReceiveCallFnQMB.receiveQMBCall(callData, callInfo.m_QMBQueue);
+        connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
 
-                // ByteBuffer callInfoBuffer = ByteBuffer.wrap(callData.m_CallInfo);
-                // String iiaData = StandardCharsets.UTF_8.decode(callInfoBuffer.slice(0,
-                // callData.m_Size)).toString()
-                // .replace("\0", "");
+        System.out.println("Received new connection");
 
-                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Size);
+        // returnInfo.m_SendReturnFnQMB.sendQMBReturn(returnInfo.m_QMBQueue, new
+        // QMBCall());
 
-                Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
-                byte[] xsltData = Files.readAllBytes(xsltPath);
+        // while (true) {
+        // try {
+        // QMBCall callData = new QMBCall();
+        // callInfo.m_ReceiveCallFnQMB.receiveQMBCall(callData, callInfo.m_QMBQueue);
 
-                String result = main.getXmlTransformed(iiaData, xsltData);
+        // // ByteBuffer callInfoBuffer = ByteBuffer.wrap(callData.m_CallInfo);
+        // // String iiaData = StandardCharsets.UTF_8.decode(callInfoBuffer.slice(0,
+        // // callData.m_Size)).toString()
+        // // .replace("\0", "");
 
-                System.out.println(result);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        // byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Size);
+
+        // Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
+        // byte[] xsltData = Files.readAllBytes(xsltPath);
+
+        // String result = main.getXmlTransformed(iiaData, xsltData);
+
+        // System.out.println(result);
+        // } catch (IOException e) {
+        // e.printStackTrace();
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
+        // }
     }
 
     /**

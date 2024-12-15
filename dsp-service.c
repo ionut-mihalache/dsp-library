@@ -135,11 +135,9 @@ int32_t processConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
 
 static int32_t
 s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
-                        struct ConnectRequestInformation *p_Request,
                         struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
     struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
-    (void)p_Request; // FIXME: This is for silencing the compilation warningS
 
     pthread_mutex_lock(queue->m_Lock);
     while (*queue->m_Size == 0) {
