@@ -30,11 +30,11 @@ int32_t processConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
      */
 
     returnQFd = createShmObject(
-        p_Request->m_ReturnQName, O_WRONLY, 0600,
+        p_Request->m_ReturnQName, O_RDWR, 0600,
         p_Request->m_ReturnQSize * sizeof(struct QMBCall), false);
 
     requestResponseQFd = createShmObject(
-        p_Request->m_RequestResponseQName, O_WRONLY, 0600,
+        p_Request->m_RequestResponseQName, O_RDWR, 0600,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
         false);
 
@@ -168,13 +168,14 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     /**
      * WIP: Add the information to the response queue. Now the signal is enough
      */
+    p_ReturnInfo->m_ResponseQueue.m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr].m_Id = 123;
 
     (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
         ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %
         p_ReturnInfo->m_ResponseQueue.m_MaxSize;
     (*p_ReturnInfo->m_ResponseQueue.m_Size)++;
 
-    pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_EmptyCond);
+    pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_FullCond);
 
     pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
 

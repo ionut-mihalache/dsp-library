@@ -21,8 +21,6 @@ static int32_t s_ProcessConnectionRequest(
     int32_t rc = 0;
     uint32_t connectionIdx;
 
-    LOGF("Start processing connection request.\n");
-
     /**
      *  search for a free spot in the opened connections for the service
      *  send the request to the service with the connection index
@@ -58,10 +56,8 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectRequest->m_ResponseQSize =
         1; // TODO: possibly change this to another (non-hardcoded) value
 
-    LOGF("Opening shared memory object with name %s\n",
-         p_ConnectInformation->m_RequestResponseQName);
     requestResponseQFd = createShmObject(
-        p_ConnectInformation->m_RequestResponseQName, O_RDONLY, 0600,
+        p_ConnectInformation->m_RequestResponseQName, O_RDWR, 0600,
         p_ConnectInformation->m_ResponseQSize *
             sizeof(struct ConnectResponseInformation),
         true);
@@ -78,7 +74,7 @@ static int32_t s_ProcessConnectionRequest(
     DIE(rc != 0, "Could not close requestResponseQFd");
 
     returnQFd = createShmObject(
-        p_ConnectInformation->m_ReturnQName, O_RDONLY, 0600,
+        p_ConnectInformation->m_ReturnQName, O_RDWR, 0600,
         p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall), true);
 
     struct QMBCall *returnQ =
@@ -88,37 +84,6 @@ static int32_t s_ProcessConnectionRequest(
 
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");
-
-    pthread_mutexattr_t attr;
-    rc = pthread_mutexattr_init(&attr);
-    DIE(rc != 0, "Could not init mutex attribute");
-
-    rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-    DIE(rc != 0, "Could not set pthread shared for mutex attribute");
-
-    rc = pthread_mutex_init(p_ReturnInfo->m_ResponseQueue.m_Lock, &attr);
-    DIE(rc != 0, "Could not init connect response lock");
-
-    rc = pthread_mutexattr_destroy(&attr);
-    DIE(rc != 0, "Could not destroy mutex attribute");
-
-    pthread_condattr_t condAttr;
-
-    rc = pthread_condattr_init(&condAttr);
-    DIE(rc != 0, "Could not init condition attribute");
-
-    rc = pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
-    DIE(rc != 0, "Could not set pthread shared for condition attribute");
-
-    rc = pthread_cond_init(p_ReturnInfo->m_ResponseQueue.m_FullCond, &condAttr);
-    DIE(rc != 0, "Could not init condition for full connect response queue");
-
-    rc =
-        pthread_cond_init(p_ReturnInfo->m_ResponseQueue.m_EmptyCond, &condAttr);
-    DIE(rc != 0, "Could not init condition for empty connect response queue");
-
-    rc = pthread_condattr_destroy(&condAttr);
-    DIE(rc != 0, "Could not destroy condition attribute object");
 
     p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx = 0;
     p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx = 0;
@@ -154,6 +119,37 @@ static int32_t s_ProcessConnectionRequest(
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
 
     p_ReturnInfo->m_ReturnFnQMB = NULL; // TODO: This has to be a valid value
+
+    pthread_mutexattr_t attr;
+    rc = pthread_mutexattr_init(&attr);
+    DIE(rc != 0, "Could not init mutex attribute");
+
+    rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    DIE(rc != 0, "Could not set pthread shared for mutex attribute");
+
+    rc = pthread_mutex_init(p_ReturnInfo->m_ResponseQueue.m_Lock, &attr);
+    DIE(rc != 0, "Could not init connect response lock");
+
+    rc = pthread_mutexattr_destroy(&attr);
+    DIE(rc != 0, "Could not destroy mutex attribute");
+
+    pthread_condattr_t condAttr;
+
+    rc = pthread_condattr_init(&condAttr);
+    DIE(rc != 0, "Could not init condition attribute");
+
+    rc = pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
+    DIE(rc != 0, "Could not set pthread shared for condition attribute");
+
+    rc = pthread_cond_init(p_ReturnInfo->m_ResponseQueue.m_FullCond, &condAttr);
+    DIE(rc != 0, "Could not init condition for full connect response queue");
+
+    rc =
+        pthread_cond_init(p_ReturnInfo->m_ResponseQueue.m_EmptyCond, &condAttr);
+    DIE(rc != 0, "Could not init condition for empty connect response queue");
+
+    rc = pthread_condattr_destroy(&condAttr);
+    DIE(rc != 0, "Could not destroy condition attribute object");
 
     return rc;
 }
@@ -192,9 +188,8 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
      * is established
      */
     pthread_mutex_lock(p_ReturnInfo->m_ResponseQueue.m_Lock);
-    while (*p_ReturnInfo->m_ResponseQueue.m_Size ==
-           p_ReturnInfo->m_ResponseQueue.m_MaxSize) {
-        pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_EmptyCond,
+    while (*p_ReturnInfo->m_ResponseQueue.m_Size == 0) {
+        pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_FullCond,
                           p_ReturnInfo->m_ResponseQueue.m_Lock);
     }
 
@@ -207,7 +202,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
         p_ReturnInfo->m_ResponseQueue.m_MaxSize;
     (*p_ReturnInfo->m_ResponseQueue.m_Size)--;
 
-    pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_FullCond);
+    pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_EmptyCond);
 
     pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
 

@@ -1,6 +1,10 @@
 <?php
 $ffi = FFI::cdef(
     "
+    struct ConnectResponseInformation {
+        uint32_t m_Id;
+    };
+
     struct ConnectResponseQueue {
         struct ConnectResponseInformation *m_Data;
         void *m_FullCond;
@@ -124,15 +128,19 @@ $returnInfoPtr = FFI::addr($returnInfo);
 
 $requestInfo = $ffi->new("struct ClientConnectRequestInformation");
 
+FFI::memset($requestInfo->m_ReturnQName, 0, 1055);
 FFI::memcpy($requestInfo->m_ReturnQName, "return-q", strlen("return-q"));
 $requestInfo->m_ReturnQSize = 1;
 
-FFI::memcpy($requestInfo->m_ReturnQName, "response-q", strlen("response-q"));
+FFI::memset($requestInfo->m_RequestResponseQName, 0, 1055);
+FFI::memcpy($requestInfo->m_RequestResponseQName, "response-q", strlen("response-q"));
 $requestInfo->m_ResponseQSize = 1;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
 $ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
+
+echo "Return response id is: " . $returnInfo->m_ResponseQueue->m_Data[0]->m_Id . "\n";
 
 // $callData = $ffi->new("struct QMBCall");
 // $callDataPtr = FFI::addr($callData);
