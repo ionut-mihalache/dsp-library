@@ -38,6 +38,7 @@ static int32_t s_ProcessConnectionRequest(
      * service
      */
     p_ConnectRequest->m_ConnectionIdx = connectionIdx;
+    p_ConnectInfo->m_Connections[connectionIdx].m_Connected = true;
 
     memcpy(p_ConnectRequest->m_ReturnQName, p_ConnectInformation->m_ReturnQName,
            min(strlen(p_ConnectInformation->m_ReturnQName),
@@ -162,9 +163,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     uint32_t idx;
     struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
 
-    LOGF("Start sending connection request. Connect queue pointer is: %p!\n",
-         queue);
-
     pthread_mutex_lock(queue->m_Lock);
     while (*queue->m_Size == CONNECTQ_MAX_SIZE) {
         pthread_cond_wait(queue->m_EmptyCond, queue->m_Lock);
@@ -180,8 +178,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     pthread_cond_broadcast(queue->m_FullCond);
 
     pthread_mutex_unlock(queue->m_Lock);
-
-    LOGF("Connect request was sent. Waiting for the request response.\n");
 
     /**
      * Wait for the response from the service to announce that the communication
@@ -205,8 +201,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_EmptyCond);
 
     pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
-
-    LOGF("Request response was received.\n");
 
     return rc;
 }
@@ -320,7 +314,6 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
 
         installInfo = (struct InstallInformation *)&(installMemZone->m_Info[i]);
 
-        LOGF("The current service string id is %s.\n", installInfo->m_StrId);
         if (!strcmp(installInfo->m_StrId, p_ServiceStrId)) {
             if (installInfo->m_Available) {
                 connected = true;
@@ -330,7 +323,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     }
 
     if (!connected) {
-        LOGF("Could not connect. Service is not installed or unavailable.\n");
+        ELOGF("Could not connect. Service is not installed or unavailable.\n");
         return;
     }
 

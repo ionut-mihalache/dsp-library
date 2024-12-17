@@ -138,14 +138,18 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
                         struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
     struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
+    uint32_t connectId;
 
     pthread_mutex_lock(queue->m_Lock);
     while (*queue->m_Size == 0) {
         pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
     }
 
+
     processConnectRequest(p_ReturnInfo, &queue->m_Data[*queue->m_PopIdxPtr],
                           p_ConnectInfo);
+
+    connectId = queue->m_Data[*queue->m_PopIdxPtr].m_ConnectionIdx;
 
     (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)--;
@@ -168,7 +172,7 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     /**
      * WIP: Add the information to the response queue. Now the signal is enough
      */
-    p_ReturnInfo->m_ResponseQueue.m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr].m_Id = 123;
+    p_ReturnInfo->m_ResponseQueue.m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr].m_Id = connectId;
 
     (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
         ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %

@@ -41,9 +41,10 @@ public class Main {
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
-        connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
-
-        System.out.println("Received new connection");
+        while (true) {
+            connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
+            System.out.println("Received new connection");
+        }
 
         // returnInfo.m_SendReturnFnQMB.sendQMBReturn(returnInfo.m_QMBQueue, new
         // QMBCall());
