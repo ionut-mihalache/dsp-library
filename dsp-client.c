@@ -26,12 +26,14 @@ static int32_t s_ProcessConnectionRequest(
      *  send the request to the service with the connection index
      *  WIP: wait for the service to establish the connection on its side
      */
+    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
     for (connectionIdx = 0; connectionIdx < OPENED_CONNECTIONS;
          ++connectionIdx) {
         if (!p_ConnectInfo->m_Connections[connectionIdx].m_Connected) {
             break;
         }
     }
+    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
 
     /**
      * With the connection index found we need to construct the request for the
@@ -151,6 +153,13 @@ static int32_t s_ProcessConnectionRequest(
 
     rc = pthread_condattr_destroy(&condAttr);
     DIE(rc != 0, "Could not destroy condition attribute object");
+
+    return rc;
+}
+
+static int32_t
+s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo) {
+    int32_t rc = 0;
 
     return rc;
 }
@@ -363,6 +372,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_Queue.m_Lock = &installInfo->m_ConnectQMutex;
     p_ConnectInfo->m_Queue.m_FullCond = &installInfo->m_ConnectQFullCond;
     p_ConnectInfo->m_Queue.m_EmptyCond = &installInfo->m_ConnectQEmptyCond;
+    p_ConnectInfo->m_ConnectLock = &installInfo->m_ConnectListLock;
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);

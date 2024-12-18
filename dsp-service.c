@@ -145,7 +145,6 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
         pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
     }
 
-
     processConnectRequest(p_ReturnInfo, &queue->m_Data[*queue->m_PopIdxPtr],
                           p_ConnectInfo);
 
@@ -172,7 +171,9 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     /**
      * WIP: Add the information to the response queue. Now the signal is enough
      */
-    p_ReturnInfo->m_ResponseQueue.m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr].m_Id = connectId;
+    p_ReturnInfo->m_ResponseQueue
+        .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr]
+        .m_Id = connectId;
 
     (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
         ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %
@@ -182,6 +183,23 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_FullCond);
 
     pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
+
+    return rc;
+}
+
+static int32_t
+s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
+    int32_t rc = 0;
+    uint32_t connectionIdx;
+
+    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    for (connectionIdx = 0; connectionIdx < OPENED_CONNECTIONS;
+         ++connectionIdx) {
+        if (!p_ConnectInfo->m_Connections[connectionIdx].m_Connected) {
+            break;
+        }
+    }
+    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
 
     return rc;
 }
@@ -392,19 +410,28 @@ spin_lock_unlock:
 
     pthread_mutexattr_t attr;
     rc = pthread_mutexattr_init(&attr);
-    DIE(rc != 0, "Could not init mutex attribute.");
+    DIE(rc != 0, "Could not init mutex attribute");
 
     rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
     DIE(rc != 0, "Could not set pshread for mutex attribute");
 
     rc = pthread_mutex_init(&installInfo->m_CallQMutex, &attr);
-    DIE(rc != 0, "Could not init call mutex!");
+    DIE(rc != 0, "Could not init call mutex");
 
     rc = pthread_mutex_init(&installInfo->m_ConnectQMutex, &attr);
-    DIE(rc != 0, "Could not init connect mutex!");
+    DIE(rc != 0, "Could not init connect mutex");
+
+    rc = pthread_mutex_init(&installInfo->m_DisconnectQMutex, &attr);
+    DIE(rc != 0, "Could not init disconnect mutex");
 
     rc = pthread_mutexattr_destroy(&attr);
-    DIE(rc != 0, "Coudl not destroy mutex attribute");
+    DIE(rc != 0, "Could not destroy mutex attribute");
+
+    rc = pthread_spin_init(&installInfo->m_ConnectListLock,
+                           PTHREAD_PROCESS_SHARED);
+    DIE(rc != 0, "Could not init opened connections lock");
+
+    p_ConnectInfo->m_ConnectLock = &installInfo->m_ConnectListLock;
 
     pthread_condattr_t condAttr;
     pthread_condattr_init(&condAttr);
@@ -416,6 +443,9 @@ spin_lock_unlock:
 
     pthread_cond_init(&installInfo->m_ConnectQFullCond, &condAttr);
     pthread_cond_init(&installInfo->m_ConnectQEmptyCond, &condAttr);
+
+    pthread_cond_init(&installInfo->m_DisconnectQFullCond, &condAttr);
+    pthread_cond_init(&installInfo->m_DisconnectQEmptyCond, &condAttr);
 
     pthread_condattr_destroy(&condAttr);
 

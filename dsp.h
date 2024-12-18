@@ -120,12 +120,17 @@ struct InstallInformation {
     pthread_cond_t m_CallQEmptyCond;
     pthread_cond_t m_ConnectQFullCond;
     pthread_cond_t m_ConnectQEmptyCond;
+    pthread_cond_t m_DisconnectQFullCond;
+    pthread_cond_t m_DisconnectQEmptyCond;
 
     pthread_mutex_t m_CallQMutex;
     pthread_mutex_t m_ConnectQMutex;
+    pthread_mutex_t m_DisconnectQMutex;
+    pthread_spinlock_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
+    uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
 
     pid_t m_ProcId;
     uint8_t m_Available;
@@ -177,6 +182,20 @@ struct ConnectQueue {
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;
 };
+
+struct DisconnectQueue {
+    struct ConnectRequest *m_Data;
+    pthread_cond_t *m_FullCond;
+    pthread_cond_t *m_EmptyCond;
+    pthread_mutex_t *m_Lock;
+    uint32_t *m_PushIdxPtr;
+    uint32_t *m_PopIdxPtr;
+    uint32_t *m_Size;
+};
+
+// struct DisconnectRequest {
+//     uint32_t m_ConnectionIdx;
+// };
 
 struct QMBDSPQueue {
     struct QMBCall *m_Data;

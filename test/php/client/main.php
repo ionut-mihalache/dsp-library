@@ -142,6 +142,9 @@ $ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 
 echo "Return response id is: " . $returnInfo->m_ResponseQueue->m_Data[0]->m_Id . "\n";
 
+
+$ffi->sendDisconnectRequest($connectInfoPtr);
+
 // $callData = $ffi->new("struct QMBCall");
 // $callDataPtr = FFI::addr($callData);
 

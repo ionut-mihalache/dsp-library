@@ -34,7 +34,9 @@ struct ServiceReturnInfo {
 
 struct ServiceConnectInfo {
     struct ConnectQueue m_Queue;
+    struct ConnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
+    pthread_spinlock_t *m_ConnectLock;
     int32_t (*m_ReceiveConnectRequest)(struct ServiceReturnInfo *,
                                        struct ServiceConnectInfo *);
 };
