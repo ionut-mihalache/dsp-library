@@ -190,16 +190,27 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
 static int32_t
 s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
-    uint32_t connectionIdx;
+    uint32_t idx;
+    struct ConnectQueue *queue = &p_ConnectInfo->m_DisconnectQ;
 
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    for (connectionIdx = 0; connectionIdx < OPENED_CONNECTIONS;
-         ++connectionIdx) {
-        if (!p_ConnectInfo->m_Connections[connectionIdx].m_Connected) {
-            break;
-        }
-    }
     pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+
+    pthread_mutex_lock(queue->m_Lock);
+    while (*queue->m_Size == 0) {
+        pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
+    }
+
+    idx = *queue->m_PopIdxPtr;
+    LOGF("Received disconnect request for connection id: %u.\n",
+         queue->m_Data[idx].m_ConnectionIdx);
+
+    (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
+    (*queue->m_Size)--;
+
+    pthread_cond_broadcast(queue->m_EmptyCond);
+
+    pthread_mutex_unlock(queue->m_Lock);
 
     return rc;
 }
@@ -372,6 +383,9 @@ spin_lock_unlock:
     installInfo->m_ConnectQPushIdx = 0;
     installInfo->m_ConnectQPopIdx = 0;
     installInfo->m_ConnectQSize = 0;
+    installInfo->m_DisconnectQPushIdx = 0;
+    installInfo->m_DisconnectQPopIdx = 0;
+    installInfo->m_DisconnectQSize = 0;
 
     connectQFd = createShmObject(
         installInfo->m_ConnectQName, O_RDWR, 0600,
@@ -401,6 +415,14 @@ spin_lock_unlock:
     p_ConnectInfo->m_Queue.m_PopIdxPtr = &installInfo->m_ConnectQPopIdx;
     p_ConnectInfo->m_Queue.m_Size = &installInfo->m_ConnectQSize;
     p_ConnectInfo->m_Connections = installInfo->m_Connections;
+
+    p_ConnectInfo->m_ReceiveDisconnectRequest = s_ReceiveDisconnectRequest;
+    p_ConnectInfo->m_DisconnectQ.m_Data = NULL; // TODO
+    p_ConnectInfo->m_DisconnectQ.m_PushIdxPtr =
+        &installInfo->m_DisconnectQPushIdx;
+    p_ConnectInfo->m_DisconnectQ.m_PopIdxPtr =
+        &installInfo->m_DisconnectQPopIdx;
+    p_ConnectInfo->m_DisconnectQ.m_Size = &installInfo->m_DisconnectQSize;
 
     p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
     p_CallInfo->m_QMBQueue.m_Data = callQ;
@@ -452,6 +474,12 @@ spin_lock_unlock:
     p_ConnectInfo->m_Queue.m_Lock = &installInfo->m_ConnectQMutex;
     p_ConnectInfo->m_Queue.m_FullCond = &installInfo->m_ConnectQFullCond;
     p_ConnectInfo->m_Queue.m_EmptyCond = &installInfo->m_ConnectQEmptyCond;
+
+    p_ConnectInfo->m_DisconnectQ.m_Lock = &installInfo->m_DisconnectQMutex;
+    p_ConnectInfo->m_DisconnectQ.m_FullCond =
+        &installInfo->m_DisconnectQFullCond;
+    p_ConnectInfo->m_DisconnectQ.m_EmptyCond =
+        &installInfo->m_DisconnectQEmptyCond;
 
     p_CallInfo->m_QMBQueue.m_Lock = &installInfo->m_CallQMutex;
     p_CallInfo->m_QMBQueue.m_FullCond = &installInfo->m_CallQFullCond;

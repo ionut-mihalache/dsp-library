@@ -160,6 +160,24 @@ static int32_t s_ProcessConnectionRequest(
 static int32_t
 s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
+    uint32_t idx;
+
+    struct DisconnectQueue *disconnectQ = &p_ConnectInfo->m_DisconnectQ;
+
+    pthread_mutex_lock(disconnectQ->m_Lock);
+    while (*disconnectQ->m_Size == CONNECTQ_MAX_SIZE) {
+        pthread_cond_wait(disconnectQ->m_EmptyCond, disconnectQ->m_Lock);
+    }
+
+    idx = *disconnectQ->m_PushIdxPtr;
+
+    disconnectQ->m_Data[idx].m_ConnectionIdx = 123;
+
+    (*disconnectQ->m_PushIdxPtr) =
+        ((*disconnectQ->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
+    (*disconnectQ->m_Size)++;
+
+    pthread_mutex_unlock(disconnectQ->m_Lock);
 
     return rc;
 }
@@ -373,6 +391,14 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_Queue.m_FullCond = &installInfo->m_ConnectQFullCond;
     p_ConnectInfo->m_Queue.m_EmptyCond = &installInfo->m_ConnectQEmptyCond;
     p_ConnectInfo->m_ConnectLock = &installInfo->m_ConnectListLock;
+
+    p_ConnectInfo->m_SendDisconnectRequest = s_SendDisconnectRequest;
+    p_ConnectInfo->m_DisconnectQ.m_Data = NULL; // TODO
+    p_ConnectInfo->m_DisconnectQ.m_PushIdxPtr = &installInfo->m_DisconnectQPushIdx;
+    p_ConnectInfo->m_DisconnectQ.m_PopIdxPtr = &installInfo->m_DisconnectQPopIdx;
+    p_ConnectInfo->m_DisconnectQ.m_Size = &installInfo->m_DisconnectQSize;
+    p_ConnectInfo->m_DisconnectQ.m_FullCond = &installInfo->m_DisconnectQFullCond;
+    p_ConnectInfo->m_DisconnectQ.m_EmptyCond = &installInfo->m_DisconnectQEmptyCond;
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);

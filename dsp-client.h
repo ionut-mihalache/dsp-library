@@ -32,6 +32,7 @@ struct ClientConnectInfo {
     int32_t (*m_SendConnectRequest)(struct ClientReturnInfo *,
                                     struct ClientConnectInfo *,
                                     struct ClientConnectRequestInformation *);
+    int32_t (*m_SendDisconnectRequest)(struct ClientConnectInfo *);
 };
 
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,

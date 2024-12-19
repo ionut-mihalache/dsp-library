@@ -39,6 +39,7 @@ struct ServiceConnectInfo {
     pthread_spinlock_t *m_ConnectLock;
     int32_t (*m_ReceiveConnectRequest)(struct ServiceReturnInfo *,
                                        struct ServiceConnectInfo *);
+    int32_t (*m_ReceiveDisconnectRequest)(struct ServiceConnectInfo *);
 };
 
 void initService();
