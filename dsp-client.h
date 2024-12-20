@@ -38,6 +38,7 @@ struct ClientConnectInfo {
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,
                         struct ClientConnectRequestInformation *p_RequestInfo);
+void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo);
 void pushQ(struct ClientCallInfo *p_CallInfo);
 void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
 void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);

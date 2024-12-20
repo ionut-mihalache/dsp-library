@@ -44,6 +44,7 @@ public class Main {
         while (true) {
             connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
             System.out.println("Received new connection");
+            connectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(connectInfo);
         }
 
         // returnInfo.m_SendReturnFnQMB.sendQMBReturn(returnInfo.m_QMBQueue, new

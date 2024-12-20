@@ -292,7 +292,7 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                 const char *p_Version) {
     int rc;
     int installShmFd;
-    int callQFd, connectQFd;
+    int callQFd, connectQFd, disconnectQFd;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
     initService();
@@ -375,14 +375,19 @@ spin_lock_unlock:
         ELOGF("Could not create call queue.\n");
         return;
     }
+
     sprintf(installInfo->m_ConnectQName, "%s-%s-connect-q", p_StrId, p_Version);
+    sprintf(installInfo->m_DisconnectQName, "%s-%s-disconnect-q", p_StrId,
+            p_Version);
 
     installInfo->m_CallQPushIdx = 0;
     installInfo->m_CallQPopIdx = 0;
     installInfo->m_CallQSize = 0;
+
     installInfo->m_ConnectQPushIdx = 0;
     installInfo->m_ConnectQPopIdx = 0;
     installInfo->m_ConnectQSize = 0;
+
     installInfo->m_DisconnectQPushIdx = 0;
     installInfo->m_DisconnectQPopIdx = 0;
     installInfo->m_DisconnectQSize = 0;
@@ -394,10 +399,22 @@ spin_lock_unlock:
     struct ConnectRequest *connectQ =
         mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
              PROT_READ | PROT_WRITE, MAP_SHARED, connectQFd, 0);
-    DIE(connectQ == MAP_FAILED, "Coudl not map connect queue memory");
+    DIE(connectQ == MAP_FAILED, "Could not map connect queue memory");
 
     rc = close(connectQFd);
     DIE(rc != 0, "Could not close connectQFd");
+
+    disconnectQFd = createShmObject(
+        installInfo->m_DisconnectQName, O_RDWR, 0600,
+        CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
+
+    struct ConnectRequest *disconnectQ =
+        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+             PROT_READ | PROT_WRITE, MAP_SHARED, disconnectQFd, 0);
+    DIE(disconnectQ == MAP_FAILED, "Could not map disconnect queue memory");
+
+    rc = close(disconnectQFd);
+    DIE(rc != 0, "Could not close disconnectQFd");
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
@@ -417,7 +434,7 @@ spin_lock_unlock:
     p_ConnectInfo->m_Connections = installInfo->m_Connections;
 
     p_ConnectInfo->m_ReceiveDisconnectRequest = s_ReceiveDisconnectRequest;
-    p_ConnectInfo->m_DisconnectQ.m_Data = NULL; // TODO
+    p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
     p_ConnectInfo->m_DisconnectQ.m_PushIdxPtr =
         &installInfo->m_DisconnectQPushIdx;
     p_ConnectInfo->m_DisconnectQ.m_PopIdxPtr =

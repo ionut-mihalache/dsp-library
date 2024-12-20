@@ -283,6 +283,10 @@ void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                                         p_RequestInfo);
 }
 
+void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo) {
+    p_ConnectInfo->m_SendDisconnectRequest(p_ConnectInfo);
+}
+
 void pushQ(struct ClientCallInfo *p_CallInfo) {
     p_CallInfo->m_CallFn(&p_CallInfo->m_Queue);
 }
@@ -319,7 +323,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
                 struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId) {
     int rc;
     int installShmFd;
-    int callQFd, connectQFd;
+    int callQFd, connectQFd, disconnectQFd;
     struct InstallInformation *installInfo;
     uint8_t connected = false;
     uint16_t i;
@@ -381,6 +385,18 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     rc = close(connectQFd);
     DIE(rc != 0, "Could not close connectQFd");
 
+    disconnectQFd = createShmObject(
+        installInfo->m_DisconnectQName, O_RDWR, 0600,
+        CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
+
+    struct ConnectRequest *disconnectQ =
+        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+             PROT_READ | PROT_WRITE, MAP_SHARED, disconnectQFd, 0);
+    DIE(disconnectQ == MAP_FAILED, "Could not map disconnect queue memory");
+
+    rc = close(disconnectQFd);
+    DIE(rc != 0, "Could not close disconnectQFd");
+
     p_ConnectInfo->m_SendConnectRequest = s_SendConnectRequest;
     p_ConnectInfo->m_Connections = installInfo->m_Connections;
     p_ConnectInfo->m_Queue.m_Data = connectQ;
@@ -393,12 +409,16 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_ConnectLock = &installInfo->m_ConnectListLock;
 
     p_ConnectInfo->m_SendDisconnectRequest = s_SendDisconnectRequest;
-    p_ConnectInfo->m_DisconnectQ.m_Data = NULL; // TODO
-    p_ConnectInfo->m_DisconnectQ.m_PushIdxPtr = &installInfo->m_DisconnectQPushIdx;
-    p_ConnectInfo->m_DisconnectQ.m_PopIdxPtr = &installInfo->m_DisconnectQPopIdx;
+    p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
+    p_ConnectInfo->m_DisconnectQ.m_PushIdxPtr =
+        &installInfo->m_DisconnectQPushIdx;
+    p_ConnectInfo->m_DisconnectQ.m_PopIdxPtr =
+        &installInfo->m_DisconnectQPopIdx;
     p_ConnectInfo->m_DisconnectQ.m_Size = &installInfo->m_DisconnectQSize;
-    p_ConnectInfo->m_DisconnectQ.m_FullCond = &installInfo->m_DisconnectQFullCond;
-    p_ConnectInfo->m_DisconnectQ.m_EmptyCond = &installInfo->m_DisconnectQEmptyCond;
+    p_ConnectInfo->m_DisconnectQ.m_FullCond =
+        &installInfo->m_DisconnectQFullCond;
+    p_ConnectInfo->m_DisconnectQ.m_EmptyCond =
+        &installInfo->m_DisconnectQEmptyCond;
 
     callQFd = createShmObject(installInfo->m_CallQName, O_RDWR, 0600,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);

@@ -102,6 +102,8 @@ $ffi = FFI::cdef(
                         struct ClientConnectInfo *p_ConnectInfo,
                         struct ClientConnectRequestInformation *p_RequestInfo);
 
+    void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo);
+
     void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
     void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
 

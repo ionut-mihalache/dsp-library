@@ -113,6 +113,7 @@ struct InstallInformation {
 
     char m_CallQName[CALLQ_NAME_MAX_SIZE];
     char m_ConnectQName[CONNECTQ_NAME_MAX_SIZE];
+    char m_DisconnectQName[CONNECTQ_NAME_MAX_SIZE];
     char m_StrId[STRING_ID_MAX_LENGTH];
     char m_Version[VERSION_MAX_LENGTH];
 
