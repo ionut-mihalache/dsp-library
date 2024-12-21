@@ -25,11 +25,15 @@ interface ReceiveDisconnectRequest extends Callback {
 }
 
 public class ServiceConnectInfo extends Structure {
-    public static final List<String> FIELDS = createFieldsOrder("m_Queue", "m_Connections", "m_ReceiveConnectRequest",
+    public static final List<String> FIELDS = createFieldsOrder("m_Queue", "m_DisconnectQ", "m_Connections",
+            "m_ConnectLock",
+            "m_ReceiveConnectRequest",
             "m_ReceiveDisconnectRequest");
 
     public ConnectQueue m_Queue;
+    public ConnectQueue m_DisconnectQ;
     public Pointer m_Connections;
+    public Pointer m_ConnectLock;
     public ReceiveConnectRequest m_ReceiveConnectRequest;
     public ReceiveDisconnectRequest m_ReceiveDisconnectRequest;
 
