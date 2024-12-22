@@ -30,6 +30,7 @@ static int32_t s_ProcessConnectionRequest(
     for (connectionIdx = 0; connectionIdx < OPENED_CONNECTIONS;
          ++connectionIdx) {
         if (!p_ConnectInfo->m_Connections[connectionIdx].m_Connected) {
+            LOGF("Found new connection idx %u.\n", connectionIdx);
             break;
         }
     }
@@ -158,26 +159,28 @@ static int32_t s_ProcessConnectionRequest(
 }
 
 static int32_t
-s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo) {
+s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
+                        struct ConnectResponseInformation *p_ResponseInfo) {
     int32_t rc = 0;
     uint32_t idx;
 
-    struct DisconnectQueue *disconnectQ = &p_ConnectInfo->m_DisconnectQ;
+    struct DisconnectQueue *queue = &p_ConnectInfo->m_DisconnectQ;
 
-    pthread_mutex_lock(disconnectQ->m_Lock);
-    while (*disconnectQ->m_Size == CONNECTQ_MAX_SIZE) {
-        pthread_cond_wait(disconnectQ->m_EmptyCond, disconnectQ->m_Lock);
+    pthread_mutex_lock(queue->m_Lock);
+    while (*queue->m_Size == CONNECTQ_MAX_SIZE) {
+        pthread_cond_wait(queue->m_EmptyCond, queue->m_Lock);
     }
 
-    idx = *disconnectQ->m_PushIdxPtr;
+    idx = *queue->m_PushIdxPtr;
 
-    disconnectQ->m_Data[idx].m_ConnectionIdx = 123;
+    queue->m_Data[idx].m_ConnectionIdx = p_ResponseInfo->m_Id;
 
-    (*disconnectQ->m_PushIdxPtr) =
-        ((*disconnectQ->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
-    (*disconnectQ->m_Size)++;
+    (*queue->m_PushIdxPtr) = ((*queue->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
+    (*queue->m_Size)++;
 
-    pthread_mutex_unlock(disconnectQ->m_Lock);
+    pthread_cond_broadcast(queue->m_FullCond);
+
+    pthread_mutex_unlock(queue->m_Lock);
 
     return rc;
 }
@@ -283,8 +286,11 @@ void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                                         p_RequestInfo);
 }
 
-void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo) {
-    p_ConnectInfo->m_SendDisconnectRequest(p_ConnectInfo);
+void sendDisconnectRequest(
+    struct ClientConnectInfo *p_ConnectInfo,
+    struct ConnectResponseInformation *p_requestResponseInfo) {
+    p_ConnectInfo->m_SendDisconnectRequest(p_ConnectInfo,
+                                           p_requestResponseInfo);
 }
 
 void pushQ(struct ClientCallInfo *p_CallInfo) {
@@ -387,7 +393,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
 
     disconnectQFd = createShmObject(
         installInfo->m_DisconnectQName, O_RDWR, 0600,
-        CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
+        CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), false);
 
     struct ConnectRequest *disconnectQ =
         mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
@@ -415,6 +421,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_DisconnectQ.m_PopIdxPtr =
         &installInfo->m_DisconnectQPopIdx;
     p_ConnectInfo->m_DisconnectQ.m_Size = &installInfo->m_DisconnectQSize;
+    p_ConnectInfo->m_DisconnectQ.m_Lock = &installInfo->m_DisconnectQMutex;
     p_ConnectInfo->m_DisconnectQ.m_FullCond =
         &installInfo->m_DisconnectQFullCond;
     p_ConnectInfo->m_DisconnectQ.m_EmptyCond =
@@ -456,4 +463,16 @@ void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
                             struct ClientCallInfo *p_CallInfo,
                             const char *p_ServiceStrId) {
     dspConnect(p_ConnectInfo, p_CallInfo, p_ServiceStrId);
+}
+
+struct ConnectResponseInformation *
+getConnectResponse(struct ClientReturnInfo *p_ReturnInfo) {
+    LOGF("Request reponse queue size is %u(%u).\n",
+         *p_ReturnInfo->m_ResponseQueue.m_Size,
+         *p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr);
+    if (*p_ReturnInfo->m_ResponseQueue.m_Size == 0) {
+        return &p_ReturnInfo->m_ResponseQueue.m_Data[0];
+    }
+
+    return NULL;
 }

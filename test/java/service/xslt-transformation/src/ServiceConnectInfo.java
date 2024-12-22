@@ -7,7 +7,7 @@ import com.sun.jna.Structure;
 /**
  * struct ServiceConnectInfo {
  * struct ConnectQueue m_Queue;
- * struct ConnectQueue m_DisconnectQ;
+ * struct DisconnectQueue m_DisconnectQ;
  * struct ConnectionInformation *m_Connections;
  * pthread_spinlock_t *m_ConnectLock;
  * int32_t (*m_ReceiveConnectRequest)(struct ServiceReturnInfo *,
@@ -31,7 +31,7 @@ public class ServiceConnectInfo extends Structure {
             "m_ReceiveDisconnectRequest");
 
     public ConnectQueue m_Queue;
-    public ConnectQueue m_DisconnectQ;
+    public DisconnectQueue m_DisconnectQ;
     public Pointer m_Connections;
     public Pointer m_ConnectLock;
     public ReceiveConnectRequest m_ReceiveConnectRequest;

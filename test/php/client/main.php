@@ -38,6 +38,16 @@ $ffi = FFI::cdef(
         uint32_t *m_Size;
     };
 
+    struct DisconnectQueue {
+        void *m_Data;
+        void *m_FullCond;
+        void *m_EmptyCond;
+        void *m_Lock;
+        uint32_t *m_PushIdxPtr;
+        uint32_t *m_PopIdxPtr;
+        uint32_t *m_Size;
+    };
+
     struct DSPQueue {
         void *m_FullCond;
         void *m_EmptyCond;
@@ -92,17 +102,20 @@ $ffi = FFI::cdef(
 
     struct ClientConnectInfo {
         struct ConnectQueue m_Queue;
+        struct DisconnectQueue m_DisconnectQ;
         struct ConnectionInformation *m_Connections;
+        void *m_ConnectLock;
         int32_t (*m_SendConnectRequest)(struct ClientReturnInfo *,
                                         struct ClientConnectInfo *,
                                         struct ClientConnectRequestInformation *);
+        int32_t (*m_SendDisconnectRequest)(struct ClientConnectInfo *);
     };
 
     void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,
                         struct ClientConnectRequestInformation *p_RequestInfo);
 
-    void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo);
+    void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo, struct ConnectResponseInformation *p_requestResponseInfo);
 
     void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
     void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
@@ -112,6 +125,8 @@ $ffi = FFI::cdef(
 
     int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
     int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
+
+    struct ConnectResponseInformation *getConnectResponse(struct ClientReturnInfo *p_ReturnInfo);
 ",
     "/home/user/dsp-library/libdsp.so"
 );
@@ -142,10 +157,18 @@ $requestInfoPtr = FFI::addr($requestInfo);
 
 $ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 
-echo "Return response id is: " . $returnInfo->m_ResponseQueue->m_Data[0]->m_Id . "\n";
+// echo "Return response id is: " . $returnInfo->m_ResponseQueue->m_Data[0]->m_Id . "\n";
 
 
-$ffi->sendDisconnectRequest($connectInfoPtr);
+$requestResponseInfo = $ffi->getConnectResponse($returnInfoPtr);
+if ($requestResponseInfo == null) {
+    echo "Request response is null" . "\n";
+    exit(1);
+}
+
+echo "Return response id is: " . $requestResponseInfo->m_Id . "\n";
+
+$ffi->sendDisconnectRequest($connectInfoPtr, $requestResponseInfo);
 
 // $callData = $ffi->new("struct QMBCall");
 // $callDataPtr = FFI::addr($callData);

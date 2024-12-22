@@ -32,13 +32,17 @@ struct ClientConnectInfo {
     int32_t (*m_SendConnectRequest)(struct ClientReturnInfo *,
                                     struct ClientConnectInfo *,
                                     struct ClientConnectRequestInformation *);
-    int32_t (*m_SendDisconnectRequest)(struct ClientConnectInfo *);
+    int32_t (*m_SendDisconnectRequest)(struct ClientConnectInfo *,
+                                       struct ConnectResponseInformation *);
 };
 
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,
                         struct ClientConnectRequestInformation *p_RequestInfo);
-void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo);
+void sendDisconnectRequest(
+    struct ClientConnectInfo *p_ConnectInfo,
+    struct ConnectResponseInformation *p_requestResponseInfo);
+
 void pushQ(struct ClientCallInfo *p_CallInfo);
 void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
 void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
@@ -54,5 +58,8 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
 void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
                             struct ClientCallInfo *p_CallInfo,
                             const char *p_ServiceStrId);
+
+struct ConnectResponseInformation *
+getConnectResponse(struct ClientReturnInfo *p_ReturnInfo);
 
 #endif // __DSP_CLIENT_H

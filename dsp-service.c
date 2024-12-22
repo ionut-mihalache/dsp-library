@@ -191,10 +191,8 @@ static int32_t
 s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
     uint32_t idx;
-    struct ConnectQueue *queue = &p_ConnectInfo->m_DisconnectQ;
-
-    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+    uint32_t connectionIdx;
+    struct DisconnectQueue *queue = &p_ConnectInfo->m_DisconnectQ;
 
     pthread_mutex_lock(queue->m_Lock);
     while (*queue->m_Size == 0) {
@@ -202,8 +200,8 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     }
 
     idx = *queue->m_PopIdxPtr;
-    LOGF("Received disconnect request for connection id: %u.\n",
-         queue->m_Data[idx].m_ConnectionIdx);
+
+    connectionIdx = queue->m_Data[idx].m_ConnectionIdx;
 
     (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)--;
@@ -211,6 +209,12 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     pthread_cond_broadcast(queue->m_EmptyCond);
 
     pthread_mutex_unlock(queue->m_Lock);
+
+    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    p_ConnectInfo->m_Connections[connectionIdx].m_Connected = false;
+    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+
+    LOGF("Disconnected for id: %u.\n", connectionIdx);
 
     return rc;
 }
@@ -369,6 +373,7 @@ spin_lock_unlock:
         ELOGF("Could not create call queue.\n");
         return;
     }
+    memset(installInfo->m_CallQName, 0, CALLQ_NAME_MAX_SIZE);
     sprintf(installInfo->m_CallQName, "%s-%s-call-q", p_StrId, p_Version);
 
     if (strIdLen + versionLen + 10 > RETURNQ_NAME_MAX_SIZE) {
@@ -376,7 +381,9 @@ spin_lock_unlock:
         return;
     }
 
+    memset(installInfo->m_ConnectQName, 0, CONNECTQ_NAME_MAX_SIZE);
     sprintf(installInfo->m_ConnectQName, "%s-%s-connect-q", p_StrId, p_Version);
+    memset(installInfo->m_DisconnectQName, 0, CONNECTQ_NAME_MAX_SIZE);
     sprintf(installInfo->m_DisconnectQName, "%s-%s-disconnect-q", p_StrId,
             p_Version);
 
