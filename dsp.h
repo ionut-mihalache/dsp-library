@@ -85,6 +85,8 @@ struct GBCall {
 };
 
 struct ConnectResponseInformation {
+    char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
+    char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];
     uint32_t m_Id;
 };
 

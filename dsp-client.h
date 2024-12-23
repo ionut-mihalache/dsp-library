@@ -13,6 +13,7 @@ struct ClientCallInfo {
 struct ClientReturnInfo {
     struct ConnectResponseQueue m_ResponseQueue;
     struct QMBDSPQueue m_QMBQueue;
+    struct ConnectResponseInformation m_ConnectResponseInformation;
     int32_t (*m_ReturnFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
 };
 

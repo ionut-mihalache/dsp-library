@@ -19,7 +19,7 @@ static int32_t s_ProcessConnectionRequest(
     int requestResponseQFd;
     int returnQFd;
     int32_t rc = 0;
-    uint32_t connectionIdx;
+    uint32_t connId;
 
     /**
      *  search for a free spot in the opened connections for the service
@@ -27,10 +27,10 @@ static int32_t s_ProcessConnectionRequest(
      *  WIP: wait for the service to establish the connection on its side
      */
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    for (connectionIdx = 0; connectionIdx < OPENED_CONNECTIONS;
-         ++connectionIdx) {
-        if (!p_ConnectInfo->m_Connections[connectionIdx].m_Connected) {
-            LOGF("Found new connection idx %u.\n", connectionIdx);
+    for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
+        if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
+            // LOGF("Found new connection idx %u.\n", connId);
+            p_ConnectInfo->m_Connections[connId].m_Connected = true;
             break;
         }
     }
@@ -40,8 +40,7 @@ static int32_t s_ProcessConnectionRequest(
      * With the connection index found we need to construct the request for the
      * service
      */
-    p_ConnectRequest->m_ConnectionIdx = connectionIdx;
-    p_ConnectInfo->m_Connections[connectionIdx].m_Connected = true;
+    p_ConnectRequest->m_ConnectionIdx = connId;
 
     memcpy(p_ConnectRequest->m_ReturnQName, p_ConnectInformation->m_ReturnQName,
            min(strlen(p_ConnectInformation->m_ReturnQName),
@@ -89,38 +88,37 @@ static int32_t s_ProcessConnectionRequest(
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");
 
-    p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx = 0;
-    p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx = 0;
-    p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize = 0;
+    p_ConnectInfo->m_Connections[connId].m_RequestResponseQPushIdx = 0;
+    p_ConnectInfo->m_Connections[connId].m_RequestResponseQPopIdx = 0;
+    p_ConnectInfo->m_Connections[connId].m_RequestResponseQSize = 0;
 
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
     p_ReturnInfo->m_ResponseQueue.m_FullCond =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQFullCond;
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQFullCond;
     p_ReturnInfo->m_ResponseQueue.m_EmptyCond =
-        &p_ConnectInfo->m_Connections[connectionIdx]
-             .m_RequestResponseQEmptyCond;
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQEmptyCond;
     p_ReturnInfo->m_ResponseQueue.m_Lock =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMutex;
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQMutex;
     p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx;
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQPushIdx;
     p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx;
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQPopIdx;
     p_ReturnInfo->m_ResponseQueue.m_Size =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQSize;
 
     p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
     p_ReturnInfo->m_QMBQueue.m_FullCond =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQFullCond;
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQFullCond;
     p_ReturnInfo->m_QMBQueue.m_EmptyCond =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQEmptyCond;
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQEmptyCond;
     p_ReturnInfo->m_QMBQueue.m_Lock =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex;
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQMutex;
     p_ReturnInfo->m_QMBQueue.m_PushIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQPushIdx;
     p_ReturnInfo->m_QMBQueue.m_PopIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQPopIdx;
     p_ReturnInfo->m_QMBQueue.m_Size =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQSize;
 
     p_ReturnInfo->m_ReturnFnQMB = NULL; // TODO: This has to be a valid value
 
@@ -173,7 +171,11 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
 
     idx = *queue->m_PushIdxPtr;
 
-    queue->m_Data[idx].m_ConnectionIdx = p_ResponseInfo->m_Id;
+    // queue->m_Data[idx].m_ConnectionIdx = p_ResponseInfo->m_Id;
+    memcpy(&queue->m_Data[idx], p_ResponseInfo,
+           sizeof(struct ConnectResponseInformation));
+    // LOGF("Received response for (%s, %s, %u).\n", p_ResponseInfo->m_ReturnQName,
+    //      p_ResponseInfo->m_ReturnRequestQName, p_ResponseInfo->m_Id);
 
     (*queue->m_PushIdxPtr) = ((*queue->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)++;
@@ -222,6 +224,21 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     /**
      * WIP: Add the information to the response queue. Now the signal is enough
      */
+    idx = *p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr;
+
+    memcpy(&p_ReturnInfo->m_ConnectResponseInformation,
+           &p_ReturnInfo->m_ResponseQueue.m_Data[idx],
+           sizeof(struct ConnectResponseInformation));
+
+    // LOGF("Received response for (%s, %s, %u).\n",
+    //      p_ReturnInfo->m_ResponseQueue.m_Data[idx].m_ReturnQName,
+    //      p_ReturnInfo->m_ResponseQueue.m_Data[idx].m_ReturnRequestQName,
+    //      p_ReturnInfo->m_ResponseQueue.m_Data[idx].m_Id);
+
+    // LOGF("Received response for (%s, %s, %u).\n",
+    //      p_ReturnInfo->m_ConnectResponseInformation.m_ReturnQName,
+    //      p_ReturnInfo->m_ConnectResponseInformation.m_ReturnRequestQName,
+    //      p_ReturnInfo->m_ConnectResponseInformation.m_Id);
 
     (*p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr) =
         ((*p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr) + 1) %
@@ -455,8 +472,8 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     // p_CallInfo->m_HMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
     // p_CallInfo->m_HMBQueue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
 
-    LOGF("Connected to \'%s\' with version \'%s\'.\n", p_ServiceStrId,
-         installInfo->m_Version);
+    // LOGF("Connected to \'%s\' with version \'%s\'.\n", p_ServiceStrId,
+    //      installInfo->m_Version);
 }
 
 void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
@@ -467,10 +484,9 @@ void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
 
 struct ConnectResponseInformation *
 getConnectResponse(struct ClientReturnInfo *p_ReturnInfo) {
-    LOGF("Request reponse queue size is %u(%u).\n",
-         *p_ReturnInfo->m_ResponseQueue.m_Size,
-         *p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr);
     if (*p_ReturnInfo->m_ResponseQueue.m_Size == 0) {
+        LOGF("Returning response request connection id: %u.\n",
+             p_ReturnInfo->m_ResponseQueue.m_Data[0].m_Id);
         return &p_ReturnInfo->m_ResponseQueue.m_Data[0];
     }
 

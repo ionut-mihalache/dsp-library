@@ -43,7 +43,7 @@ public class Main {
 
         while (true) {
             connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
-            System.out.println("Received new connection");
+            System.out.println("Received new connection for ID: " + returnInfo.m_ResponseQueue.m_Data.getInt(2112));
 
             connectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(connectInfo);
         }

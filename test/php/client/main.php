@@ -2,6 +2,8 @@
 $ffi = FFI::cdef(
     "
     struct ConnectResponseInformation {
+        char m_ReturnQName[1056];
+        char m_ReturnRequestQName[1056];
         uint32_t m_Id;
     };
 
@@ -89,6 +91,7 @@ $ffi = FFI::cdef(
     struct ClientReturnInfo {
         struct ConnectResponseQueue m_ResponseQueue;
         struct QMBDSPQueue m_QMBQueue;
+        struct ConnectResponseInformation m_ConnectResponseInformation;
         int32_t (*m_ReturnFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
     };
 
@@ -145,12 +148,16 @@ $returnInfoPtr = FFI::addr($returnInfo);
 
 $requestInfo = $ffi->new("struct ClientConnectRequestInformation");
 
+$uniqueId = uniqid();
+
+$returnQName = "return-q-" . $uniqueId;
 FFI::memset($requestInfo->m_ReturnQName, 0, 1055);
-FFI::memcpy($requestInfo->m_ReturnQName, "return-q", strlen("return-q"));
+FFI::memcpy($requestInfo->m_ReturnQName, $returnQName, strlen($returnQName));
 $requestInfo->m_ReturnQSize = 1;
 
+$responseQName = "response-q-" . $uniqueId;
 FFI::memset($requestInfo->m_RequestResponseQName, 0, 1055);
-FFI::memcpy($requestInfo->m_RequestResponseQName, "response-q", strlen("response-q"));
+FFI::memcpy($requestInfo->m_RequestResponseQName, $responseQName, strlen($responseQName));
 $requestInfo->m_ResponseQSize = 1;
 
 $requestInfoPtr = FFI::addr($requestInfo);
@@ -158,17 +165,18 @@ $requestInfoPtr = FFI::addr($requestInfo);
 $ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 
 // echo "Return response id is: " . $returnInfo->m_ResponseQueue->m_Data[0]->m_Id . "\n";
+echo "Return response id is: " . $returnInfo->m_ConnectResponseInformation->m_Id . "\n";
 
+// $requestResponseInfo = $ffi->getConnectResponse($returnInfoPtr);
+// if ($requestResponseInfo == null) {
+//     echo "Request response is null" . "\n";
+//     exit(1);
+// }
 
-$requestResponseInfo = $ffi->getConnectResponse($returnInfoPtr);
-if ($requestResponseInfo == null) {
-    echo "Request response is null" . "\n";
-    exit(1);
-}
+// echo "Return response id is: " . $requestResponseInfo->m_Id . "\n";
+$requestInfoPtr = FFI::addr($returnInfo->m_ConnectResponseInformation);
 
-echo "Return response id is: " . $requestResponseInfo->m_Id . "\n";
-
-$ffi->sendDisconnectRequest($connectInfoPtr, $requestResponseInfo);
+$ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
 
 // $callData = $ffi->new("struct QMBCall");
 // $callDataPtr = FFI::addr($callData);

@@ -138,7 +138,7 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
                         struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
     struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
-    uint32_t connectId;
+    struct ConnectResponseInformation responseInfo;
 
     pthread_mutex_lock(queue->m_Lock);
     while (*queue->m_Size == 0) {
@@ -148,7 +148,14 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     processConnectRequest(p_ReturnInfo, &queue->m_Data[*queue->m_PopIdxPtr],
                           p_ConnectInfo);
 
-    connectId = queue->m_Data[*queue->m_PopIdxPtr].m_ConnectionIdx;
+    // connectId = queue->m_Data[*queue->m_PopIdxPtr].m_ConnectionIdx;
+    memcpy(responseInfo.m_ReturnQName,
+           queue->m_Data[*queue->m_PopIdxPtr].m_ReturnQName,
+           RETURNQ_NAME_MAX_SIZE);
+    memcpy(responseInfo.m_ReturnRequestQName,
+           queue->m_Data[*queue->m_PopIdxPtr].m_RequestResponseQName,
+           RETURNQ_NAME_MAX_SIZE);
+    responseInfo.m_Id = queue->m_Data[*queue->m_PopIdxPtr].m_ConnectionIdx;
 
     (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)--;
@@ -164,16 +171,19 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     pthread_mutex_lock(p_ReturnInfo->m_ResponseQueue.m_Lock);
     while (*p_ReturnInfo->m_ResponseQueue.m_Size ==
            p_ReturnInfo->m_ResponseQueue.m_MaxSize) {
-        pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_FullCond,
+        pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_EmptyCond,
                           p_ReturnInfo->m_ResponseQueue.m_Lock);
     }
 
     /**
      * WIP: Add the information to the response queue. Now the signal is enough
      */
-    p_ReturnInfo->m_ResponseQueue
-        .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr]
-        .m_Id = connectId;
+    // p_ReturnInfo->m_ResponseQueue
+    //     .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr]
+    //     .m_Id = connectId;
+    memcpy(&p_ReturnInfo->m_ResponseQueue
+                .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr],
+           &responseInfo, sizeof(struct ConnectResponseInformation));
 
     (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
         ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %
@@ -203,16 +213,16 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     connectionIdx = queue->m_Data[idx].m_ConnectionIdx;
 
+    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    p_ConnectInfo->m_Connections[connectionIdx].m_Connected = false;
+    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+
     (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)--;
 
     pthread_cond_broadcast(queue->m_EmptyCond);
 
     pthread_mutex_unlock(queue->m_Lock);
-
-    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    p_ConnectInfo->m_Connections[connectionIdx].m_Connected = false;
-    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
 
     LOGF("Disconnected for id: %u.\n", connectionIdx);
 
