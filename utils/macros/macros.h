@@ -35,7 +35,8 @@
 #define DIE(assertion, call_description)                                       \
     do {                                                                       \
         if (assertion) {                                                       \
-            fprintf(stderr, "%s: %s\n", call_description, strerror(errno));    \
+            fprintf(stderr, "%s (%d): %s - %s\n", __FILE__, __LINE__,          \
+                    call_description, strerror(errno));                        \
             exit(EXIT_FAILURE);                                                \
         }                                                                      \
     } while (0)

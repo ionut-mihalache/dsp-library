@@ -42,9 +42,9 @@
 #define CONNECTQ_MAX_SIZE ((uint32_t)64)
 #define RETURNQ_MAX_SIZE ((uint32_t)1024)
 
-#define CALLQ_NAME_MAX_SIZE ((uint32_t)1056)
-#define CONNECTQ_NAME_MAX_SIZE ((uint32_t)1056)
-#define RETURNQ_NAME_MAX_SIZE ((uint32_t)1056)
+#define CALLQ_NAME_MAX_SIZE ((uint32_t)256)
+#define CONNECTQ_NAME_MAX_SIZE ((uint32_t)256)
+#define RETURNQ_NAME_MAX_SIZE ((uint32_t)256)
 
 #define OPENED_CONNECTIONS ((uint32_t)2048)
 
@@ -130,6 +130,7 @@ struct InstallInformation {
     pthread_mutex_t m_ConnectQMutex;
     pthread_mutex_t m_DisconnectQMutex;
     pthread_spinlock_t m_ConnectListLock;
+    // pthread_mutex_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
@@ -195,10 +196,6 @@ struct DisconnectQueue {
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;
 };
-
-// struct DisconnectRequest {
-//     uint32_t m_ConnectionIdx;
-// };
 
 struct QMBDSPQueue {
     struct QMBCall *m_Data;

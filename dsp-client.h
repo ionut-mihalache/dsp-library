@@ -1,5 +1,5 @@
 #ifndef __DSP_CLIENT_H_
-#define __DSP_CLIENT_H
+#define __DSP_CLIENT_H_
 
 struct ClientCallInfo {
     struct DSPQueue m_Queue;
@@ -30,6 +30,7 @@ struct ClientConnectInfo {
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
     pthread_spinlock_t *m_ConnectLock;
+    // pthread_mutex_t *m_ConnectLock;
     int32_t (*m_SendConnectRequest)(struct ClientReturnInfo *,
                                     struct ClientConnectInfo *,
                                     struct ClientConnectRequestInformation *);

@@ -27,14 +27,16 @@ static int32_t s_ProcessConnectionRequest(
      *  WIP: wait for the service to establish the connection on its side
      */
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    // pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
     for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
         if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
-            // LOGF("Found new connection idx %u.\n", connId);
+            // LOGF("New connection for ID: %u.\n", connId);
             p_ConnectInfo->m_Connections[connId].m_Connected = true;
             break;
         }
     }
     pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+    // pthread_mutex_unlock(p_ConnectInfo->m_ConnectLock);
 
     /**
      * With the connection index found we need to construct the request for the
@@ -42,14 +44,14 @@ static int32_t s_ProcessConnectionRequest(
      */
     p_ConnectRequest->m_ConnectionIdx = connId;
 
+    memset(p_ConnectRequest->m_ReturnQName, 0, RETURNQ_NAME_MAX_SIZE);
     memcpy(p_ConnectRequest->m_ReturnQName, p_ConnectInformation->m_ReturnQName,
-           min(strlen(p_ConnectInformation->m_ReturnQName),
-               RETURNQ_NAME_MAX_SIZE));
+           strlen(p_ConnectInformation->m_ReturnQName));
 
+    memset(p_ConnectRequest->m_RequestResponseQName, 0, RETURNQ_NAME_MAX_SIZE);
     memcpy(p_ConnectRequest->m_RequestResponseQName,
            p_ConnectInformation->m_RequestResponseQName,
-           min(strlen(p_ConnectInformation->m_RequestResponseQName),
-               RETURNQ_NAME_MAX_SIZE));
+           strlen(p_ConnectInformation->m_RequestResponseQName));
 
     p_ReturnInfo->m_QMBQueue.m_MaxSize = 1;
     p_ConnectRequest->m_ReturnQSize =
@@ -64,6 +66,7 @@ static int32_t s_ProcessConnectionRequest(
         p_ConnectInformation->m_ResponseQSize *
             sizeof(struct ConnectResponseInformation),
         true);
+    DIE(requestResponseQFd < 0, "Could not create shared memory object");
 
     struct ConnectResponseInformation *requestResponseQ =
         mmap(NULL,
@@ -171,11 +174,11 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
 
     idx = *queue->m_PushIdxPtr;
 
-    // queue->m_Data[idx].m_ConnectionIdx = p_ResponseInfo->m_Id;
-    memcpy(&queue->m_Data[idx], p_ResponseInfo,
-           sizeof(struct ConnectResponseInformation));
-    // LOGF("Received response for (%s, %s, %u).\n", p_ResponseInfo->m_ReturnQName,
-    //      p_ResponseInfo->m_ReturnRequestQName, p_ResponseInfo->m_Id);
+    // memcpy(queue->m_Data[idx].m_ReturnQName, p_ResponseInfo->m_ReturnQName,
+    //        RETURNQ_NAME_MAX_SIZE);
+    // memcpy(queue->m_Data[idx].m_RequestResponseQName,
+    //        p_ResponseInfo->m_ReturnRequestQName, RETURNQ_NAME_MAX_SIZE);
+    queue->m_Data[idx].m_ConnectionIdx = p_ResponseInfo->m_Id;
 
     (*queue->m_PushIdxPtr) = ((*queue->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)++;

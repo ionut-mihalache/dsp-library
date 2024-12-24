@@ -15,15 +15,17 @@
 
 static struct InstallSharedData *installShdata = NULL;
 
-int32_t processConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
-                              struct ConnectRequest *p_Request,
-                              struct ServiceConnectInfo *p_ConnectInfo) {
+int32_t s_ProcessConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
+                                struct ConnectRequest *p_Request,
+                                struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
     int returnQFd;
     int requestResponseQFd;
     uint32_t connectionIdx;
 
     connectionIdx = p_Request->m_ConnectionIdx;
+
+    // LOGF("Connected for id: %u.\n", connectionIdx);
 
     /**
      * WIP: Consider saving the request response and return queues names
@@ -145,10 +147,9 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
         pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
     }
 
-    processConnectRequest(p_ReturnInfo, &queue->m_Data[*queue->m_PopIdxPtr],
-                          p_ConnectInfo);
+    s_ProcessConnectRequest(p_ReturnInfo, &queue->m_Data[*queue->m_PopIdxPtr],
+                            p_ConnectInfo);
 
-    // connectId = queue->m_Data[*queue->m_PopIdxPtr].m_ConnectionIdx;
     memcpy(responseInfo.m_ReturnQName,
            queue->m_Data[*queue->m_PopIdxPtr].m_ReturnQName,
            RETURNQ_NAME_MAX_SIZE);
@@ -201,7 +202,7 @@ static int32_t
 s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
     uint32_t idx;
-    uint32_t connectionIdx;
+    uint32_t connId;
     struct DisconnectQueue *queue = &p_ConnectInfo->m_DisconnectQ;
 
     pthread_mutex_lock(queue->m_Lock);
@@ -211,11 +212,45 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     idx = *queue->m_PopIdxPtr;
 
-    connectionIdx = queue->m_Data[idx].m_ConnectionIdx;
+    connId = queue->m_Data[idx].m_ConnectionIdx;
 
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    p_ConnectInfo->m_Connections[connectionIdx].m_Connected = false;
+    // pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
+
+    rc = pthread_mutex_destroy(
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQMutex);
+    if (rc != 0) {
+        fprintf(stdout, "Mutex destroy error is %s.\n", strerror(rc));
+    }
+    DIE(rc != 0, "Could not destroy request response mutex");
+
+    rc = pthread_cond_destroy(
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQFullCond);
+    DIE(rc != 0, "Could not destroy request response full cond");
+
+    rc = pthread_cond_destroy(
+        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQEmptyCond);
+    DIE(rc != 0, "Could not destroy request response empty cond");
+
+    rc = pthread_mutex_destroy(
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQMutex);
+    DIE(rc != 0, "Could not destroy return response mutex");
+
+    rc = pthread_cond_destroy(
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQFullCond);
+    DIE(rc != 0, "Could not destroy return response full cond");
+
+    rc = pthread_cond_destroy(
+        &p_ConnectInfo->m_Connections[connId].m_ReturnQEmptyCond);
+    DIE(rc != 0, "Could not destroy return response empty cond");
+
+    p_ConnectInfo->m_Connections[connId].m_Connected = false;
+
+    // memset(&p_ConnectInfo->m_Connections[connId], 0,
+    //        sizeof(struct ConnectionInformation));
+
     pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+    // pthread_mutex_unlock(p_ConnectInfo->m_ConnectLock);
 
     (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)--;
@@ -224,7 +259,7 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     pthread_mutex_unlock(queue->m_Lock);
 
-    LOGF("Disconnected for id: %u.\n", connectionIdx);
+    // LOGF("Disconnected for id: %u.\n", connId);
 
     return rc;
 }
@@ -347,7 +382,7 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
 
 spin_lock_unlock:
     if (freeIdx < 0) {
-        LOGF("Cannot install a new service!\n");
+        ELOGF("Cannot install a new service!\n");
         goto end;
     }
 
@@ -479,6 +514,9 @@ spin_lock_unlock:
 
     rc = pthread_mutex_init(&installInfo->m_DisconnectQMutex, &attr);
     DIE(rc != 0, "Could not init disconnect mutex");
+
+    // rc = pthread_mutex_init(&installInfo->m_ConnectListLock, &attr);
+    // DIE(rc != 0, "Could not init opened connections lock");
 
     rc = pthread_mutexattr_destroy(&attr);
     DIE(rc != 0, "Could not destroy mutex attribute");

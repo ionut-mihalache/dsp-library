@@ -32,49 +32,86 @@ interface LibDSP extends Library {
     void dspReturn();
 }
 
+class ConnectThread extends Thread {
+    private ServiceReturnInfo m_ReturnInfo;
+    private ServiceConnectInfo m_ConnectInfo;
+
+    ConnectThread(ServiceReturnInfo p_ReturnInfo, ServiceConnectInfo p_ConnectInfo) {
+        m_ReturnInfo = p_ReturnInfo;
+        m_ConnectInfo = p_ConnectInfo;
+    }
+
+    public void run() {
+        while (true) {
+            m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(m_ReturnInfo, m_ConnectInfo);
+            // System.out.println("Received new connection for ID: " + m_ReturnInfo.m_ResponseQueue.m_Data.getInt(512));
+        }
+    }
+}
+
+class DisconnectThread extends Thread {
+    private ServiceConnectInfo m_ConnectInfo;
+
+    DisconnectThread(ServiceConnectInfo p_ConnectInfo) {
+        m_ConnectInfo = p_ConnectInfo;
+    }
+
+    public void run() {
+        while (true) {
+            m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
+        }
+    }
+}
+
 public class Main {
     public static void main(String[] args) {
-        // Main main = new Main();
+        Main main = new Main();
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
         ServiceReturnInfo returnInfo = new ServiceReturnInfo();
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
-        while (true) {
-            connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
-            System.out.println("Received new connection for ID: " + returnInfo.m_ResponseQueue.m_Data.getInt(2112));
+        ConnectThread connectThread = new ConnectThread(returnInfo, connectInfo);
+        DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
-            connectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(connectInfo);
+        connectThread.start();
+        disconnectThread.start();
+
+        try {
+            connectThread.join();
+            disconnectThread.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
         }
 
         // returnInfo.m_SendReturnFnQMB.sendQMBReturn(returnInfo.m_QMBQueue, new
         // QMBCall());
 
-        // while (true) {
-        // try {
-        // QMBCall callData = new QMBCall();
-        // callInfo.m_ReceiveCallFnQMB.receiveQMBCall(callData, callInfo.m_QMBQueue);
+        while (true) {
+            try {
+                QMBCall callData = new QMBCall();
+                callInfo.m_ReceiveCallFnQMB.receiveQMBCall(callData, callInfo.m_QMBQueue);
 
-        // // ByteBuffer callInfoBuffer = ByteBuffer.wrap(callData.m_CallInfo);
-        // // String iiaData = StandardCharsets.UTF_8.decode(callInfoBuffer.slice(0,
-        // // callData.m_Size)).toString()
-        // // .replace("\0", "");
+                // ByteBuffer callInfoBuffer = ByteBuffer.wrap(callData.m_CallInfo);
+                // String iiaData = StandardCharsets.UTF_8.decode(callInfoBuffer.slice(0,
+                // callData.m_Size)).toString()
+                // .replace("\0", "");
 
-        // byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Size);
+                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Size);
 
-        // Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
-        // byte[] xsltData = Files.readAllBytes(xsltPath);
+                Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
+                byte[] xsltData = Files.readAllBytes(xsltPath);
 
-        // String result = main.getXmlTransformed(iiaData, xsltData);
+                String result = main.getXmlTransformed(iiaData, xsltData);
 
-        // System.out.println(result);
-        // } catch (IOException e) {
-        // e.printStackTrace();
-        // } catch (Exception e) {
-        // e.printStackTrace();
-        // }
-        // }
+                System.out.println(result);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     /**

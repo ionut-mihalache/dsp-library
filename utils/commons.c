@@ -26,9 +26,11 @@ int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
         if (errno == EEXIST) {
             shouldTruncate = false;
             shmFd = shm_open(p_Name, p_Oflag, p_Mode);
-            DIE(shmFd < 0, "Could not open shared memory object");
+            goto end;
+            // DIE(shmFd < 0, "Could not open shared memory object");
         } else {
-            DIE(shmFd < 0, "Could not open shared memory object");
+            // DIE(shmFd < 0, "Could not open shared memory object");
+            goto end;
         }
     }
 
