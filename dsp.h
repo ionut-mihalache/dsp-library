@@ -92,7 +92,7 @@ struct ConnectResponseInformation {
 
 struct ConnectionInformation {
     // char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
-    // char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];
+    // char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 
     pthread_cond_t m_ReturnQFullCond;
     pthread_cond_t m_ReturnQEmptyCond;
@@ -102,12 +102,17 @@ struct ConnectionInformation {
     pthread_mutex_t m_ReturnQMutex;
     pthread_mutex_t m_RequestResponseQMutex;
 
+    void *m_RequestResponseQ, *m_ReturnQ;
+    size_t m_RequestResponseQMapSize, m_ReturnQMapSize;
+
     uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
     uint32_t m_RequestResponseQPushIdx, m_RequestResponseQPopIdx,
         m_RequestResponseQSize;
 
     int32_t m_ConnectionError;
     bool m_Connected;
+    bool m_ResponseQSyncInit;
+    bool m_ReturnQSyncInit;
 };
 
 struct InstallInformation {
