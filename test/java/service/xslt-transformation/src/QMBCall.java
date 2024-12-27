@@ -3,12 +3,11 @@ import java.util.List;
 import com.sun.jna.Structure;
 
 /**
- *
  * struct QMBCall {
-        uint8_t m_CallInfo[QMB];
-        uint32_t m_Size;
-        bool m_DataReady;
-    };
+ * uint8_t m_CallInfo[QMB];
+ * uint32_t m_Size;
+ * bool m_DataReady;
+ * };
  */
 
 public class QMBCall extends Structure {

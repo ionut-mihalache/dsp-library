@@ -25,11 +25,7 @@ import com.sun.jna.Pointer;
 interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
 
-    Pointer getCallInfo();
-
     void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version);
-
-    void dspReturn();
 }
 
 class ConnectThread extends Thread {
@@ -44,7 +40,8 @@ class ConnectThread extends Thread {
     public void run() {
         while (true) {
             m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(m_ReturnInfo, m_ConnectInfo);
-            // System.out.println("Received new connection for ID: " + m_ReturnInfo.m_ResponseQueue.m_Data.getInt(512));
+            // System.out.println("Received new connection for ID: " +
+            // m_ReturnInfo.m_ResponseQueue.m_Data.getInt(512));
         }
     }
 }
@@ -72,46 +69,51 @@ public class Main {
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
-        ConnectThread connectThread = new ConnectThread(returnInfo, connectInfo);
-        DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
+        System.out.println(connectInfo);
+        System.out.println(callInfo);
 
-        connectThread.start();
-        disconnectThread.start();
+        // System.out.println(callInfo);
 
-        try {
-            connectThread.join();
-            disconnectThread.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        // ConnectThread connectThread = new ConnectThread(returnInfo, connectInfo);
+        // DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
+
+        // connectThread.start();
+        // disconnectThread.start();
+
+        // try {
+        // connectThread.join();
+        // disconnectThread.join();
+        // } catch (InterruptedException e) {
+        // e.printStackTrace();
+        // }
 
         // returnInfo.m_SendReturnFnQMB.sendQMBReturn(returnInfo.m_QMBQueue, new
         // QMBCall());
 
-        while (true) {
-            try {
-                QMBCall callData = new QMBCall();
-                callInfo.m_ReceiveCallFnQMB.receiveQMBCall(callData, callInfo.m_QMBQueue);
+        // while (true) {
+        // try {
+        // QMBCall callData = new QMBCall();
+        // callInfo.m_ReceiveCallFnQMB.receiveQMBCall(callData, callInfo.m_QMBQueue);
 
-                // ByteBuffer callInfoBuffer = ByteBuffer.wrap(callData.m_CallInfo);
-                // String iiaData = StandardCharsets.UTF_8.decode(callInfoBuffer.slice(0,
-                // callData.m_Size)).toString()
-                // .replace("\0", "");
+        // // ByteBuffer callInfoBuffer = ByteBuffer.wrap(callData.m_CallInfo);
+        // // String iiaData = StandardCharsets.UTF_8.decode(callInfoBuffer.slice(0,
+        // // callData.m_Size)).toString()
+        // // .replace("\0", "");
 
-                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Size);
+        // byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Size);
 
-                Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
-                byte[] xsltData = Files.readAllBytes(xsltPath);
+        // Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
+        // byte[] xsltData = Files.readAllBytes(xsltPath);
 
-                String result = main.getXmlTransformed(iiaData, xsltData);
+        // String result = main.getXmlTransformed(iiaData, xsltData);
 
-                System.out.println(result);
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
+        // System.out.println(result);
+        // } catch (IOException e) {
+        // e.printStackTrace();
+        // } catch (Exception e) {
+        // e.printStackTrace();
+        // }
+        // }
     }
 
     /**

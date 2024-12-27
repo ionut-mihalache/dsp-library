@@ -5,18 +5,19 @@ import com.sun.jna.Structure;
 
 /**
  * Based on the C library version:
-    struct DSPQueue {
-        pthread_cond_t *m_FullCond;
-        pthread_cond_t *m_EmptyCond;
-        pthread_mutex_t *m_Lock;
-        uint32_t *m_PushIdxPtr;
-        uint32_t *m_PopIdxPtr;
-        char *m_Start;
-    };
-*/
+ * struct DSPQueue {
+ * pthread_cond_t *m_FullCond;
+ * pthread_cond_t *m_EmptyCond;
+ * pthread_mutex_t *m_Lock;
+ * uint32_t *m_PushIdxPtr;
+ * uint32_t *m_PopIdxPtr;
+ * char *m_Start;
+ * };
+ */
 
 public class DSPQueue extends Structure {
-    public static final List<String> FIELDS = createFieldsOrder("m_FullCond", "m_EmptyCond", "m_Lock", "m_PushIdxPtr", "m_PopIdxPtr", "m_Start");
+    public static final List<String> FIELDS = createFieldsOrder("m_FullCond", "m_EmptyCond", "m_Lock", "m_PushIdxPtr",
+            "m_PopIdxPtr", "m_Start");
 
     public Pointer m_FullCond;
     public Pointer m_EmptyCond;
@@ -27,11 +28,6 @@ public class DSPQueue extends Structure {
 
     public DSPQueue() {
         super();
-        m_FullCond = null;
-        m_EmptyCond = null;
-        m_PushIdxPtr = null;
-        m_PopIdxPtr = null;
-        m_Start = null;
     }
 
     @Override

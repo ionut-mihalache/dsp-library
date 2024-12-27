@@ -3,12 +3,11 @@ import java.util.List;
 import com.sun.jna.Structure;
 
 /**
- *
  * struct HMBCall {
-        uint8_t m_CallInfo[HMB];
-        uint32_t m_Size;
-        bool m_DataReady;
-    };
+ * uint8_t m_CallInfo[HMB];
+ * uint32_t m_Size;
+ * bool m_DataReady;
+ * };
  */
 
 public class HMBCall extends Structure {

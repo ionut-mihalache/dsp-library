@@ -1,8 +1,7 @@
-import java.util.List;
-
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import com.sun.jna.Structure.FieldOrder;
 
 /**
  * struct ServiceConnectInfo {
@@ -24,12 +23,9 @@ interface ReceiveDisconnectRequest extends Callback {
     int receiveDisconnectRequest(ServiceConnectInfo p_ConnectInfo);
 }
 
+@FieldOrder({ "m_Queue", "m_DisconnectQ", "m_Connections", "m_ConnectLock", "m_ReceiveConnectRequest",
+        "m_ReceiveDisconnectRequest" })
 public class ServiceConnectInfo extends Structure {
-    public static final List<String> FIELDS = createFieldsOrder("m_Queue", "m_DisconnectQ", "m_Connections",
-            "m_ConnectLock",
-            "m_ReceiveConnectRequest",
-            "m_ReceiveDisconnectRequest");
-
     public ConnectQueue m_Queue;
     public DisconnectQueue m_DisconnectQ;
     public Pointer m_Connections;
@@ -42,7 +38,22 @@ public class ServiceConnectInfo extends Structure {
     }
 
     @Override
-    protected List<String> getFieldOrder() {
-        return FIELDS;
+    public String toString() {
+        return this.toString(1);
+    }
+
+    public String toString(int indentation) {
+        String ws = "\n";
+        for (int i = 0; i < indentation; ++i) {
+            ws += "\t";
+        }
+
+        return "ConnectInfo" + ws
+                + m_Queue.toString(indentation + 1) + ws
+                + m_DisconnectQ.toString(indentation + 1) + ws
+                + "m_Connections: " + m_Connections + ws
+                + "m_ConnectLock: " + m_ConnectLock + ws
+                + "m_ReceiveConnectRequest" + m_ReceiveConnectRequest + ws
+                + "m_ReceiveDisconnectRequest" + m_ReceiveDisconnectRequest;
     }
 }

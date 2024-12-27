@@ -284,8 +284,8 @@ static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
     return rc;
 }
 
-__attribute_used__ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
-                                            struct HMBDSPQueue *p_Queue) {
+static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
+                         struct HMBDSPQueue *p_Queue) {
     int32_t rc = 0;
 
     pthread_mutex_lock(p_Queue->m_Lock);
@@ -491,7 +491,16 @@ spin_lock_unlock:
         &installInfo->m_DisconnectQPopIdx;
     p_ConnectInfo->m_DisconnectQ.m_Size = &installInfo->m_DisconnectQSize;
 
+    p_CallInfo->m_ReceiveCallFnHMB = s_QPopHMB;
+    LOGF("m_ReceiveCallFnHMB is %p.\n", s_QPopHMB);
+
     p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
+    LOGF("m_ReceiveCallFnQMB is %p.\n", s_QPopQMB);
+    p_CallInfo->m_HMBQueue.m_Data = callQ;
+    p_CallInfo->m_HMBQueue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
+    p_CallInfo->m_HMBQueue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
+    p_CallInfo->m_HMBQueue.m_Size = &installInfo->m_CallQSize;
+
     p_CallInfo->m_QMBQueue.m_Data = callQ;
     p_CallInfo->m_QMBQueue.m_PushIdxPtr = &installInfo->m_CallQPushIdx;
     p_CallInfo->m_QMBQueue.m_PopIdxPtr = &installInfo->m_CallQPopIdx;
@@ -550,6 +559,10 @@ spin_lock_unlock:
         &installInfo->m_DisconnectQFullCond;
     p_ConnectInfo->m_DisconnectQ.m_EmptyCond =
         &installInfo->m_DisconnectQEmptyCond;
+
+    p_CallInfo->m_HMBQueue.m_Lock = &installInfo->m_CallQMutex;
+    p_CallInfo->m_HMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
+    p_CallInfo->m_HMBQueue.m_EmptyCond = &installInfo->m_CallQEmptyCond;
 
     p_CallInfo->m_QMBQueue.m_Lock = &installInfo->m_CallQMutex;
     p_CallInfo->m_QMBQueue.m_FullCond = &installInfo->m_CallQFullCond;
