@@ -2,10 +2,10 @@
 
 #include "dsp-client.h"
 #include "protocol.h"
-#include "utils/commons.h"
+#include "commons.h"
 
-#include "utils/log/log.h"
-#include "utils/macros/macros.h"
+#include "log.h"
+#include "macros.h"
 
 #include <stdbool.h>
 #include <string.h>

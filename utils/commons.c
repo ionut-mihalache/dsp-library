@@ -1,5 +1,5 @@
 #include "commons.h"
-#include "../dsp.h"
+#include "dsp.h"
 
 #include <errno.h>
 #include <fcntl.h>

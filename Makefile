@@ -1,28 +1,67 @@
 CC=gcc
 # CC=clang
 DEBUG_DEFINES=-D__COMPILE_MODE_DEBUG__
-INCLUDES=
+INCLUDES=-Iutils -Iutils/macros -Iutils/hashmap -Iutils/exit -Iutils/log -Iinclude -Iservice/include -Iclient/include
 OPTIONS=-Wall -Wextra
 OPTIMIZATIONS=-O3
 # OPTIMIZATIONS=
 
-all: build
+OBJECTS_DIR=object
 
-build: libdsp.o
+CREATE_OBJECT_FILE = $(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c $(1) -o $(2) -fPIC
 
-libdsp.o: dsp-service.o dsp-client.o commons.o
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) dsp-service.o dsp-client.o commons.o -shared -o libdsp.so
+all: $(OBJECTS_DIR) build
 
-dsp-service.o: dsp-service.c dsp-service.h dsp.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c dsp-service.c -fPIC
+build: libdsp.so
 
-dsp-client.o: dsp-client.c dsp-client.h dsp.h utils/commons.h utils/hashmap/hashmap.h utils/macros/macros.h
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c dsp-client.c -fPIC
+$(OBJECTS_DIR):
+	mkdir $(OBJECTS_DIR)
 
-commons.o: utils/commons.c utils/commons.h dsp.h utils/macros/macros.h
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c utils/commons.c -o commons.o -fPIC
+libdsp.so: $(OBJECTS_DIR)/dsp-service-install.o \
+		$(OBJECTS_DIR)/dsp-service-call.o \
+		$(OBJECTS_DIR)/dsp-service.o \
+		$(OBJECTS_DIR)/dsp-client.o \
+		$(OBJECTS_DIR)/commons.o
+	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) $^ -shared -o $@
+
+$(OBJECTS_DIR)/dsp-service.o: service/dsp-service.c \
+		service/include/dsp-service.h \
+		include/dsp.h \
+		utils/commons.h \
+		utils/hashmap/hashmap.h \
+		utils/macros/macros.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
+
+$(OBJECTS_DIR)/dsp-service-install.o: service/install.c \
+		service/include/install.h \
+		service/include/dsp-service.h \
+		include/dsp.h \
+		utils/commons.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
+
+$(OBJECTS_DIR)/dsp-service-call.o: service/call.c \
+		service/include/call.h \
+		service/include/dsp-service.h \
+		include/dsp.h \
+		utils/commons.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
+
+$(OBJECTS_DIR)/dsp-client.o: client/dsp-client.c \
+		client/include/dsp-client.h \
+		include/dsp.h \
+		utils/commons.h \
+		utils/hashmap/hashmap.h \
+		utils/macros/macros.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
+
+$(OBJECTS_DIR)/commons.o: utils/commons.c \
+		utils/commons.h \
+		include/dsp.h \
+		utils/macros/macros.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
 
 clean:
-	rm *.o *.so
+	rm *.so
+	rm -rf $(OBJECTS_DIR)
 
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/user/dsp-library
