@@ -1,7 +1,6 @@
-import java.util.List;
-
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import com.sun.jna.Structure.FieldOrder;
 
 /**
  * struct ConnectResponseQueue {
@@ -16,10 +15,8 @@ import com.sun.jna.Structure;
  * };
  */
 
+@FieldOrder({ "m_Data", "m_FullCond", "m_EmptyCond", "m_Lock", "m_PushIdxPtr", "m_PopIdxPtr", "m_Size", "m_MaxSize" })
 public class ConnectResponseQueue extends Structure {
-    public static final List<String> FIELDS = createFieldsOrder("m_Data", "m_FullCond", "m_EmptyCond", "m_Lock",
-            "m_PushIdxPtr", "m_PopIdxPtr", "m_Size", "m_MaxSize");
-
     public Pointer m_Data;
     public Pointer m_FullCond;
     public Pointer m_EmptyCond;
@@ -34,7 +31,24 @@ public class ConnectResponseQueue extends Structure {
     }
 
     @Override
-    protected List<String> getFieldOrder() {
-        return FIELDS;
+    public String toString() {
+        return this.toString(1);
+    }
+
+    public String toString(int indentation) {
+        String ws = "\n";
+        for (int i = 0; i < indentation; ++i) {
+            ws += "\t";
+        }
+
+        return "ConnectResponseQueue" + ws
+                + "m_Data: " + m_Data + ws
+                + "m_Lock: " + m_Lock + ws
+                + "m_FullCond: " + m_FullCond + ws
+                + "m_EmptyCond: " + m_EmptyCond + ws
+                + "m_PushIdxPtr: " + m_PushIdxPtr + ws
+                + "m_PopIdxPtr: " + m_PopIdxPtr + ws
+                + "m_Size: " + m_Size + ws
+                + "m_MaxSize" + m_MaxSize;
     }
 }

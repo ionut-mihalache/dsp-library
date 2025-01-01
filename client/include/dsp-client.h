@@ -1,6 +1,8 @@
 #ifndef __DSP_CLIENT_H_
 #define __DSP_CLIENT_H_
 
+#include "dsp.h"
+
 struct ClientCallInfo {
     struct DSPQueue m_Queue;
     struct QMBDSPQueue m_QMBQueue;

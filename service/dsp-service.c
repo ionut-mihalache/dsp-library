@@ -140,8 +140,8 @@ spin_lock_unlock:
     installInfo->m_CallQPopIdx = 0;
     installInfo->m_CallQSize = 0;
 
-    configureConnectInformation(p_ConnectInfo, installInfo);
-    configureCallInformation(p_CallInfo, installInfo);
+    configureServiceConnectInformation(p_ConnectInfo, installInfo);
+    configureServiceCallInformation(p_CallInfo, installInfo);
 
 end:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);

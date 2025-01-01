@@ -17,9 +17,13 @@ build: libdsp.so
 $(OBJECTS_DIR):
 	mkdir $(OBJECTS_DIR)
 
-libdsp.so: $(OBJECTS_DIR)/dsp-service-install.o \
+libdsp.so: \
+		$(OBJECTS_DIR)/dsp-service-install.o \
 		$(OBJECTS_DIR)/dsp-service-call.o \
+		$(OBJECTS_DIR)/dsp-service-return.o \
 		$(OBJECTS_DIR)/dsp-service.o \
+		$(OBJECTS_DIR)/dsp-client-connect.o \
+		$(OBJECTS_DIR)/dsp-client-call.o \
 		$(OBJECTS_DIR)/dsp-client.o \
 		$(OBJECTS_DIR)/commons.o
 	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) $^ -shared -o $@
@@ -46,12 +50,33 @@ $(OBJECTS_DIR)/dsp-service-call.o: service/call.c \
 		utils/commons.h
 	$(call CREATE_OBJECT_FILE,$<,$@)
 
+$(OBJECTS_DIR)/dsp-service-return.o: service/return.c \
+		service/include/return.h \
+		service/include/dsp-service.h \
+		include/dsp.h \
+		utils/commons.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
+
 $(OBJECTS_DIR)/dsp-client.o: client/dsp-client.c \
 		client/include/dsp-client.h \
 		include/dsp.h \
 		utils/commons.h \
 		utils/hashmap/hashmap.h \
 		utils/macros/macros.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
+
+$(OBJECTS_DIR)/dsp-client-connect.o: client/client-connect.c \
+		client/include/client-connect.h \
+		client/include/dsp-client.h \
+		include/dsp.h \
+		utils/commons.h
+	$(call CREATE_OBJECT_FILE,$<,$@)
+
+$(OBJECTS_DIR)/dsp-client-call.o: client/client-call.c \
+		client/include/client-call.h \
+		client/include/dsp-client.h \
+		include/dsp.h \
+		utils/commons.h
 	$(call CREATE_OBJECT_FILE,$<,$@)
 
 $(OBJECTS_DIR)/commons.o: utils/commons.c \

@@ -53,7 +53,7 @@ public class ServiceConnectInfo extends Structure {
                 + m_DisconnectQ.toString(indentation + 1) + ws
                 + "m_Connections: " + m_Connections + ws
                 + "m_ConnectLock: " + m_ConnectLock + ws
-                + "m_ReceiveConnectRequest" + m_ReceiveConnectRequest + ws
-                + "m_ReceiveDisconnectRequest" + m_ReceiveDisconnectRequest;
+                + "m_ReceiveConnectRequest: " + m_ReceiveConnectRequest + ws
+                + "m_ReceiveDisconnectRequest: " + m_ReceiveDisconnectRequest;
     }
 }

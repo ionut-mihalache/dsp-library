@@ -22,7 +22,6 @@ struct ServiceCallInfo {
     struct QMBDSPQueue m_QMBQueue;
     int32_t (*m_ReceiveCallFnHMB)(struct HMBCall *, struct HMBDSPQueue *);
     int32_t (*m_ReceiveCallFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
-    // int32_t (*m_CallFn)(struct DSPQueue *);
 };
 
 struct ServiceReturnInfo {

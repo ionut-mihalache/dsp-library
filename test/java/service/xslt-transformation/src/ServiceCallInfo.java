@@ -42,9 +42,9 @@ public class ServiceCallInfo extends Structure {
         }
 
         return "CallInfo" + ws
-                + "m_ReceiveCallFnHMB: " + m_ReceiveCallFnHMB + ws
-                + "m_ReceiveCallFnQMB: " + m_ReceiveCallFnQMB + ws
                 + m_HMBQueue.toString(indentation + 1) + ws
-                + m_QMBQueue.toString(indentation + 1);
+                + m_QMBQueue.toString(indentation + 1) + ws
+                + "m_ReceiveCallFnHMB: " + m_ReceiveCallFnHMB + ws
+                + "m_ReceiveCallFnQMB: " + m_ReceiveCallFnQMB;
     }
 }

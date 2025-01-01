@@ -44,6 +44,7 @@ public class DisconnectQueue extends Structure {
                 + "m_FullCond: " + m_FullCond + ws
                 + "m_EmptyCond: " + m_EmptyCond + ws
                 + "m_PushIdxPtr: " + m_PushIdxPtr + ws
-                + "m_PopIdxPtr: " + m_PopIdxPtr;
+                + "m_PopIdxPtr: " + m_PopIdxPtr + ws
+                + "m_Size: " + m_Size;
     }
 }

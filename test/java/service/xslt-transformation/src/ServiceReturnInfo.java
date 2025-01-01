@@ -1,7 +1,6 @@
-import java.util.List;
-
 import com.sun.jna.Callback;
 import com.sun.jna.Structure;
+import com.sun.jna.Structure.FieldOrder;
 
 /**
  * struct ServiceReturnInfo {
@@ -15,9 +14,8 @@ interface SendReturnFnQMB extends Callback {
     int sendQMBReturn(QMBDSPQueue p_Queue, QMBCall p_ReturnInfo);
 }
 
+@FieldOrder({ "m_ResponseQueue", "m_QMBQueue", "m_SendReturnFnQMB" })
 public class ServiceReturnInfo extends Structure {
-    public static final List<String> FIELDS = createFieldsOrder("m_ResponseQueue", "m_QMBQueue", "m_SendReturnFnQMB");
-
     public ConnectResponseQueue m_ResponseQueue;
     public QMBDSPQueue m_QMBQueue;
     public SendReturnFnQMB m_SendReturnFnQMB;
@@ -27,7 +25,19 @@ public class ServiceReturnInfo extends Structure {
     }
 
     @Override
-    protected List<String> getFieldOrder() {
-        return FIELDS;
+    public String toString() {
+        return this.toString(1);
+    }
+
+    public String toString(int indentation) {
+        String ws = "\n";
+        for (int i = 0; i < indentation; ++i) {
+            ws += "\t";
+        }
+
+        return "ReturnInfo" + ws
+                + m_ResponseQueue.toString(indentation + 1) + ws
+                + m_QMBQueue.toString(indentation + 1) + ws
+                + "m_SendReturnFnQMB: " + m_SendReturnFnQMB;
     }
 }

@@ -1,4 +1,4 @@
-#include "string.h"
+#include <string.h>
 
 #include "call.h"
 #include "commons.h"
@@ -53,7 +53,7 @@ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
     return rc;
 }
 
-int32_t configureCallInformation(struct ServiceCallInfo *p_CallInfo,
+int32_t configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
                                  struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     int callQFd;
@@ -69,15 +69,12 @@ int32_t configureCallInformation(struct ServiceCallInfo *p_CallInfo,
     DIE(rc != 0, "Could not close callQFd");
 
     p_CallInfo->m_ReceiveCallFnHMB = s_QPopHMB;
-    LOGF("m_ReceiveCallFnHMB is %p.\n", s_QPopHMB);
+    // p_CallInfo->m_HMBQueue.m_Data = callQ;
+    // p_CallInfo->m_HMBQueue.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
+    // p_CallInfo->m_HMBQueue.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
+    // p_CallInfo->m_HMBQueue.m_Size = &p_InstallInfo->m_CallQSize;
 
     p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
-    LOGF("m_ReceiveCallFnQMB is %p.\n", s_QPopQMB);
-    p_CallInfo->m_HMBQueue.m_Data = callQ;
-    p_CallInfo->m_HMBQueue.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
-    p_CallInfo->m_HMBQueue.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
-    p_CallInfo->m_HMBQueue.m_Size = &p_InstallInfo->m_CallQSize;
-
     p_CallInfo->m_QMBQueue.m_Data = callQ;
     p_CallInfo->m_QMBQueue.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
     p_CallInfo->m_QMBQueue.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;

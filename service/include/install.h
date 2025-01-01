@@ -3,7 +3,7 @@
 
 #include "dsp-service.h"
 
-int32_t configureConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
+int32_t configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
                                     struct InstallInformation *p_InstallInfo);
 
 #endif // __DSP_SERVICE_INSTALL_H

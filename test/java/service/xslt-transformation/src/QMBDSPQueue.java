@@ -11,10 +11,11 @@ import com.sun.jna.Structure.FieldOrder;
  * uint32_t *m_PushIdxPtr;
  * uint32_t *m_PopIdxPtr;
  * uint32_t *m_Size;
+ * uint32_t m_MaxSize;
  * };
  */
 
-@FieldOrder({ "m_Data", "m_FullCond", "m_EmptyCond", "m_Lock", "m_PushIdxPtr", "m_PopIdxPtr", "m_Size" })
+@FieldOrder({ "m_Data", "m_FullCond", "m_EmptyCond", "m_Lock", "m_PushIdxPtr", "m_PopIdxPtr", "m_Size", "m_MaxSize" })
 public class QMBDSPQueue extends Structure {
     public Pointer m_Data;
     public Pointer m_FullCond;
@@ -23,6 +24,7 @@ public class QMBDSPQueue extends Structure {
     public Pointer m_PushIdxPtr;
     public Pointer m_PopIdxPtr;
     public Pointer m_Size;
+    public int m_MaxSize;
 
     public QMBDSPQueue() {
         super();
@@ -45,6 +47,8 @@ public class QMBDSPQueue extends Structure {
                 + "m_FullCond: " + m_FullCond + ws
                 + "m_EmptyCond: " + m_EmptyCond + ws
                 + "m_PushIdxPtr: " + m_PushIdxPtr + ws
-                + "m_PopIdxPtr: " + m_PopIdxPtr;
+                + "m_PopIdxPtr: " + m_PopIdxPtr + ws
+                + "m_Size: " + m_Size + ws
+                + "m_MaxSize: " + m_MaxSize;
     }
 }
