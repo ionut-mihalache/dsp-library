@@ -1,3 +1,5 @@
+package main;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -5,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 // import java.nio.charset.StandardCharsets;
 
@@ -21,6 +24,11 @@ import org.w3c.dom.Document;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 
+import call.QMBCall;
+import call.ServiceCallInfo;
+import call.ServiceReturnInfo;
+import connect.ServiceConnectInfo;
+
 interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
 
@@ -28,18 +36,20 @@ interface LibDSP extends Library {
 }
 
 class ConnectThread extends Thread {
-    private ServiceReturnInfo m_ReturnInfo;
     private ServiceConnectInfo m_ConnectInfo;
+    private ArrayList<ServiceReturnInfo> m_Connections;
 
-    ConnectThread(ServiceConnectInfo p_ConnectInfo) {
+    ConnectThread(ServiceConnectInfo p_ConnectInfo, ArrayList<ServiceReturnInfo> p_Connections) {
         m_ConnectInfo = p_ConnectInfo;
+        m_Connections = p_Connections;
     }
 
     public void run() {
         while (true) {
-            m_ReturnInfo = new ServiceReturnInfo();
+            ServiceReturnInfo returnInfo = new ServiceReturnInfo();
 
-            m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(m_ReturnInfo, m_ConnectInfo);
+            m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, m_ConnectInfo);
+            m_Connections.add(0, returnInfo);
 
             // System.out.println(m_ReturnInfo);
             // System.out.println("Received new connection for ID: " +
@@ -67,23 +77,24 @@ public class Main {
         Main main = new Main();
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
+        ArrayList<ServiceReturnInfo> connections = new ArrayList<ServiceReturnInfo>();
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
         // System.out.println(connectInfo);
         // System.out.println(callInfo);
 
-        ConnectThread connectThread = new ConnectThread(connectInfo);
+        ConnectThread connectThread = new ConnectThread(connectInfo, connections);
         DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
         connectThread.start();
         disconnectThread.start();
 
         // try {
-        //     connectThread.join();
-        //     disconnectThread.join();
+        // connectThread.join();
+        // disconnectThread.join();
         // } catch (InterruptedException e) {
-        //     e.printStackTrace();
+        // e.printStackTrace();
         // }
 
         // returnInfo.m_SendReturnFnQMB.sendQMBReturn(returnInfo.m_QMBQueue, new
@@ -106,7 +117,17 @@ public class Main {
 
                 String result = main.getXmlTransformed(iiaData, xsltData);
 
-                System.out.println(result);
+                byte[] resByteArr = result.getBytes();
+
+                System.out.println(resByteArr.length);
+
+                QMBCall returnData = new QMBCall();
+                System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
+                returnData.m_Size = resByteArr.length;
+
+                connections.get(0).m_SendReturnFnQMB.sendQMBReturn(connections.get(0).m_QMBQueue, returnData);
+
+                // System.out.println(result);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {

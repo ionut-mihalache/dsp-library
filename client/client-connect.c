@@ -1,8 +1,38 @@
 #include <string.h>
 
-#include "commons.h"
 #include "client-connect.h"
+#include "commons.h"
+#include "log.h"
 #include "macros.h"
+
+static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnInfo,
+                             struct QMBDSPQueue *p_Queue) {
+    int32_t rc = 0;
+
+    pthread_mutex_lock(p_Queue->m_Lock);
+    while (*p_Queue->m_Size == 0) {
+        pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
+    }
+
+    memcpy(p_ReturnInfo, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
+           sizeof(struct QMBCall));
+
+    // LOGF("%s: Message length: %u. Message: %s.\n", __func__,
+    //      p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_Size,
+    //      p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo);
+
+    // LOGF("%s\n", (char
+    // *)(p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo));
+
+    (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % QMB_Q_MAX_SIZE;
+    (*p_Queue->m_Size)--;
+
+    pthread_mutex_unlock(p_Queue->m_Lock);
+
+    pthread_cond_broadcast(p_Queue->m_EmptyCond);
+
+    return rc;
+}
 
 static int32_t s_ProcessConnectionRequest(
     struct ClientReturnInfo *p_ReturnInfo,
@@ -126,7 +156,7 @@ static int32_t s_ProcessConnectionRequest(
     p_ReturnInfo->m_QMBQueue.m_Size =
         &p_ConnectInfo->m_Connections[connId].m_ReturnQSize;
 
-    p_ReturnInfo->m_ReturnFnQMB = NULL; // TODO: This has to be a valid value
+    p_ReturnInfo->m_ReturnFnQMB = m_ReturnFnQMB;
 
     if (!p_ConnectInfo->m_Connections[connId].m_ResponseQSyncInit) {
         pthread_mutexattr_t attr;

@@ -1,12 +1,38 @@
 #include <string.h>
 
 #include "commons.h"
+#include "log.h"
 #include "macros.h"
 #include "return.h"
 
-int32_t configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
-                                   struct ServiceConnectInfo *p_ConnectInfo,
-                                   struct ConnectRequest *p_Request) {
+static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
+                                 struct QMBCall *p_ReturnInfo) {
+    int32_t rc = 0;
+
+    pthread_mutex_lock(p_Queue->m_Lock);
+    while (*p_Queue->m_Size == QMB_Q_MAX_SIZE) {
+        pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
+    }
+
+    memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnInfo,
+           sizeof(struct QMBCall));
+
+    (*p_Queue->m_PushIdxPtr) = ((*p_Queue->m_PushIdxPtr) + 1) % QMB_Q_MAX_SIZE;
+    (*p_Queue->m_Size)++;
+
+    pthread_mutex_unlock(p_Queue->m_Lock);
+
+    pthread_cond_broadcast(p_Queue->m_FullCond);
+
+    LOGF("Return has been sent.\n");
+
+    return rc;
+}
+
+int32_t
+configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
+                                  struct ServiceConnectInfo *p_ConnectInfo,
+                                  struct ConnectRequest *p_Request) {
     int32_t rc = 0;
     int returnQFd;
     int requestResponseQFd;
@@ -74,8 +100,7 @@ int32_t configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo
 
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ReturnQSize;
 
-    p_ReturnInfo->m_SendReturnFnQMB =
-        NULL; // TODO: This has to be a valid value
+    p_ReturnInfo->m_SendReturnFnQMB = s_SendReturnFnQMB;
 
     if (!p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSyncInit) {
         pthread_mutexattr_t attr;

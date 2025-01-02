@@ -1,7 +1,13 @@
-import com.sun.jna.Callback;
+package connect;
+
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
+
+import connect.interfaces.ReceiveConnectRequest;
+import connect.interfaces.ReceiveDisconnectRequest;
+import queues.ConnectQueue;
+import queues.DisconnectQueue;
 
 /**
  * struct ServiceConnectInfo {
@@ -14,14 +20,6 @@ import com.sun.jna.Structure.FieldOrder;
  * int32_t (*m_ReceiveDisconnectRequest)(struct ServiceConnectInfo *);
  * };
  */
-
-interface ReceiveConnectRequest extends Callback {
-    int receiveConnectRequest(ServiceReturnInfo p_ReturnInfo, ServiceConnectInfo p_ConnectInfo);
-}
-
-interface ReceiveDisconnectRequest extends Callback {
-    int receiveDisconnectRequest(ServiceConnectInfo p_ConnectInfo);
-}
 
 @FieldOrder({ "m_Queue", "m_DisconnectQ", "m_Connections", "m_ConnectLock", "m_ReceiveConnectRequest",
         "m_ReceiveDisconnectRequest" })

@@ -1,6 +1,12 @@
-import com.sun.jna.Callback;
+package call;
+
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
+
+import call.interfaces.ReceiveCallFnHMB;
+import call.interfaces.ReceiveCallFnQMB;
+import queues.HMBDSPQueue;
+import queues.QMBDSPQueue;
 
 /**
  * struct ServiceCallInfo {
@@ -10,14 +16,6 @@ import com.sun.jna.Structure.FieldOrder;
  * int32_t (*m_ReceiveCallFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
  * };
  */
-
-interface ReceiveCallFnHMB extends Callback {
-    int m_ReceiveCallFnHMB(HMBCall p_CallInfo, HMBDSPQueue p_Queue);
-}
-
-interface ReceiveCallFnQMB extends Callback {
-    int m_ReceiveCallFnQMB(QMBCall p_CallInfo, QMBDSPQueue p_Queue);
-}
 
 @FieldOrder({ "m_HMBQueue", "m_QMBQueue", "m_ReceiveCallFnHMB", "m_ReceiveCallFnQMB" })
 public class ServiceCallInfo extends Structure {

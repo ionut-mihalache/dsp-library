@@ -1,6 +1,11 @@
-import com.sun.jna.Callback;
+package call;
+
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
+
+import call.interfaces.SendReturnFnQMB;
+import queues.ConnectResponseQueue;
+import queues.QMBDSPQueue;
 
 /**
  * struct ServiceReturnInfo {
@@ -9,10 +14,6 @@ import com.sun.jna.Structure.FieldOrder;
  * int32_t (*m_SendReturnFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
  * };
  */
-
-interface SendReturnFnQMB extends Callback {
-    int sendQMBReturn(QMBDSPQueue p_Queue, QMBCall p_ReturnInfo);
-}
 
 @FieldOrder({ "m_ResponseQueue", "m_QMBQueue", "m_SendReturnFnQMB" })
 public class ServiceReturnInfo extends Structure {

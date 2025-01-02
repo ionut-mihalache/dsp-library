@@ -38,6 +38,11 @@ void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData) {
     p_CallInfo->m_CallFnHMB(&p_CallInfo->m_HMBQueue, p_CallData);
 }
 
+void returnQMB(struct QMBCall *p_ReturnData,
+               struct ClientReturnInfo *p_ReturnInfo) {
+    p_ReturnInfo->m_ReturnFnQMB(p_ReturnData, &p_ReturnInfo->m_QMBQueue);
+}
+
 int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data,
                        uint32_t p_Size) {
     int32_t rc = 0;

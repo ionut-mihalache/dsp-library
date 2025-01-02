@@ -1,5 +1,9 @@
+package call;
+
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
+
+import consts.Constants;
 
 /**
  * struct QMBCall {

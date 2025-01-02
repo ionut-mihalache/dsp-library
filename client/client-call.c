@@ -26,7 +26,7 @@ static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
     return rc;
 }
 
-__attribute_used__ static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
+static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
                                              struct HMBCall *p_CallInfo) {
     int32_t rc = 0;
 

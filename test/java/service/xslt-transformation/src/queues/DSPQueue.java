@@ -1,7 +1,8 @@
-import java.util.List;
+package queues;
 
 import com.sun.jna.Pointer;
 import com.sun.jna.Structure;
+import com.sun.jna.Structure.FieldOrder;
 
 /**
  * Based on the C library version:
@@ -15,10 +16,8 @@ import com.sun.jna.Structure;
  * };
  */
 
+@FieldOrder({ "m_FullCond", "m_EmptyCond", "m_Lock", "m_PushIdxPtr", "m_PopIdxPtr", "m_Start" })
 public class DSPQueue extends Structure {
-    public static final List<String> FIELDS = createFieldsOrder("m_FullCond", "m_EmptyCond", "m_Lock", "m_PushIdxPtr",
-            "m_PopIdxPtr", "m_Start");
-
     public Pointer m_FullCond;
     public Pointer m_EmptyCond;
     public Pointer m_Lock;
@@ -28,15 +27,5 @@ public class DSPQueue extends Structure {
 
     public DSPQueue() {
         super();
-    }
-
-    @Override
-    protected List<String> getFieldOrder() {
-        return FIELDS;
-    }
-
-    @Override
-    public String toString() {
-        return "DSPQueue: " + m_PushIdxPtr.getInt(0) + " " + m_PopIdxPtr.getInt(0) + " " + m_Start;
     }
 }

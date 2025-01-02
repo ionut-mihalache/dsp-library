@@ -1,3 +1,5 @@
+package consts;
+
 public class Constants {
     public static final int QMB = 1 << 18;
     public static final int HMB = 1 << 19;
