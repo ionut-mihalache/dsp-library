@@ -2,8 +2,55 @@
 
 #include "commons.h"
 #include "install.h"
+#include "log.h"
 #include "macros.h"
 #include "return.h"
+
+static int32_t
+s_SendConnectResponse(struct ServiceReturnInfo *p_ReturnInfo,
+                      struct ConnectResponseInformation *p_ResponseInfo) {
+    int32_t rc = 0;
+
+    // LOGF("Sending the response to the client...\n");
+
+    /**
+     * Send the response to the client to announce that the communication is
+     * established
+     */
+    rc = pthread_mutex_lock(p_ReturnInfo->m_ResponseQueue.m_Lock);
+    DIE(rc != 0, "Could not lock mutex!");
+    while (*p_ReturnInfo->m_ResponseQueue.m_Size ==
+           p_ReturnInfo->m_ResponseQueue.m_MaxSize) {
+        rc = pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_EmptyCond,
+                               p_ReturnInfo->m_ResponseQueue.m_Lock);
+        DIE(rc != 0, "Could not wait for response queue empty condition");
+    }
+
+    // LOGF("Copying information!\n");
+
+    memcpy(&p_ReturnInfo->m_ResponseQueue
+                .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr],
+           p_ResponseInfo, sizeof(struct ConnectResponseInformation));
+    memcpy(&p_ReturnInfo->m_ConnectResponseInformation, p_ResponseInfo,
+           sizeof(struct ConnectResponseInformation));
+
+    // LOGF("Information copied!\n");
+
+    (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
+        ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %
+        p_ReturnInfo->m_ResponseQueue.m_MaxSize;
+    (*p_ReturnInfo->m_ResponseQueue.m_Size)++;
+
+    rc = pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
+    DIE(rc != 0, "Could not unlock mutex!");
+
+    rc = pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_FullCond);
+    DIE(rc != 0, "Could not broadcast condition!");
+
+    // LOGF("Response sent to the client.\n");
+
+    return rc;
+}
 
 static int32_t
 s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
@@ -12,9 +59,12 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
     struct ConnectResponseInformation responseInfo;
 
-    pthread_mutex_lock(queue->m_Lock);
+    rc = pthread_mutex_lock(queue->m_Lock);
+    DIE(rc != 0, "Could not lock mutex!");
+
     while (*queue->m_Size == 0) {
-        pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
+        rc = pthread_cond_wait(queue->m_FullCond, queue->m_Lock);
+        DIE(rc != 0, "Could not wait for condition!");
     }
 
     configureServiceReturnInformation(p_ReturnInfo, p_ConnectInfo,
@@ -31,42 +81,13 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     (*queue->m_PopIdxPtr) = ((*queue->m_PopIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)--;
 
-    pthread_mutex_unlock(queue->m_Lock);
+    rc = pthread_mutex_unlock(queue->m_Lock);
+    DIE(rc != 0, "Could not unlock mutex!");
 
-    pthread_cond_broadcast(queue->m_EmptyCond);
+    rc = pthread_cond_broadcast(queue->m_EmptyCond);
+    DIE(rc != 0, "Could not broadcast condition!");
 
-    /**
-     * Send the response to the client to announce that the communication is
-     * established
-     */
-    pthread_mutex_lock(p_ReturnInfo->m_ResponseQueue.m_Lock);
-    while (*p_ReturnInfo->m_ResponseQueue.m_Size ==
-           p_ReturnInfo->m_ResponseQueue.m_MaxSize) {
-        rc = pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_EmptyCond,
-                               p_ReturnInfo->m_ResponseQueue.m_Lock);
-        DIE(rc != 0, "Could not wait for response queue empty condition");
-    }
-
-    /**
-     * WIP: Add the information to the response queue. Now the signal is enough
-     */
-    // p_ReturnInfo->m_ResponseQueue
-    //     .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr]
-    //     .m_Id = connectId;
-    memcpy(&p_ReturnInfo->m_ResponseQueue
-                .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr],
-           &responseInfo, sizeof(struct ConnectResponseInformation));
-    memcpy(&p_ReturnInfo->m_ConnectResponseInformation, &responseInfo,
-           sizeof(struct ConnectResponseInformation));
-
-    (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
-        ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %
-        p_ReturnInfo->m_ResponseQueue.m_MaxSize;
-    (*p_ReturnInfo->m_ResponseQueue.m_Size)++;
-
-    pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
-
-    pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_FullCond);
+    s_SendConnectResponse(p_ReturnInfo, &responseInfo);
 
     return rc;
 }
@@ -96,6 +117,9 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     rc = munmap(p_ConnectInfo->m_Connections[connId].m_ReturnQ,
                 p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
     DIE(rc < 0, "Could not unmap return queue");
+
+    shm_unlink(p_ConnectInfo->m_Connections[connId].m_RequestResponseQName);
+    shm_unlink(p_ConnectInfo->m_Connections[connId].m_ReturnQName);
 
     // rc =
     //     shm_unlink(p_ConnectInfo->m_Connections[connId].m_RequestResponseQName);

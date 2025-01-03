@@ -93,8 +93,8 @@ struct ConnectResponseInformation {
 };
 
 struct ConnectionInformation {
-    // char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
-    // char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
+    char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
+    char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 
     pthread_cond_t m_ReturnQFullCond;
     pthread_cond_t m_ReturnQEmptyCond;

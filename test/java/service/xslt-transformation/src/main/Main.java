@@ -3,13 +3,11 @@ package main;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-// import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-// import java.nio.charset.StandardCharsets;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -102,7 +100,6 @@ public class Main {
                 QMBCall returnData = new QMBCall();
                 System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
                 returnData.m_Size = resByteArr.length;
-
                 returnData.m_ConnId = callData.m_ConnId;
 
                 connections.get(callData.m_ConnId).m_SendReturnFnQMB

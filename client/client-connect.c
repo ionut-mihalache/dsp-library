@@ -16,13 +16,6 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
     memcpy(p_ReturnData, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
            sizeof(struct QMBCall));
 
-    // LOGF("%s: Message length: %u. Message: %s.\n", __func__,
-    //      p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_Size,
-    //      p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo);
-
-    // LOGF("%s\n", (char
-    // *)(p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo));
-
     (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % RETURNQ_MAX_SIZE;
     (*p_Queue->m_Size)--;
 
@@ -49,22 +42,26 @@ static int32_t s_ProcessConnectionRequest(
      *  WIP: wait for the service to establish the connection on its side
      */
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    // pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
     for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
         if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
-            // LOGF("New connection for ID: %u.\n", connId);
             p_ConnectInfo->m_Connections[connId].m_Connected = true;
             break;
         }
     }
     pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
-    // pthread_mutex_unlock(p_ConnectInfo->m_ConnectLock);
 
     /**
      * With the connection index found we need to construct the request for the
      * service
      */
     p_ConnectRequest->m_ConnectionIdx = connId;
+
+    memcpy(p_ConnectInfo->m_Connections[connId].m_RequestResponseQName,
+           p_ConnectInformation->m_ReturnQName,
+           strlen(p_ConnectInformation->m_ReturnQName));
+    memcpy(p_ConnectInfo->m_Connections[connId].m_ReturnQName,
+           p_ConnectInformation->m_RequestResponseQName,
+           strlen(p_ConnectInformation->m_RequestResponseQName));
 
     memset(p_ConnectRequest->m_ReturnQName, 0, RETURNQ_NAME_MAX_SIZE);
     memcpy(p_ConnectRequest->m_ReturnQName, p_ConnectInformation->m_ReturnQName,
@@ -229,16 +226,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     memcpy(&p_ReturnInfo->m_ConnectResponseInformation,
            &p_ReturnInfo->m_ResponseQueue.m_Data[idx],
            sizeof(struct ConnectResponseInformation));
-
-    // LOGF("Received response for (%s, %s, %u).\n",
-    //      p_ReturnInfo->m_ResponseQueue.m_Data[idx].m_ReturnQName,
-    //      p_ReturnInfo->m_ResponseQueue.m_Data[idx].m_ReturnRequestQName,
-    //      p_ReturnInfo->m_ResponseQueue.m_Data[idx].m_Id);
-
-    // LOGF("Received response for (%s, %s, %u).\n",
-    //      p_ReturnInfo->m_ConnectResponseInformation.m_ReturnQName,
-    //      p_ReturnInfo->m_ConnectResponseInformation.m_ReturnRequestQName,
-    //      p_ReturnInfo->m_ConnectResponseInformation.m_Id);
 
     (*p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr) =
         ((*p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr) + 1) %

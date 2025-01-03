@@ -9,9 +9,11 @@ static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
                          struct QMBDSPQueue *p_Queue) {
     int32_t rc = 0;
 
-    pthread_mutex_lock(p_Queue->m_Lock);
+    rc = pthread_mutex_lock(p_Queue->m_Lock);
+    DIE(rc != 0, "Could not lock mutex!");
     while (*p_Queue->m_Size == 0) {
-        pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
+        rc = pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
+        DIE(rc != 0, "Could not wait for condition!");
     }
 
     memcpy(p_CallInfo, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
@@ -20,9 +22,11 @@ static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
     (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % QMB_Q_MAX_SIZE;
     (*p_Queue->m_Size)--;
 
-    pthread_mutex_unlock(p_Queue->m_Lock);
+    rc = pthread_mutex_unlock(p_Queue->m_Lock);
+    DIE(rc != 0, "Could not unlock mutex!");
 
-    pthread_cond_broadcast(p_Queue->m_EmptyCond);
+    rc = pthread_cond_broadcast(p_Queue->m_EmptyCond);
+    DIE(rc != 0, "Could not broadcast condition!");
 
     return rc;
 }
@@ -53,8 +57,9 @@ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
     return rc;
 }
 
-int32_t configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
-                                 struct InstallInformation *p_InstallInfo) {
+int32_t
+configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
+                                struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     int callQFd;
 

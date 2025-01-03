@@ -9,9 +9,12 @@ static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
                                  struct QMBCall *p_ReturnData) {
     int32_t rc = 0;
 
-    pthread_mutex_lock(p_Queue->m_Lock);
+    rc = pthread_mutex_lock(p_Queue->m_Lock);
+    DIE(rc != 0, "Could not lock mutex!");
+
     while (*p_Queue->m_Size == RETURNQ_MAX_SIZE) {
-        pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
+        rc = pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
+        DIE(rc != 0, "Could not wait for condition!");
     }
 
     memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnData,
@@ -21,11 +24,11 @@ static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
         ((*p_Queue->m_PushIdxPtr) + 1) % RETURNQ_MAX_SIZE;
     (*p_Queue->m_Size)++;
 
-    pthread_mutex_unlock(p_Queue->m_Lock);
+    rc = pthread_mutex_unlock(p_Queue->m_Lock);
+    DIE(rc != 0, "Could not unlock mutex!");
 
-    pthread_cond_broadcast(p_Queue->m_FullCond);
-
-    LOGF("Return has been sent.\n");
+    rc = pthread_cond_broadcast(p_Queue->m_FullCond);
+    DIE(rc != 0, "Could not broadcast condition!");
 
     return rc;
 }
@@ -40,8 +43,6 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     uint32_t connectionIdx;
 
     connectionIdx = p_Request->m_ConnectionIdx;
-
-    // LOGF("Connected for id: %u.\n", connectionIdx);
 
     /**
      * WIP: Consider saving the request response and return queues names
