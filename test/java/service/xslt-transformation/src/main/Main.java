@@ -49,11 +49,9 @@ class ConnectThread extends Thread {
             ServiceReturnInfo returnInfo = new ServiceReturnInfo();
 
             m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, m_ConnectInfo);
-            m_Connections.add(0, returnInfo);
 
-            // System.out.println(m_ReturnInfo);
-            // System.out.println("Received new connection for ID: " +
-            // m_ReturnInfo.m_ResponseQueue.m_Data.getInt(512));
+            int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
+            m_Connections.add(connId, returnInfo);
         }
     }
 }
@@ -81,34 +79,16 @@ public class Main {
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
-        // System.out.println(connectInfo);
-        // System.out.println(callInfo);
-
         ConnectThread connectThread = new ConnectThread(connectInfo, connections);
         DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
         connectThread.start();
         disconnectThread.start();
 
-        // try {
-        // connectThread.join();
-        // disconnectThread.join();
-        // } catch (InterruptedException e) {
-        // e.printStackTrace();
-        // }
-
-        // returnInfo.m_SendReturnFnQMB.sendQMBReturn(returnInfo.m_QMBQueue, new
-        // QMBCall());
-
         while (true) {
             try {
                 QMBCall callData = new QMBCall();
                 callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData, callInfo.m_QMBQueue);
-
-                // ByteBuffer callInfoBuffer = ByteBuffer.wrap(callData.m_CallInfo);
-                // String iiaData = StandardCharsets.UTF_8.decode(callInfoBuffer.slice(0,
-                // callData.m_Size)).toString()
-                // .replace("\0", "");
 
                 byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Size);
 
@@ -119,15 +99,14 @@ public class Main {
 
                 byte[] resByteArr = result.getBytes();
 
-                System.out.println(resByteArr.length);
-
                 QMBCall returnData = new QMBCall();
                 System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
                 returnData.m_Size = resByteArr.length;
 
-                connections.get(0).m_SendReturnFnQMB.sendQMBReturn(connections.get(0).m_QMBQueue, returnData);
+                returnData.m_ConnId = callData.m_ConnId;
 
-                // System.out.println(result);
+                connections.get(callData.m_ConnId).m_SendReturnFnQMB
+                        .sendQMBReturn(connections.get(callData.m_ConnId).m_QMBQueue, returnData);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {

@@ -7,4 +7,6 @@ public class Constants {
     public static final int DMB = 1 << 21;
     public static final int GB = 1 << 30;
     public static final long DGB = 1 << 31;
+
+    public static final int RETURNQ_NAME_MAX_SIZE = 256;
 }

@@ -3,9 +3,6 @@
 
 #include "dsp.h"
 
-#include <pthread.h>
-#include <stdint.h>
-
 #define INSTALL_SHD "/install-shared-data"
 
 struct InstallCommons {
@@ -27,6 +24,7 @@ struct ServiceCallInfo {
 struct ServiceReturnInfo {
     struct ConnectResponseQueue m_ResponseQueue;
     struct QMBDSPQueue m_QMBQueue;
+    struct ConnectResponseInformation m_ConnectResponseInformation;
     int32_t (*m_SendReturnFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
 };
 

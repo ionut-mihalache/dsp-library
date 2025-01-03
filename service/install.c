@@ -18,7 +18,7 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     }
 
     configureServiceReturnInformation(p_ReturnInfo, p_ConnectInfo,
-                               &queue->m_Data[*queue->m_PopIdxPtr]);
+                                      &queue->m_Data[*queue->m_PopIdxPtr]);
 
     memcpy(responseInfo.m_ReturnQName,
            queue->m_Data[*queue->m_PopIdxPtr].m_ReturnQName,
@@ -56,6 +56,8 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     memcpy(&p_ReturnInfo->m_ResponseQueue
                 .m_Data[*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr],
            &responseInfo, sizeof(struct ConnectResponseInformation));
+    memcpy(&p_ReturnInfo->m_ConnectResponseInformation, &responseInfo,
+           sizeof(struct ConnectResponseInformation));
 
     (*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) =
         ((*p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr) + 1) %
@@ -117,8 +119,9 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     return rc;
 }
 
-int32_t configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
-                                    struct InstallInformation *p_InstallInfo) {
+int32_t
+configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
+                                   struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     int connectQFd, disconnectQFd;
 

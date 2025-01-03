@@ -40,7 +40,8 @@
 
 #define CALLQ_MAX_SIZE ((uint32_t)1024)
 #define CONNECTQ_MAX_SIZE ((uint32_t)64)
-#define RETURNQ_MAX_SIZE ((uint32_t)1024)
+#define RETURNQ_MAX_SIZE ((uint32_t)1)
+#define RETURN_RESPONSEQ_MAX_SIZE ((uint32_t)1)
 
 #define CALLQ_NAME_MAX_SIZE ((uint32_t)256)
 #define CONNECTQ_NAME_MAX_SIZE ((uint32_t)256)
@@ -51,6 +52,7 @@
 struct QMBCall {
     uint8_t m_CallInfo[QMB];
     uint32_t m_Size;
+    uint32_t m_ConnId;
     bool m_DataReady;
 };
 

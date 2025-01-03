@@ -2,48 +2,50 @@
 
 #include "client-call.h"
 #include "commons.h"
+#include "log.h"
 #include "macros.h"
 
+#define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
+    do {                                                                       \
+        pthread_mutex_lock(p_Queue->m_Lock);                                   \
+        while (*p_Queue->m_Size == (p_QMaxSize)) {                             \
+            pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);          \
+        }                                                                      \
+                                                                               \
+        p_Code;                                                                \
+                                                                               \
+        (*p_Queue->m_PushIdxPtr) =                                             \
+            ((*p_Queue->m_PushIdxPtr) + 1) % (p_QMaxSize);                     \
+        (*p_Queue->m_Size)++;                                                  \
+        pthread_mutex_unlock(p_Queue->m_Lock);                                 \
+                                                                               \
+        pthread_cond_broadcast(p_Queue->m_FullCond);                           \
+    } while (0)
+
 static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
-                          struct QMBCall *p_CallInfo) {
+                          struct QMBCall *p_CallData) {
     int32_t rc = 0;
 
-    pthread_mutex_lock(p_Queue->m_Lock);
-    while (*p_Queue->m_Size == QMB_Q_MAX_SIZE) {
-        pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
-    }
-
-    memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_CallInfo,
-           sizeof(struct QMBCall));
-
-    (*p_Queue->m_PushIdxPtr) = ((*p_Queue->m_PushIdxPtr) + 1) % QMB_Q_MAX_SIZE;
-    (*p_Queue->m_Size)++;
-
-    pthread_mutex_unlock(p_Queue->m_Lock);
-
-    pthread_cond_broadcast(p_Queue->m_FullCond);
+    LOGF("Start call.\n");
+    QPUSH(
+        p_Queue, QMB_Q_MAX_SIZE, do {
+            memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_CallData,
+                   sizeof(struct QMBCall));
+        } while (0));
+    LOGF("End call.\n");
 
     return rc;
 }
 
 static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
-                                             struct HMBCall *p_CallInfo) {
+                          struct HMBCall *p_CallData) {
     int32_t rc = 0;
 
-    pthread_mutex_lock(p_Queue->m_Lock);
-    while (*p_Queue->m_Size == HMB_Q_MAX_SIZE) {
-        pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
-    }
-
-    memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_CallInfo,
-           sizeof(struct HMBCall));
-
-    (*p_Queue->m_PushIdxPtr) = ((*p_Queue->m_PushIdxPtr) + 1) % HMB_Q_MAX_SIZE;
-    (*p_Queue->m_Size)++;
-
-    pthread_mutex_unlock(p_Queue->m_Lock);
-
-    pthread_cond_broadcast(p_Queue->m_FullCond);
+    QPUSH(
+        p_Queue, HMB_Q_MAX_SIZE, do {
+            memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_CallData,
+                   sizeof(struct QMBCall));
+        } while (0));
 
     return rc;
 }

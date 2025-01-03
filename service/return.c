@@ -6,18 +6,19 @@
 #include "return.h"
 
 static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
-                                 struct QMBCall *p_ReturnInfo) {
+                                 struct QMBCall *p_ReturnData) {
     int32_t rc = 0;
 
     pthread_mutex_lock(p_Queue->m_Lock);
-    while (*p_Queue->m_Size == QMB_Q_MAX_SIZE) {
+    while (*p_Queue->m_Size == RETURNQ_MAX_SIZE) {
         pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
     }
 
-    memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnInfo,
+    memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnData,
            sizeof(struct QMBCall));
 
-    (*p_Queue->m_PushIdxPtr) = ((*p_Queue->m_PushIdxPtr) + 1) % QMB_Q_MAX_SIZE;
+    (*p_Queue->m_PushIdxPtr) =
+        ((*p_Queue->m_PushIdxPtr) + 1) % RETURNQ_MAX_SIZE;
     (*p_Queue->m_Size)++;
 
     pthread_mutex_unlock(p_Queue->m_Lock);

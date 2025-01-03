@@ -2,10 +2,9 @@
 
 #include "client-connect.h"
 #include "commons.h"
-#include "log.h"
 #include "macros.h"
 
-static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnInfo,
+static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
                              struct QMBDSPQueue *p_Queue) {
     int32_t rc = 0;
 
@@ -14,7 +13,7 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnInfo,
         pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
     }
 
-    memcpy(p_ReturnInfo, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
+    memcpy(p_ReturnData, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
            sizeof(struct QMBCall));
 
     // LOGF("%s: Message length: %u. Message: %s.\n", __func__,
@@ -24,7 +23,7 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnInfo,
     // LOGF("%s\n", (char
     // *)(p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo));
 
-    (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % QMB_Q_MAX_SIZE;
+    (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % RETURNQ_MAX_SIZE;
     (*p_Queue->m_Size)--;
 
     pthread_mutex_unlock(p_Queue->m_Lock);
@@ -67,32 +66,22 @@ static int32_t s_ProcessConnectionRequest(
      */
     p_ConnectRequest->m_ConnectionIdx = connId;
 
-    // memset(p_ConnectInfo->m_Connections[connId].m_ReturnQName, 0,
-    //    RETURNQ_NAME_MAX_SIZE);
     memset(p_ConnectRequest->m_ReturnQName, 0, RETURNQ_NAME_MAX_SIZE);
     memcpy(p_ConnectRequest->m_ReturnQName, p_ConnectInformation->m_ReturnQName,
            strlen(p_ConnectInformation->m_ReturnQName));
-    // memcpy(p_ConnectInfo->m_Connections[connId].m_ReturnQName,
-    //        p_ConnectInformation->m_ReturnQName,
-    //        strlen(p_ConnectInformation->m_ReturnQName));
 
-    // memset(p_ConnectInfo->m_Connections[connId].m_RequestResponseQName, 0,
-    //        RETURNQ_NAME_MAX_SIZE);
     memset(p_ConnectRequest->m_RequestResponseQName, 0, RETURNQ_NAME_MAX_SIZE);
     memcpy(p_ConnectRequest->m_RequestResponseQName,
            p_ConnectInformation->m_RequestResponseQName,
            strlen(p_ConnectInformation->m_RequestResponseQName));
-    // memcpy(p_ConnectInfo->m_Connections[connId].m_RequestResponseQName,
-    //        p_ConnectInformation->m_RequestResponseQName,
-    //        strlen(p_ConnectInformation->m_RequestResponseQName));
 
-    p_ReturnInfo->m_QMBQueue.m_MaxSize = 1;
+    p_ReturnInfo->m_QMBQueue.m_MaxSize = RETURNQ_MAX_SIZE;
     p_ConnectRequest->m_ReturnQSize =
-        1; // TODO: possibly change this to another (non-hardcoded) value
+        RETURNQ_MAX_SIZE; // CHECK: possibly user specified
 
-    p_ReturnInfo->m_ResponseQueue.m_MaxSize = 1;
+    p_ReturnInfo->m_ResponseQueue.m_MaxSize = RETURNQ_MAX_SIZE;
     p_ConnectRequest->m_ResponseQSize =
-        1; // TODO: possibly change this to another (non-hardcoded) value
+        RETURNQ_MAX_SIZE; // CHECK: possibly user specified
 
     requestResponseQFd = createShmObject(
         p_ConnectInformation->m_RequestResponseQName, O_RDWR, 0600,

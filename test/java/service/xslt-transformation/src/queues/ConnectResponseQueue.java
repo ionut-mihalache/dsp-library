@@ -51,6 +51,6 @@ public class ConnectResponseQueue extends Structure {
                 + "m_PushIdxPtr: " + m_PushIdxPtr + ws
                 + "m_PopIdxPtr: " + m_PopIdxPtr + ws
                 + "m_Size: " + m_Size + ws
-                + "m_MaxSize" + m_MaxSize;
+                + "m_MaxSize: " + m_MaxSize;
     }
 }
