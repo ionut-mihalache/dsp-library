@@ -17,9 +17,10 @@
         (*p_Queue->m_PushIdxPtr) =                                             \
             ((*p_Queue->m_PushIdxPtr) + 1) % (p_QMaxSize);                     \
         (*p_Queue->m_Size)++;                                                  \
-        pthread_mutex_unlock(p_Queue->m_Lock);                                 \
                                                                                \
         pthread_cond_broadcast(p_Queue->m_FullCond);                           \
+                                                                               \
+        pthread_mutex_unlock(p_Queue->m_Lock);                                 \
     } while (0)
 
 static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,

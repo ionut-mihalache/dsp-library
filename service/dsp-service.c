@@ -7,13 +7,13 @@
 #include <sys/mman.h>
 #include <sys/shm.h>
 
+#include "call.h"
 #include "commons.h"
 #include "dsp.h"
 #include "install.h"
 #include "log.h"
 #include "macros.h"
 #include "protocol.h"
-#include "call.h"
 
 static struct InstallSharedData *installShdata = NULL;
 
@@ -140,6 +140,7 @@ spin_lock_unlock:
     installInfo->m_CallQPopIdx = 0;
     installInfo->m_CallQSize = 0;
 
+    initializeServiceConnections(installInfo);
     configureServiceConnectInformation(p_ConnectInfo, installInfo);
     configureServiceCallInformation(p_CallInfo, installInfo);
 

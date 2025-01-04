@@ -1,8 +1,6 @@
 #ifndef __DSP_H_
 #define __DSP_H_
 
-#define _GNU_SOURCE
-
 #include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
@@ -24,6 +22,8 @@
 
 #define FUNC_NAME_MAX_LENGTH ((uint32_t)32)
 
+#define SMB 1 << 16
+#define EMB 1 << 17
 #define QMB 1 << 18
 #define HMB 1 << 19
 #define MB 1 << 20
@@ -31,15 +31,14 @@
 #define GB 1 << 30
 #define DGB 1ULL << 31
 
-#define QMB_Q_MAX_SIZE ((uint32_t)8)
+#define QMB_Q_MAX_SIZE ((uint32_t)32)
 #define HMB_Q_MAX_SIZE ((uint32_t)4)
 #define MB_Q_MAX_SIZE ((uint32_t)2)
 #define DMB_Q_MAX_SIZE ((uint32_t)1)
 #define GB_Q_MAX_SIZE ((uint32_t)1)
 #define DGB_Q_MAX_SIZE ((uint32_t)1)
 
-#define CALLQ_MAX_SIZE ((uint32_t)1024)
-#define CONNECTQ_MAX_SIZE ((uint32_t)64)
+#define CONNECTQ_MAX_SIZE ((uint32_t)32)
 #define RETURNQ_MAX_SIZE ((uint32_t)1)
 #define RETURN_RESPONSEQ_MAX_SIZE ((uint32_t)1)
 
@@ -48,6 +47,20 @@
 #define RETURNQ_NAME_MAX_SIZE ((uint32_t)256)
 
 #define OPENED_CONNECTIONS ((uint32_t)2048)
+
+struct SMBCall {
+    uint8_t m_CallInfo[SMB];
+    uint32_t m_Size;
+    uint32_t m_ConnId;
+    bool m_DataReady;
+};
+
+struct EMBCall {
+    uint8_t m_CallInfo[EMB];
+    uint32_t m_Size;
+    uint32_t m_ConnId;
+    bool m_DataReady;
+};
 
 struct QMBCall {
     uint8_t m_CallInfo[QMB];
@@ -113,8 +126,6 @@ struct ConnectionInformation {
 
     int32_t m_ConnectionError;
     bool m_Connected;
-    bool m_ResponseQSyncInit;
-    bool m_ReturnQSyncInit;
 };
 
 struct InstallInformation {
@@ -137,7 +148,6 @@ struct InstallInformation {
     pthread_mutex_t m_ConnectQMutex;
     pthread_mutex_t m_DisconnectQMutex;
     pthread_spinlock_t m_ConnectListLock;
-    // pthread_mutex_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;

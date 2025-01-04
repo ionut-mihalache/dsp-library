@@ -1,3 +1,4 @@
+#include <semaphore.h>
 #include <string.h>
 
 #include "commons.h"
@@ -5,8 +6,11 @@
 #include "macros.h"
 #include "return.h"
 
+sem_t sem;
+
 static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
                                  struct QMBCall *p_ReturnData) {
+
     int32_t rc = 0;
 
     rc = pthread_mutex_lock(p_Queue->m_Lock);
@@ -24,11 +28,11 @@ static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
         ((*p_Queue->m_PushIdxPtr) + 1) % RETURNQ_MAX_SIZE;
     (*p_Queue->m_Size)++;
 
-    rc = pthread_mutex_unlock(p_Queue->m_Lock);
-    DIE(rc != 0, "Could not unlock mutex!");
-
     rc = pthread_cond_broadcast(p_Queue->m_FullCond);
     DIE(rc != 0, "Could not broadcast condition!");
+
+    rc = pthread_mutex_unlock(p_Queue->m_Lock);
+    DIE(rc != 0, "Could not unlock mutex!");
 
     return rc;
 }
@@ -44,10 +48,6 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 
     connectionIdx = p_Request->m_ConnectionIdx;
 
-    /**
-     * WIP: Consider saving the request response and return queues names
-     */
-
     returnQFd = createShmObject(
         p_Request->m_ReturnQName, O_RDWR, 0600,
         p_Request->m_ReturnQSize * sizeof(struct QMBCall), false);
@@ -59,13 +59,13 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 
     struct QMBCall *returnQ =
         mmap(NULL, p_Request->m_ReturnQSize * sizeof(struct QMBCall),
-             PROT_WRITE, MAP_SHARED, returnQFd, 0);
+             PROT_WRITE | PROT_READ, MAP_SHARED, returnQFd, 0);
     DIE(returnQ == MAP_FAILED, "Could not map return queue memory");
 
     struct ConnectResponseInformation *requestResponseQ = mmap(
         NULL,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
-        PROT_WRITE, MAP_SHARED, requestResponseQFd, 0);
+        PROT_WRITE | PROT_READ, MAP_SHARED, requestResponseQFd, 0);
     DIE(requestResponseQ == MAP_FAILED,
         "Could not map request response queue memory");
 
@@ -103,42 +103,6 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ReturnQSize;
 
     p_ReturnInfo->m_SendReturnFnQMB = s_SendReturnFnQMB;
-
-    if (!p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSyncInit) {
-        pthread_mutexattr_t attr;
-        rc = pthread_mutexattr_init(&attr);
-        DIE(rc != 0, "Could not init mutex attribute");
-
-        rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-        DIE(rc != 0, "Could not set pthread shared for mutex attribute");
-
-        rc = pthread_mutex_init(p_ReturnInfo->m_QMBQueue.m_Lock, &attr);
-        DIE(rc != 0, "Could not init connect response lock");
-
-        rc = pthread_mutexattr_destroy(&attr);
-        DIE(rc != 0, "Could not destroy mutex attribute");
-
-        pthread_condattr_t condAttr;
-
-        rc = pthread_condattr_init(&condAttr);
-        DIE(rc != 0, "Could not init condition attribute");
-
-        rc = pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
-        DIE(rc != 0, "Could not set pthread shared for condition attribute");
-
-        rc = pthread_cond_init(p_ReturnInfo->m_QMBQueue.m_FullCond, &condAttr);
-        DIE(rc != 0,
-            "Could not init condition for full connect response queue");
-
-        rc = pthread_cond_init(p_ReturnInfo->m_QMBQueue.m_EmptyCond, &condAttr);
-        DIE(rc != 0,
-            "Could not init condition for empty connect response queue");
-
-        rc = pthread_condattr_destroy(&condAttr);
-        DIE(rc != 0, "Could not destroy condition attribute object");
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSyncInit = true;
-    }
 
     p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMapSize =
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation);

@@ -22,11 +22,11 @@ static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
     (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % QMB_Q_MAX_SIZE;
     (*p_Queue->m_Size)--;
 
+    rc = pthread_cond_broadcast(p_Queue->m_EmptyCond);
+    DIE(rc != 0, "Could not signal condition!");
+
     rc = pthread_mutex_unlock(p_Queue->m_Lock);
     DIE(rc != 0, "Could not unlock mutex!");
-
-    rc = pthread_cond_broadcast(p_Queue->m_EmptyCond);
-    DIE(rc != 0, "Could not broadcast condition!");
 
     return rc;
 }
@@ -50,9 +50,9 @@ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
     (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % HMB_Q_MAX_SIZE;
     (*p_Queue->m_Size)--;
 
-    pthread_mutex_unlock(p_Queue->m_Lock);
-
     pthread_cond_broadcast(p_Queue->m_EmptyCond);
+
+    pthread_mutex_unlock(p_Queue->m_Lock);
 
     return rc;
 }

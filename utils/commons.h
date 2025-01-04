@@ -5,7 +5,6 @@
 #ifndef DSP_COMMONS_H
 #define DSP_COMMONS_H
 
-#define _GNU_SOURCE
 #define _FILE_OFFSET_BITS 64
 
 #include <stdint.h>

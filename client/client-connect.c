@@ -19,9 +19,9 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
     (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % RETURNQ_MAX_SIZE;
     (*p_Queue->m_Size)--;
 
-    pthread_mutex_unlock(p_Queue->m_Lock);
-
     pthread_cond_broadcast(p_Queue->m_EmptyCond);
+
+    pthread_mutex_unlock(p_Queue->m_Lock);
 
     return rc;
 }
@@ -76,9 +76,9 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectRequest->m_ReturnQSize =
         RETURNQ_MAX_SIZE; // CHECK: possibly user specified
 
-    p_ReturnInfo->m_ResponseQueue.m_MaxSize = RETURNQ_MAX_SIZE;
+    p_ReturnInfo->m_ResponseQueue.m_MaxSize = RETURN_RESPONSEQ_MAX_SIZE;
     p_ConnectRequest->m_ResponseQSize =
-        RETURNQ_MAX_SIZE; // CHECK: possibly user specified
+        RETURN_RESPONSEQ_MAX_SIZE; // CHECK: possibly user specified
 
     requestResponseQFd = createShmObject(
         p_ConnectInformation->m_RequestResponseQName, O_RDWR, 0600,
@@ -144,43 +144,6 @@ static int32_t s_ProcessConnectionRequest(
 
     p_ReturnInfo->m_ReturnFnQMB = m_ReturnFnQMB;
 
-    if (!p_ConnectInfo->m_Connections[connId].m_ResponseQSyncInit) {
-        pthread_mutexattr_t attr;
-        rc = pthread_mutexattr_init(&attr);
-        DIE(rc != 0, "Could not init mutex attribute");
-
-        rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-        DIE(rc != 0, "Could not set pthread shared for mutex attribute");
-
-        rc = pthread_mutex_init(p_ReturnInfo->m_ResponseQueue.m_Lock, &attr);
-        DIE(rc != 0, "Could not init connect response lock");
-
-        rc = pthread_mutexattr_destroy(&attr);
-        DIE(rc != 0, "Could not destroy mutex attribute");
-
-        pthread_condattr_t condAttr;
-
-        rc = pthread_condattr_init(&condAttr);
-        DIE(rc != 0, "Could not init condition attribute");
-
-        rc = pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
-        DIE(rc != 0, "Could not set pthread shared for condition attribute");
-
-        rc = pthread_cond_init(p_ReturnInfo->m_ResponseQueue.m_FullCond,
-                               &condAttr);
-        DIE(rc != 0,
-            "Could not init condition for full connect response queue");
-
-        rc = pthread_cond_init(p_ReturnInfo->m_ResponseQueue.m_EmptyCond,
-                               &condAttr);
-        DIE(rc != 0,
-            "Could not init condition for empty connect response queue");
-
-        rc = pthread_condattr_destroy(&condAttr);
-        DIE(rc != 0, "Could not destroy condition attribute object");
-        p_ConnectInfo->m_Connections[connId].m_ResponseQSyncInit = true;
-    }
-
     return rc;
 }
 
@@ -204,9 +167,9 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     (*queue->m_PushIdxPtr) = ((*queue->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)++;
 
-    pthread_mutex_unlock(queue->m_Lock);
-
     pthread_cond_broadcast(queue->m_FullCond);
+
+    pthread_mutex_unlock(queue->m_Lock);
 
     /**
      * Wait for the response from the service to announce that the communication
@@ -232,9 +195,9 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
         p_ReturnInfo->m_ResponseQueue.m_MaxSize;
     (*p_ReturnInfo->m_ResponseQueue.m_Size)--;
 
-    pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
-
     pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_EmptyCond);
+
+    pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
 
     return rc;
 }
@@ -260,6 +223,8 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
     queue->m_Data[idx].m_ConnectionIdx = connId;
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
 
+    // p_ReturnInfo->
+
     // rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
     //             p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
     // DIE(rc < 0, "Could not unmap request response queue");
@@ -273,9 +238,9 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
     (*queue->m_PushIdxPtr) = ((*queue->m_PushIdxPtr) + 1) % CONNECTQ_MAX_SIZE;
     (*queue->m_Size)++;
 
-    pthread_mutex_unlock(queue->m_Lock);
-
     pthread_cond_broadcast(queue->m_FullCond);
+
+    pthread_mutex_unlock(queue->m_Lock);
 
     return rc;
 }

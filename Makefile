@@ -1,5 +1,6 @@
-CC=gcc
-# CC=clang
+# CC=gcc
+CC=clang
+LINTER_DEFINES=-D_GNU_SOURCE
 DEBUG_DEFINES=-D__COMPILE_MODE_DEBUG__
 INCLUDES=-Iutils -Iutils/macros -Iutils/hashmap -Iutils/exit -Iutils/log -Iinclude -Iservice/include -Iclient/include
 OPTIONS=-Wall -Wextra
@@ -8,7 +9,7 @@ OPTIMIZATIONS=-O3
 
 OBJECTS_DIR=object
 
-CREATE_OBJECT_FILE = $(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c $(1) -o $(2) -fPIC
+CREATE_OBJECT_FILE = $(CC) $(OPTIONS) $(DEBUG_DEFINES) $(LINTER_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c $(1) -o $(2) -fPIC
 
 all: $(OBJECTS_DIR) build
 
@@ -26,7 +27,7 @@ libdsp.so: \
 		$(OBJECTS_DIR)/dsp-client-call.o \
 		$(OBJECTS_DIR)/dsp-client.o \
 		$(OBJECTS_DIR)/commons.o
-	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) $^ -shared -o $@
+	$(CC) $(OPTIONS) $(DEBUG_DEFINES) $(LINTER_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) $^ -shared -o $@
 
 $(OBJECTS_DIR)/dsp-service.o: service/dsp-service.c \
 		service/include/dsp-service.h \

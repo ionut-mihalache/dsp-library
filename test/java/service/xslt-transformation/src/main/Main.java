@@ -77,14 +77,23 @@ public class Main {
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
-        ConnectThread connectThread = new ConnectThread(connectInfo, connections);
-        DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
+        // ConnectThread connectThread = new ConnectThread(connectInfo, connections);
+        // DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
-        connectThread.start();
-        disconnectThread.start();
+        // connectThread.start();
+        // disconnectThread.start();
+
+        int callsNumber = 0;
 
         while (true) {
             try {
+                ServiceReturnInfo returnInfo = new ServiceReturnInfo();
+
+                connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
+
+                int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
+                connections.add(connId, returnInfo);
+
                 QMBCall callData = new QMBCall();
                 callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData, callInfo.m_QMBQueue);
 
@@ -104,6 +113,14 @@ public class Main {
 
                 connections.get(callData.m_ConnId).m_SendReturnFnQMB
                         .sendQMBReturn(connections.get(callData.m_ConnId).m_QMBQueue, returnData);
+
+                System.out.println("Return " + callsNumber + " calls.");
+
+                callsNumber++;
+
+                // if (callsNumber % 10 == 0) {
+                connectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(connectInfo);
+                // }
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Exception e) {

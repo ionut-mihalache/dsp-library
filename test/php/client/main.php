@@ -150,7 +150,9 @@ $returnInfoPtr = FFI::addr($returnInfo);
 
 $requestInfo = $ffi->new("struct ClientConnectRequestInformation");
 
-$uniqueId = uniqid();
+$uniqueId = uniqid("", true);
+
+echo "Unique ID is: " . $uniqueId . "\n";
 
 $returnQName = "return-q-" . $uniqueId;
 FFI::memset($requestInfo->m_ReturnQName, 0, 256);
@@ -187,11 +189,11 @@ $returnDataPtr = FFI::addr($returnData);
 $ffi->returnQMB($returnDataPtr, $returnInfoPtr);
 
 $result = "";
-for ($i = 0; $i < $returnData->m_Size; ++$i) {
-    $result = $result . chr($returnData->m_CallInfo[$i]);
-}
+// for ($i = 0; $i < $returnData->m_Size; ++$i) {
+//     $result = $result . chr($returnData->m_CallInfo[$i]);
+// }
 
-echo $result . "\n";
+// echo $result . "\n";
 
 $requestInfoPtr = FFI::addr($returnInfo->m_ConnectResponseInformation);
 $ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
