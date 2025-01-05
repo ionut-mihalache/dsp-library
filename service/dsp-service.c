@@ -23,7 +23,8 @@ void initService() {
 
     LOGF("Service init...\n");
 
-    installShdFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600,
+    installShdFd = createShmObject(INSTALL_MZONE, O_RDWR,
+                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
                                    sizeof(struct InstallSharedData), true);
     DIE(installShdFd < 0, "Could not create install shared memory object");
 
@@ -50,7 +51,8 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
 
     initService();
 
-    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600,
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR,
+                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
                                    sizeof(struct InstallInfo), true);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");

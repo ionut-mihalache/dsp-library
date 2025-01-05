@@ -80,11 +80,12 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectRequest->m_ResponseQSize =
         RETURN_RESPONSEQ_MAX_SIZE; // CHECK: possibly user specified
 
-    requestResponseQFd = createShmObject(
-        p_ConnectInformation->m_RequestResponseQName, O_RDWR, 0600,
-        p_ConnectInformation->m_ResponseQSize *
-            sizeof(struct ConnectResponseInformation),
-        true);
+    requestResponseQFd =
+        createShmObject(p_ConnectInformation->m_RequestResponseQName, O_RDWR,
+                        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+                        p_ConnectInformation->m_ResponseQSize *
+                            sizeof(struct ConnectResponseInformation),
+                        true);
     DIE(requestResponseQFd < 0, "Could not create shared memory object");
 
     struct ConnectResponseInformation *requestResponseQ =
@@ -99,7 +100,8 @@ static int32_t s_ProcessConnectionRequest(
     DIE(rc != 0, "Could not close requestResponseQFd");
 
     returnQFd = createShmObject(
-        p_ConnectInformation->m_ReturnQName, O_RDWR, 0600,
+        p_ConnectInformation->m_ReturnQName, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall), true);
 
     struct QMBCall *returnQ =
@@ -256,7 +258,8 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
      */
 
     connectQFd = createShmObject(
-        p_InstallInfo->m_ConnectQName, O_RDWR, 0600,
+        p_InstallInfo->m_ConnectQName, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), false);
 
     struct ConnectRequest *connectQ =
@@ -268,7 +271,8 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
     DIE(rc != 0, "Could not close connectQFd");
 
     disconnectQFd = createShmObject(
-        p_InstallInfo->m_DisconnectQName, O_RDWR, 0600,
+        p_InstallInfo->m_DisconnectQName, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), false);
 
     struct ConnectRequest *disconnectQ =

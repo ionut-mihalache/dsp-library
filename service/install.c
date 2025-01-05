@@ -206,7 +206,8 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_InstallInfo->m_DisconnectQSize = 0;
 
     connectQFd = createShmObject(
-        p_InstallInfo->m_ConnectQName, O_RDWR, 0600,
+        p_InstallInfo->m_ConnectQName, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
     struct ConnectRequest *connectQ =
@@ -218,7 +219,8 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     DIE(rc != 0, "Could not close connectQFd");
 
     disconnectQFd = createShmObject(
-        p_InstallInfo->m_DisconnectQName, O_RDWR, 0600,
+        p_InstallInfo->m_DisconnectQName, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
     struct ConnectRequest *disconnectQ =

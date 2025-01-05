@@ -71,7 +71,8 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     uint8_t connected = false;
     uint16_t i;
 
-    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR, 0600,
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR,
+                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
                                    sizeof(struct InstallInfo), false);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");

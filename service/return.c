@@ -49,11 +49,12 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     connectionIdx = p_Request->m_ConnectionIdx;
 
     returnQFd = createShmObject(
-        p_Request->m_ReturnQName, O_RDWR, 0600,
+        p_Request->m_ReturnQName, O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         p_Request->m_ReturnQSize * sizeof(struct QMBCall), false);
 
     requestResponseQFd = createShmObject(
-        p_Request->m_RequestResponseQName, O_RDWR, 0600,
+        p_Request->m_RequestResponseQName, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
         false);
 

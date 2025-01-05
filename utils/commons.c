@@ -17,6 +17,8 @@ int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
     int shmFd;
     uint8_t shouldTruncate = true;
 
+    int oldMask = umask(0);
+
     if (p_Unlink) {
         shm_unlink(p_Name); // TODO: This should not happen all the time.
     }
@@ -49,6 +51,8 @@ int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
               errno);
     }
     DIE(rc != 0, "Could not truncate shared memory object");
+
+    umask(oldMask);
 
 end:
     return shmFd;
