@@ -48,55 +48,50 @@
 
 #define OPENED_CONNECTIONS ((uint32_t)2048)
 
-struct SMBCall {
-    uint8_t m_CallInfo[SMB];
+struct CallMetada {
     uint32_t m_Size;
     uint32_t m_ConnId;
     bool m_DataReady;
+};
+
+struct SMBCall {
+    uint8_t m_CallInfo[SMB];
+    struct CallMetada m_CallMetadata;
 };
 
 struct EMBCall {
     uint8_t m_CallInfo[EMB];
-    uint32_t m_Size;
-    uint32_t m_ConnId;
-    bool m_DataReady;
+    struct CallMetada m_CallMetadata;
 };
 
 struct QMBCall {
     uint8_t m_CallInfo[QMB];
-    uint32_t m_Size;
-    uint32_t m_ConnId;
-    bool m_DataReady;
+    struct CallMetada m_CallMetadata;
 };
 
 struct HMBCall {
     uint8_t m_CallInfo[HMB];
-    uint32_t m_Size;
-    bool m_DataReady;
+    struct CallMetada m_CallMetadata;
 };
 
 struct MBCall {
     uint8_t m_CallInfo[MB];
-    uint32_t m_Size;
-    bool m_DataReady;
+    struct CallMetada m_CallMetadata;
 };
 
 struct DMBCall {
     uint8_t m_CallInfo[DMB];
-    uint32_t m_Size;
-    bool m_DataReady;
+    struct CallMetada m_CallMetadata;
 };
 
 struct HGBCall {
     uint8_t m_CallInfo[GB];
-    uint32_t m_Size;
-    bool m_DataReady;
+    struct CallMetada m_CallMetadata;
 };
 
 struct GBCall {
     uint8_t m_CallInfo[DGB];
-    uint32_t m_Size;
-    bool m_DataReady;
+    struct CallMetada m_CallMetadata;
 };
 
 struct ConnectResponseInformation {

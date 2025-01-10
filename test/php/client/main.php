@@ -1,6 +1,12 @@
 <?php
 $ffi = FFI::cdef(
     "
+    struct CallMetada {
+        uint32_t m_Size;
+        uint32_t m_ConnId;
+        bool m_DataReady;
+    };
+
     struct ConnectResponseInformation {
         char m_ReturnQName[256];
         char m_ReturnRequestQName[256];
@@ -18,17 +24,44 @@ $ffi = FFI::cdef(
         uint32_t m_MaxSize;
     };
 
+    struct SMBCall {
+        uint8_t m_CallInfo[SMB];
+        struct CallMetada m_CallMetadata;
+    };
+
+    struct EMBCall {
+        uint8_t m_CallInfo[EMB];
+        struct CallMetada m_CallMetadata;
+    };
+
     struct QMBCall {
-        uint8_t m_CallInfo[1 << 18];
-        uint32_t m_Size;
-        uint32_t m_ConnId;
-        bool m_DataReady;
+        uint8_t m_CallInfo[QMB];
+        struct CallMetada m_CallMetadata;
     };
 
     struct HMBCall {
-        uint8_t m_CallInfo[1 << 19];
-        uint32_t m_Size;
-        bool m_DataReady;
+        uint8_t m_CallInfo[HMB];
+        struct CallMetada m_CallMetadata;
+    };
+
+    struct MBCall {
+        uint8_t m_CallInfo[MB];
+        struct CallMetada m_CallMetadata;
+    };
+
+    struct DMBCall {
+        uint8_t m_CallInfo[DMB];
+        struct CallMetada m_CallMetadata;
+    };
+
+    struct HGBCall {
+        uint8_t m_CallInfo[GB];
+        struct CallMetada m_CallMetadata;
+    };
+
+    struct GBCall {
+        uint8_t m_CallInfo[DGB];
+        struct CallMetada m_CallMetadata;
     };
 
     struct ConnectQueue {

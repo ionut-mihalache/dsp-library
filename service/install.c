@@ -196,6 +196,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
                                    struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     int connectQFd, disconnectQFd;
+    int connectionQsFd;
 
     p_InstallInfo->m_ConnectQPushIdx = 0;
     p_InstallInfo->m_ConnectQPopIdx = 0;
@@ -204,6 +205,8 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_InstallInfo->m_DisconnectQPushIdx = 0;
     p_InstallInfo->m_DisconnectQPopIdx = 0;
     p_InstallInfo->m_DisconnectQSize = 0;
+
+    // connectionQsFd = createShmObject()
 
     connectQFd = createShmObject(
         p_InstallInfo->m_ConnectQName, O_RDWR,
