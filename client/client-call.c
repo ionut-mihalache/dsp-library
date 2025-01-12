@@ -5,24 +5,6 @@
 #include "log.h"
 #include "macros.h"
 
-#define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
-    do {                                                                       \
-        pthread_mutex_lock(p_Queue->m_Lock);                                   \
-        while (*p_Queue->m_Size == (p_QMaxSize)) {                             \
-            pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);          \
-        }                                                                      \
-                                                                               \
-        p_Code;                                                                \
-                                                                               \
-        (*p_Queue->m_PushIdxPtr) =                                             \
-            ((*p_Queue->m_PushIdxPtr) + 1) % (p_QMaxSize);                     \
-        (*p_Queue->m_Size)++;                                                  \
-                                                                               \
-        pthread_cond_broadcast(p_Queue->m_FullCond);                           \
-                                                                               \
-        pthread_mutex_unlock(p_Queue->m_Lock);                                 \
-    } while (0)
-
 static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
                           struct QMBCall *p_CallData) {
     int32_t rc = 0;
@@ -58,7 +40,8 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     int callQFd;
 
     callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
-                              S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+                              S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH |
+                                  S_IWOTH,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);
 
     struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct QMBCall),

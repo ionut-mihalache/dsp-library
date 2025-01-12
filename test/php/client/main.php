@@ -1,7 +1,7 @@
 <?php
 $ffi = FFI::cdef(
     "
-    struct CallMetada {
+    struct CallMetadata {
         uint32_t m_Size;
         uint32_t m_ConnId;
         bool m_DataReady;
@@ -25,43 +25,33 @@ $ffi = FFI::cdef(
     };
 
     struct SMBCall {
-        uint8_t m_CallInfo[SMB];
-        struct CallMetada m_CallMetadata;
+        uint8_t m_CallInfo[1 << 16];
+        struct CallMetadata m_CallMetadata;
     };
 
     struct EMBCall {
-        uint8_t m_CallInfo[EMB];
-        struct CallMetada m_CallMetadata;
+        uint8_t m_CallInfo[1 << 17];
+        struct CallMetadata m_CallMetadata;
     };
 
     struct QMBCall {
-        uint8_t m_CallInfo[QMB];
-        struct CallMetada m_CallMetadata;
+        uint8_t m_CallInfo[1 << 18];
+        struct CallMetadata m_CallMetadata;
     };
 
     struct HMBCall {
-        uint8_t m_CallInfo[HMB];
-        struct CallMetada m_CallMetadata;
+        uint8_t m_CallInfo[1 << 19];
+        struct CallMetadata m_CallMetadata;
     };
 
     struct MBCall {
-        uint8_t m_CallInfo[MB];
-        struct CallMetada m_CallMetadata;
+        uint8_t m_CallInfo[1 << 20];
+        struct CallMetadata m_CallMetadata;
     };
 
     struct DMBCall {
-        uint8_t m_CallInfo[DMB];
-        struct CallMetada m_CallMetadata;
-    };
-
-    struct HGBCall {
-        uint8_t m_CallInfo[GB];
-        struct CallMetada m_CallMetadata;
-    };
-
-    struct GBCall {
-        uint8_t m_CallInfo[DGB];
-        struct CallMetada m_CallMetadata;
+        uint8_t m_CallInfo[1 << 21];
+        struct CallMetadata m_CallMetadata;
     };
 
     struct ConnectQueue {
@@ -204,7 +194,7 @@ $ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 $callData = $ffi->new("struct QMBCall");
 $callDataPtr = FFI::addr($callData);
 
-$callData->m_ConnId = $returnInfo->m_ConnectResponseInformation->m_Id;
+$callData->m_CallMetadata->m_ConnId = $returnInfo->m_ConnectResponseInformation->m_Id;
 
 $iiaData = '<iias-get-response xmlns="https://github.com/erasmus-without-paper/ewp-specs-api-iias/blob/stable-v7/endpoints/get-response.xsd" xmlns:c="https://github.com/erasmus-without-paper/ewp-specs-types-contact/tree/stable-v1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="&#10;        https://github.com/erasmus-without-paper/ewp-specs-api-iias/blob/stable-v7/endpoints/get-response.xsd&#10;        https://raw.githubusercontent.com/erasmus-without-paper/ewp-specs-api-iias/stable-v7/endpoints/get-response.xsd&#10;    "><iia><partner><hei-id>upb.ro</hei-id><iia-id>15476857</iia-id></partner><partner><hei-id>Not found</hei-id><iia-id>15476857</iia-id><signing-contact><c:contact-name>GÜLDEN ALBUNAR</c:contact-name><c:email>intoffice@thk.edu.tr</c:email></signing-contact></partner><in-effect>true</in-effect><cooperation-conditions><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>THK UNIVERSITY</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>ERASMUS+ Office Campus Bucuresti</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>6</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><subject-area><isced-f-code>0714</isced-f-code><isced-clarification>,,</isced-clarification></subject-area><subject-area><isced-f-code>0413</isced-f-code></subject-area><subject-area><isced-f-code>0716</isced-f-code></subject-area><total-days-per-year>30</total-days-per-year></staff-training-mobility-spec><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>ERASMUS+ Office Campus Bucuresti</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>THK UNIVERSITY</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>6</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><subject-area><isced-f-code>0714</isced-f-code><isced-clarification>,,</isced-clarification></subject-area><subject-area><isced-f-code>0413</isced-f-code></subject-area><subject-area><isced-f-code>0716</isced-f-code></subject-area><total-days-per-year>30</total-days-per-year></staff-training-mobility-spec><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>THK UNIVERSITY</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>ERASMUS+ Office Campus Bucuresti</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>6</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><subject-area><isced-f-code>0714</isced-f-code><isced-clarification>,,</isced-clarification></subject-area><subject-area><isced-f-code>0413</isced-f-code></subject-area><subject-area><isced-f-code>0716</isced-f-code></subject-area><total-days-per-year>12</total-days-per-year></staff-training-mobility-spec><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>ERASMUS+ Office Campus Bucuresti</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>THK UNIVERSITY</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>4</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B1</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B1</cefr-level></recommended-language-skill><subject-area><isced-f-code>0710</isced-f-code><isced-clarification>,</isced-clarification></subject-area><subject-area><isced-f-code>0413</isced-f-code></subject-area><total-days-per-year>12</total-days-per-year></staff-training-mobility-spec><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>THK UNIVERSITY</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>ERASMUS+ Office Campus Bucuresti</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>6</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><subject-area><isced-f-code>0413</isced-f-code><isced-clarification>,,</isced-clarification></subject-area><subject-area><isced-f-code>0714</isced-f-code></subject-area><subject-area><isced-f-code>0716</isced-f-code></subject-area><total-days-per-year>30</total-days-per-year></staff-training-mobility-spec><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>ERASMUS+ Office Campus Bucuresti</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>THK UNIVERSITY</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>6</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><subject-area><isced-f-code>0716</isced-f-code><isced-clarification>,,</isced-clarification></subject-area><subject-area><isced-f-code>0413</isced-f-code></subject-area><subject-area><isced-f-code>0714</isced-f-code></subject-area><total-days-per-year>30</total-days-per-year></staff-training-mobility-spec><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>THK UNIVERSITY</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>ERASMUS+ Office Campus Bucuresti</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>3</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><subject-area><isced-f-code>0714</isced-f-code><isced-clarification>,,</isced-clarification></subject-area><subject-area><isced-f-code>0413</isced-f-code></subject-area><subject-area><isced-f-code>0716</isced-f-code></subject-area><total-days-per-year>15</total-days-per-year></staff-training-mobility-spec><staff-training-mobility-spec><sending-hei-id>Not found</sending-hei-id><sending-ounit-id>ERASMUS+ Office Campus Bucuresti</sending-ounit-id><receiving-hei-id>upb.ro</receiving-hei-id><receiving-ounit-id>THK UNIVERSITY</receiving-ounit-id><receiving-first-academic-year-id>2023/2024</receiving-first-academic-year-id><receiving-last-academic-year-id>2028/2029</receiving-last-academic-year-id><mobilities-per-year>3</mobilities-per-year><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><recommended-language-skill><language>en</language><cefr-level>B2</cefr-level></recommended-language-skill><subject-area><isced-f-code>0714</isced-f-code><isced-clarification>,,</isced-clarification></subject-area><subject-area><isced-f-code>0413</isced-f-code></subject-area><subject-area><isced-f-code>0716</isced-f-code></subject-area><total-days-per-year>15</total-days-per-year></staff-training-mobility-spec></cooperation-conditions></iia></iias-get-response>';
 

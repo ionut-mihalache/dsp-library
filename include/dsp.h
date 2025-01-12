@@ -48,7 +48,7 @@
 
 #define OPENED_CONNECTIONS ((uint32_t)2048)
 
-struct CallMetada {
+struct CallMetadata {
     uint32_t m_Size;
     uint32_t m_ConnId;
     bool m_DataReady;
@@ -56,42 +56,42 @@ struct CallMetada {
 
 struct SMBCall {
     uint8_t m_CallInfo[SMB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct EMBCall {
     uint8_t m_CallInfo[EMB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct QMBCall {
     uint8_t m_CallInfo[QMB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct HMBCall {
     uint8_t m_CallInfo[HMB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct MBCall {
     uint8_t m_CallInfo[MB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct DMBCall {
     uint8_t m_CallInfo[DMB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct HGBCall {
     uint8_t m_CallInfo[GB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct GBCall {
     uint8_t m_CallInfo[DGB];
-    struct CallMetada m_CallMetadata;
+    struct CallMetadata m_CallMetadata;
 };
 
 struct ConnectResponseInformation {
@@ -153,7 +153,7 @@ struct InstallInformation {
 } __attribute__((aligned(PAGE_SIZE)));
 
 struct InstallInfo {
-    struct InstallInformation m_Info[SERVICES_NUMBER >> 3];
+    struct InstallInformation m_Info[SERVICES_NUMBER];
     uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
     uint8_t m_BytesNr;
 } __attribute__((aligned(PAGE_SIZE)));
@@ -238,5 +238,41 @@ struct DSPQueue {
     uint32_t *m_PopIdxPtr;
     uint8_t *m_Start;
 };
+
+#define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
+    do {                                                                       \
+        pthread_mutex_lock((p_Queue)->m_Lock);                                 \
+        while (*(p_Queue)->m_Size == (p_QMaxSize)) {                           \
+            pthread_cond_wait((p_Queue)->m_EmptyCond, (p_Queue)->m_Lock);      \
+        }                                                                      \
+                                                                               \
+        p_Code;                                                                \
+                                                                               \
+        (*(p_Queue)->m_PushIdxPtr) =                                           \
+            ((*(p_Queue)->m_PushIdxPtr) + 1) % (p_QMaxSize);                   \
+        (*(p_Queue)->m_Size)++;                                                \
+                                                                               \
+        pthread_mutex_unlock((p_Queue)->m_Lock);                               \
+                                                                               \
+        pthread_cond_broadcast((p_Queue)->m_FullCond);                         \
+    } while (0)
+
+#define QPOP(p_Queue, p_QMaxSize, p_Code)                                      \
+    do {                                                                       \
+        pthread_mutex_lock((p_Queue)->m_Lock);                                 \
+        while (*(p_Queue)->m_Size == 0) {                                      \
+            pthread_cond_wait((p_Queue)->m_FullCond, (p_Queue)->m_Lock);       \
+        }                                                                      \
+                                                                               \
+        p_Code;                                                                \
+                                                                               \
+        (*(p_Queue)->m_PopIdxPtr) =                                            \
+            ((*(p_Queue)->m_PopIdxPtr) + 1) % (p_QMaxSize);                    \
+        (*(p_Queue)->m_Size)--;                                                \
+                                                                               \
+        pthread_mutex_unlock((p_Queue)->m_Lock);                               \
+                                                                               \
+        pthread_cond_broadcast((p_Queue)->m_EmptyCond);                        \
+    } while (0)
 
 #endif // __DSP_H_

@@ -44,7 +44,7 @@ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
            sizeof(struct HMBCall));
 
     LOGF("%s: Message length: %u. Message: %s.\n", __func__,
-         p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_Size,
+         p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallMetadata.m_Size,
          p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo);
 
     (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % HMB_Q_MAX_SIZE;

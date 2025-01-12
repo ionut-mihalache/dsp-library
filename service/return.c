@@ -13,26 +13,32 @@ static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
 
     int32_t rc = 0;
 
-    rc = pthread_mutex_lock(p_Queue->m_Lock);
-    DIE(rc != 0, "Could not lock mutex!");
+    QPUSH(
+        p_Queue, RETURNQ_MAX_SIZE, do {
+            memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnData,
+                   sizeof(struct QMBCall));
+        } while (0));
 
-    while (*p_Queue->m_Size == RETURNQ_MAX_SIZE) {
-        rc = pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
-        DIE(rc != 0, "Could not wait for condition!");
-    }
+    // rc = pthread_mutex_lock(p_Queue->m_Lock);
+    // DIE(rc != 0, "Could not lock mutex!");
 
-    memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnData,
-           sizeof(struct QMBCall));
+    // while (*p_Queue->m_Size == RETURNQ_MAX_SIZE) {
+    //     rc = pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
+    //     DIE(rc != 0, "Could not wait for condition!");
+    // }
 
-    (*p_Queue->m_PushIdxPtr) =
-        ((*p_Queue->m_PushIdxPtr) + 1) % RETURNQ_MAX_SIZE;
-    (*p_Queue->m_Size)++;
+    // memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnData,
+    //        sizeof(struct QMBCall));
 
-    rc = pthread_cond_broadcast(p_Queue->m_FullCond);
-    DIE(rc != 0, "Could not broadcast condition!");
+    // (*p_Queue->m_PushIdxPtr) =
+    //     ((*p_Queue->m_PushIdxPtr) + 1) % RETURNQ_MAX_SIZE;
+    // (*p_Queue->m_Size)++;
 
-    rc = pthread_mutex_unlock(p_Queue->m_Lock);
-    DIE(rc != 0, "Could not unlock mutex!");
+    // rc = pthread_cond_broadcast(p_Queue->m_FullCond);
+    // DIE(rc != 0, "Could not broadcast condition!");
+
+    // rc = pthread_mutex_unlock(p_Queue->m_Lock);
+    // DIE(rc != 0, "Could not unlock mutex!");
 
     return rc;
 }
@@ -49,7 +55,8 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     connectionIdx = p_Request->m_ConnectionIdx;
 
     returnQFd = createShmObject(
-        p_Request->m_ReturnQName, O_RDWR, S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+        p_Request->m_ReturnQName, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         p_Request->m_ReturnQSize * sizeof(struct QMBCall), false);
 
     requestResponseQFd = createShmObject(

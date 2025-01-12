@@ -15,6 +15,8 @@
 
 #define DSP_UNUSED __attribute__((unused))
 
+uint32_t murmur3Hash_32(const char *key, uint32_t len, uint32_t seed);
+
 int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
                     loff_t p_Size, uint8_t p_Unlink);
 

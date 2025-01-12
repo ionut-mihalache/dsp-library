@@ -7,8 +7,8 @@ public class QMBCall extends Call {
     public QMBCall() {
         super();
         m_CallInfo = new byte[Constants.QMB];
-        m_Size = 0;
-        m_ConnId = 0;
-        m_DataReady = 0;
+        m_CallMetadata.m_Size = 0;
+        m_CallMetadata.m_ConnId = 0;
+        m_CallMetadata.m_DataReady = 0;
     }
 }

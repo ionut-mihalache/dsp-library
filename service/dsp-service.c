@@ -24,7 +24,8 @@ static struct InstallSharedData *installShdata = NULL;
 //     int memoryInfoFd;
 //     loff_t memorySize;
 
-//     memorySize = sizeof(struct InstallSharedData) + sizeof(struct InstallInfo) +
+//     memorySize = sizeof(struct InstallSharedData) + sizeof(struct
+//     InstallInfo) +
 //                  sizeof(struct ConnectResponseInformation) +
 //                  (2 * CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest)) +
 //                  (QMB_Q_MAX_SIZE * sizeof(struct QMBCall));
@@ -33,7 +34,8 @@ static struct InstallSharedData *installShdata = NULL;
 //                                    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
 //                                        S_IROTH | S_IWOTH,
 //                                    memorySize, true);
-//     DIE(memoryInfoFd < 0, "Could not create information shared memory object");
+//     DIE(memoryInfoFd < 0, "Could not create information shared memory
+//     object");
 
 //     memoryInformation = mmap(NULL, memorySize, PROT_READ | PROT_WRITE,
 //                              MAP_SHARED, memoryInfoFd, 0);
@@ -78,16 +80,17 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
 
     initService();
 
-    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR,
-                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                                       S_IROTH | S_IWOTH,
-                                   sizeof(struct InstallInfo), true);
+    installShmFd = createShmObject(
+        INSTALL_MZONE, O_RDWR,
+        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+        sizeof(struct InstallInfo) + sizeof(struct InstallInformation), true);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
     struct InstallInfo *installMemZone =
-        mmap(installShdata, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
-             MAP_SHARED, installShmFd, 0);
+        mmap(installShdata,
+             sizeof(struct InstallInfo) + sizeof(struct InstallInformation),
+             PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 
     rc = close(installShmFd);
@@ -109,18 +112,21 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                  * We set the bit index for the current byte
                  */
                 freeIdx = j;
-                goto spin_lock_unlock;
+                goto check_free_index;
             }
         }
     }
 
-spin_lock_unlock:
+check_free_index:
     if (freeIdx < 0) {
         ELOGF("Cannot install a new service!\n");
-        goto end;
+        goto spin_lock_unlock;
     }
 
     *freeBytePtr = (*freeBytePtr) | (1 << freeIdx);
+
+spin_lock_unlock:
+    pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
     struct InstallInformation *installInfo =
         &installMemZone->m_Info[freeByteIdx];
@@ -173,9 +179,6 @@ spin_lock_unlock:
     initializeServiceConnections(installInfo);
     configureServiceConnectInformation(p_ConnectInfo, installInfo);
     configureServiceCallInformation(p_CallInfo, installInfo);
-
-end:
-    pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
     LOGF("Successfully installed new service: (%s, %s).\n", p_StrId, p_Version);
 }
