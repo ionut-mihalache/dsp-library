@@ -1,6 +1,6 @@
 package queues;
 
-import queues.abstract_classes.Queue;
+import queues.abstract_classes.DSPQueue;
 
 /**
  * struct ConnectQueue {
@@ -13,7 +13,7 @@ import queues.abstract_classes.Queue;
  * uint32_t *m_Size;
  * };
  */
-public class ConnectQueue extends Queue {
+public class ConnectQueue extends DSPQueue {
     public ConnectQueue() {
         super();
     }

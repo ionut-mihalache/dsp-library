@@ -105,7 +105,6 @@ $ffi = FFI::cdef(
     };
 
     struct ClientCallInfo {
-        struct DSPQueue m_Queue;
         struct HMBDSPQueue m_HMBQueue;
         int32_t (*m_CallFn)(struct DSPQueue *);
         int32_t (*m_CallFnQMB)(struct QMBDSPQueue *, struct QMBCall *);

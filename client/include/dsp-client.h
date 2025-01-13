@@ -4,7 +4,6 @@
 #include "dsp.h"
 
 struct ClientCallInfo {
-    struct DSPQueue m_Queue;
     struct QMBDSPQueue m_QMBQueue;
     struct HMBDSPQueue m_HMBQueue;
     int32_t (*m_CallFn)(struct DSPQueue *);
