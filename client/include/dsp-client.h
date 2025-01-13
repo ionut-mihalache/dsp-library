@@ -6,7 +6,6 @@
 struct ClientCallInfo {
     struct QMBDSPQueue m_QMBQueue;
     struct HMBDSPQueue m_HMBQueue;
-    int32_t (*m_CallFn)(struct DSPQueue *);
     int32_t (*m_CallFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
     int32_t (*m_CallFnHMB)(struct HMBDSPQueue *, struct HMBCall *);
 };
@@ -27,7 +26,7 @@ struct ClientConnectRequestInformation {
 };
 
 struct ClientConnectInfo {
-    struct ConnectQueue m_Queue;
+    struct ConnectQueue m_ConnectQ;
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
     pthread_spinlock_t *m_ConnectLock;
@@ -45,7 +44,6 @@ void sendDisconnectRequest(
     struct ClientConnectInfo *p_ConnectInfo,
     struct ConnectResponseInformation *p_requestResponseInfo);
 
-void pushQ(struct ClientCallInfo *p_CallInfo);
 void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
 void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
 

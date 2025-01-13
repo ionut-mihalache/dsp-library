@@ -15,8 +15,8 @@ static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
 
     QPUSH(
         p_Queue, RETURNQ_MAX_SIZE, do {
-            memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnData,
-                   sizeof(struct QMBCall));
+            memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
+                   p_ReturnData, sizeof(struct QMBCall));
         } while (0));
 
     // rc = pthread_mutex_lock(p_Queue->m_Lock);
@@ -94,18 +94,18 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 
     p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
 
-    p_ReturnInfo->m_QMBQueue.m_FullCond =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_FullCond =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQFullCond;
-    p_ReturnInfo->m_QMBQueue.m_EmptyCond =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQEmptyCond;
-    p_ReturnInfo->m_QMBQueue.m_Lock =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_Lock =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex;
 
-    p_ReturnInfo->m_QMBQueue.m_PushIdxPtr =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
-    p_ReturnInfo->m_QMBQueue.m_PopIdxPtr =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
-    p_ReturnInfo->m_QMBQueue.m_Size =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
 
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ReturnQSize;
@@ -119,19 +119,19 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
 
-    p_ReturnInfo->m_ResponseQueue.m_FullCond =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
         &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQFullCond;
-    p_ReturnInfo->m_ResponseQueue.m_EmptyCond =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
         &p_ConnectInfo->m_Connections[connectionIdx]
              .m_RequestResponseQEmptyCond;
-    p_ReturnInfo->m_ResponseQueue.m_Lock =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
         &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMutex;
 
-    p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
         &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx;
-    p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
         &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx;
-    p_ReturnInfo->m_ResponseQueue.m_Size =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ResponseQSize;
 

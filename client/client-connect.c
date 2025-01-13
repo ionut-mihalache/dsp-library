@@ -11,7 +11,8 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
 
     QPOP(
         p_Queue, RETURNQ_MAX_SIZE, do {
-            memcpy(p_ReturnData, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
+            memcpy(p_ReturnData,
+                   &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
                    sizeof(struct QMBCall));
         } while (0));
 
@@ -125,31 +126,31 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectInfo->m_Connections[connId].m_RequestResponseQSize = 0;
 
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
-    p_ReturnInfo->m_ResponseQueue.m_FullCond =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
         &p_ConnectInfo->m_Connections[connId].m_RequestResponseQFullCond;
-    p_ReturnInfo->m_ResponseQueue.m_EmptyCond =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
         &p_ConnectInfo->m_Connections[connId].m_RequestResponseQEmptyCond;
-    p_ReturnInfo->m_ResponseQueue.m_Lock =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
         &p_ConnectInfo->m_Connections[connId].m_RequestResponseQMutex;
-    p_ReturnInfo->m_ResponseQueue.m_PushIdxPtr =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
         &p_ConnectInfo->m_Connections[connId].m_RequestResponseQPushIdx;
-    p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
         &p_ConnectInfo->m_Connections[connId].m_RequestResponseQPopIdx;
-    p_ReturnInfo->m_ResponseQueue.m_Size =
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[connId].m_RequestResponseQSize;
 
     p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
-    p_ReturnInfo->m_QMBQueue.m_FullCond =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_FullCond =
         &p_ConnectInfo->m_Connections[connId].m_ReturnQFullCond;
-    p_ReturnInfo->m_QMBQueue.m_EmptyCond =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
         &p_ConnectInfo->m_Connections[connId].m_ReturnQEmptyCond;
-    p_ReturnInfo->m_QMBQueue.m_Lock =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_Lock =
         &p_ConnectInfo->m_Connections[connId].m_ReturnQMutex;
-    p_ReturnInfo->m_QMBQueue.m_PushIdxPtr =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
         &p_ConnectInfo->m_Connections[connId].m_ReturnQPushIdx;
-    p_ReturnInfo->m_QMBQueue.m_PopIdxPtr =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
         &p_ConnectInfo->m_Connections[connId].m_ReturnQPopIdx;
-    p_ReturnInfo->m_QMBQueue.m_Size =
+    p_ReturnInfo->m_QMBQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[connId].m_ReturnQSize;
 
     p_ReturnInfo->m_ReturnFnQMB = m_ReturnFnQMB;
@@ -163,11 +164,11 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                      struct ClientConnectRequestInformation *p_RequestInfo) {
     int32_t rc = 0;
     uint32_t idx;
-    struct ConnectQueue *queue = &p_ConnectInfo->m_Queue;
+    struct ConnectQueue *queue = &p_ConnectInfo->m_ConnectQ;
 
     QPUSH(
         queue, CONNECTQ_MAX_SIZE, do {
-            idx = *queue->m_PushIdxPtr;
+            idx = *queue->m_Metadata.m_PushIdxPtr;
             s_ProcessConnectionRequest(p_ReturnInfo, &queue->m_Data[idx],
                                        p_ConnectInfo, p_RequestInfo);
         } while (0));
@@ -203,7 +204,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
              * WIP: Add the information to the response queue. Now the signal is
              * enough
              */
-            idx = *p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr;
+            idx = *p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr;
 
             memcpy(&p_ReturnInfo->m_ConnectResponseInformation,
                    &p_ReturnInfo->m_ResponseQueue.m_Data[idx],
@@ -251,7 +252,7 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
 
     QPUSH(
         queue, CONNECTQ_MAX_SIZE, do {
-            idx = *queue->m_PushIdxPtr;
+            idx = *queue->m_Metadata.m_PushIdxPtr;
 
             connId = p_ResponseInfo->m_Id;
 
@@ -345,26 +346,34 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
 
     p_ConnectInfo->m_SendConnectRequest = s_SendConnectRequest;
     p_ConnectInfo->m_Connections = p_InstallInfo->m_Connections;
-    p_ConnectInfo->m_Queue.m_Data = connectQ;
-    p_ConnectInfo->m_Queue.m_PushIdxPtr = &p_InstallInfo->m_ConnectQPushIdx;
-    p_ConnectInfo->m_Queue.m_PopIdxPtr = &p_InstallInfo->m_ConnectQPopIdx;
-    p_ConnectInfo->m_Queue.m_Size = &p_InstallInfo->m_ConnectQSize;
-    p_ConnectInfo->m_Queue.m_Lock = &p_InstallInfo->m_ConnectQMutex;
-    p_ConnectInfo->m_Queue.m_FullCond = &p_InstallInfo->m_ConnectQFullCond;
-    p_ConnectInfo->m_Queue.m_EmptyCond = &p_InstallInfo->m_ConnectQEmptyCond;
+    p_ConnectInfo->m_ConnectQ.m_Data = connectQ;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxPtr =
+        &p_InstallInfo->m_ConnectQPushIdx;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxPtr =
+        &p_InstallInfo->m_ConnectQPopIdx;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Size =
+        &p_InstallInfo->m_ConnectQSize;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
+        &p_InstallInfo->m_ConnectQMutex;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_FullCond =
+        &p_InstallInfo->m_ConnectQFullCond;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_EmptyCond =
+        &p_InstallInfo->m_ConnectQEmptyCond;
     p_ConnectInfo->m_ConnectLock = &p_InstallInfo->m_ConnectListLock;
 
     p_ConnectInfo->m_SendDisconnectRequest = s_SendDisconnectRequest;
     p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
-    p_ConnectInfo->m_DisconnectQ.m_PushIdxPtr =
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxPtr =
         &p_InstallInfo->m_DisconnectQPushIdx;
-    p_ConnectInfo->m_DisconnectQ.m_PopIdxPtr =
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxPtr =
         &p_InstallInfo->m_DisconnectQPopIdx;
-    p_ConnectInfo->m_DisconnectQ.m_Size = &p_InstallInfo->m_DisconnectQSize;
-    p_ConnectInfo->m_DisconnectQ.m_Lock = &p_InstallInfo->m_DisconnectQMutex;
-    p_ConnectInfo->m_DisconnectQ.m_FullCond =
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Size =
+        &p_InstallInfo->m_DisconnectQSize;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock =
+        &p_InstallInfo->m_DisconnectQMutex;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_FullCond =
         &p_InstallInfo->m_DisconnectQFullCond;
-    p_ConnectInfo->m_DisconnectQ.m_EmptyCond =
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
         &p_InstallInfo->m_DisconnectQEmptyCond;
 
     return rc;

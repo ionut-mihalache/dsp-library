@@ -1,6 +1,10 @@
 package queues;
 
-import queues.abstract_classes.DSPQueue;
+import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
+import com.sun.jna.Structure.FieldOrder;
+
+import queues.commons.DSPQueueMetadata;
 
 /**
  * struct HMBDSPQueue {
@@ -14,7 +18,11 @@ import queues.abstract_classes.DSPQueue;
  * };
  */
 
-public class HMBDSPQueue extends DSPQueue {
+@FieldOrder({ "m_Metadata", "m_Data" })
+public class HMBDSPQueue extends Structure {
+    public DSPQueueMetadata m_Metadata;
+    public Pointer m_Data;
+
     public HMBDSPQueue() {
         super();
     }
@@ -32,11 +40,11 @@ public class HMBDSPQueue extends DSPQueue {
 
         return "HMBDSPQueue" + ws
                 + "m_Data: " + m_Data + ws
-                + "m_Lock: " + m_Lock + ws
-                + "m_FullCond: " + m_FullCond + ws
-                + "m_EmptyCond: " + m_EmptyCond + ws
-                + "m_PushIdxPtr: " + m_PushIdxPtr + ws
-                + "m_PopIdxPtr: " + m_PopIdxPtr + ws
-                + "m_Size: " + m_Size;
+                + "m_Lock: " + m_Metadata.m_Lock + ws
+                + "m_FullCond: " + m_Metadata.m_FullCond + ws
+                + "m_EmptyCond: " + m_Metadata.m_EmptyCond + ws
+                + "m_PushIdxPtr: " + m_Metadata.m_PushIdxPtr + ws
+                + "m_PopIdxPtr: " + m_Metadata.m_PopIdxPtr + ws
+                + "m_Size: " + m_Metadata.m_Size;
     }
 }

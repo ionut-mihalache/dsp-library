@@ -13,5 +13,5 @@ import com.sun.jna.Structure.FieldOrder;
 @FieldOrder({ "m_CallInfo", "m_CallMetadata" })
 public abstract class Call extends Structure {
     public byte[] m_CallInfo;
-    public CallMetadata m_CallMetadata;
+    public CallMetadata m_Metadata;
 }

@@ -12,8 +12,8 @@ static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
     LOGF("Start call.\n");
     QPUSH(
         p_Queue, QMB_Q_MAX_SIZE, do {
-            memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_CallData,
-                   sizeof(struct QMBCall));
+            memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
+                   p_CallData, sizeof(struct QMBCall));
         } while (0));
     LOGF("End call.\n");
 
@@ -26,8 +26,8 @@ static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
 
     QPUSH(
         p_Queue, HMB_Q_MAX_SIZE, do {
-            memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_CallData,
-                   sizeof(struct QMBCall));
+            memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
+                   p_CallData, sizeof(struct QMBCall));
         } while (0));
 
     return rc;
@@ -55,12 +55,16 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
 
     p_CallInfo->m_CallFnQMB = s_QPushQMB;
     p_CallInfo->m_QMBQueue.m_Data = callQ;
-    p_CallInfo->m_QMBQueue.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
-    p_CallInfo->m_QMBQueue.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
-    p_CallInfo->m_QMBQueue.m_Size = &p_InstallInfo->m_CallQSize;
-    p_CallInfo->m_QMBQueue.m_Lock = &p_InstallInfo->m_CallQMutex;
-    p_CallInfo->m_QMBQueue.m_FullCond = &p_InstallInfo->m_CallQFullCond;
-    p_CallInfo->m_QMBQueue.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
+    p_CallInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
+        &p_InstallInfo->m_CallQPushIdx;
+    p_CallInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
+        &p_InstallInfo->m_CallQPopIdx;
+    p_CallInfo->m_QMBQueue.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+    p_CallInfo->m_QMBQueue.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
+    p_CallInfo->m_QMBQueue.m_Metadata.m_FullCond =
+        &p_InstallInfo->m_CallQFullCond;
+    p_CallInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
+        &p_InstallInfo->m_CallQEmptyCond;
 
     // p_CallInfo->m_CallFnHMB = s_QPushHMB;
     // p_CallInfo->m_HMBQueue.m_Data = callQ;

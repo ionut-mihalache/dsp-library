@@ -56,42 +56,42 @@ struct CallMetadata {
 
 struct SMBCall {
     uint8_t m_CallInfo[SMB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct EMBCall {
     uint8_t m_CallInfo[EMB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct QMBCall {
     uint8_t m_CallInfo[QMB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct HMBCall {
     uint8_t m_CallInfo[HMB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct MBCall {
     uint8_t m_CallInfo[MB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct DMBCall {
     uint8_t m_CallInfo[DMB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct HGBCall {
     uint8_t m_CallInfo[GB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct GBCall {
     uint8_t m_CallInfo[DGB];
-    struct CallMetadata m_CallMetadata;
+    struct CallMetadata m_Metadata;
 };
 
 struct ConnectResponseInformation {
@@ -168,7 +168,7 @@ struct DSPQueueMetadata {
 };
 
 struct ConnectResponseQueue {
-    struct DSPQueueMetadata *m_Medatadata;
+    struct DSPQueueMetadata m_Metadata;
     struct ConnectResponseInformation *m_Data;
     uint32_t m_MaxSize;
 };

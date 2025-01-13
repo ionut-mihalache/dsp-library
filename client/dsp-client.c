@@ -26,10 +26,6 @@ void sendDisconnectRequest(
                                            p_requestResponseInfo);
 }
 
-void pushQ(struct ClientCallInfo *p_CallInfo) {
-    p_CallInfo->m_CallFn(&p_CallInfo->m_Queue);
-}
-
 void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData) {
     p_CallInfo->m_CallFnQMB(&p_CallInfo->m_QMBQueue, p_CallData);
 }
@@ -48,7 +44,7 @@ int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data,
     int32_t rc = 0;
 
     memcpy(p_CallInfo->m_CallInfo, p_Data, p_Size);
-    p_CallInfo->m_CallMetadata.m_Size = p_Size;
+    p_CallInfo->m_Metadata.m_Size = p_Size;
 
     return rc;
 }
@@ -58,7 +54,7 @@ int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data,
     int32_t rc = 0;
 
     memcpy(p_CallInfo->m_CallInfo, p_Data, p_Size);
-    p_CallInfo->m_CallMetadata.m_Size = p_Size;
+    p_CallInfo->m_Metadata.m_Size = p_Size;
 
     return rc;
 }
@@ -106,7 +102,8 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
         return;
     }
 
-    memcpy(installInfoSentinel, installInfo, sizeof(struct InstallInformation));
+    // memcpy(installInfoSentinel, installInfo, sizeof(struct
+    // InstallInformation));
 
     rc = munmap(installMemZone, sizeof(struct InstallInfo));
     DIE(rc != 0, "Could not unmap install memory zone");
@@ -114,13 +111,13 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     /**
      * Map only the information of the service
      */
-    // installInfo = (struct InstallInformation *)mmap(
-    //     NULL, sizeof(struct InstallInformation), PROT_READ | PROT_WRITE,
-    //     MAP_SHARED, installShmFd, i * sizeof(struct InstallInformation));
-    // DIE(installInfo == MAP_FAILED, "Could not map service information");
+    installInfo = (struct InstallInformation *)mmap(
+        NULL, sizeof(struct InstallInformation), PROT_READ | PROT_WRITE,
+        MAP_SHARED, installShmFd, i * sizeof(struct InstallInformation));
+    DIE(installInfo == MAP_FAILED, "Could not map service information");
 
-    configureClientConnectInformation(p_ConnectInfo, installInfoSentinel);
-    configureClientCallInformation(p_CallInfo, installInfoSentinel);
+    configureClientConnectInformation(p_ConnectInfo, installInfo);
+    configureClientCallInformation(p_CallInfo, installInfo);
 }
 
 void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
@@ -131,7 +128,7 @@ void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
 
 struct ConnectResponseInformation *
 getConnectResponse(struct ClientReturnInfo *p_ReturnInfo) {
-    if (*p_ReturnInfo->m_ResponseQueue.m_Size == 0) {
+    if (*p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size == 0) {
         LOGF("Returning response request connection id: %u.\n",
              p_ReturnInfo->m_ResponseQueue.m_Data[0].m_Id);
         return &p_ReturnInfo->m_ResponseQueue.m_Data[0];

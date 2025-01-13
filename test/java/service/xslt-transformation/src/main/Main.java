@@ -97,7 +97,7 @@ public class Main {
                 QMBCall callData = new QMBCall();
                 callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData, callInfo.m_QMBQueue);
 
-                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_CallMetadata.m_Size);
+                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Metadata.m_Size);
 
                 Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
@@ -108,11 +108,11 @@ public class Main {
 
                 QMBCall returnData = new QMBCall();
                 System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
-                returnData.m_CallMetadata.m_Size = resByteArr.length;
-                returnData.m_CallMetadata.m_ConnId = callData.m_CallMetadata.m_ConnId;
+                returnData.m_Metadata.m_Size = resByteArr.length;
+                returnData.m_Metadata.m_ConnId = callData.m_Metadata.m_ConnId;
 
-                connections.get(callData.m_CallMetadata.m_ConnId).m_SendReturnFnQMB
-                        .sendQMBReturn(connections.get(callData.m_CallMetadata.m_ConnId).m_QMBQueue, returnData);
+                connections.get(callData.m_Metadata.m_ConnId).m_SendReturnFnQMB
+                        .sendQMBReturn(connections.get(callData.m_Metadata.m_ConnId).m_QMBQueue, returnData);
 
                 System.out.println("Return " + callsNumber + " calls.");
 
