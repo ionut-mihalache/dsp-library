@@ -21,10 +21,10 @@ import queues.DisconnectQueue;
  * };
  */
 
-@FieldOrder({ "m_Queue", "m_DisconnectQ", "m_Connections", "m_ConnectLock", "m_ReceiveConnectRequest",
+@FieldOrder({ "m_ConnectQ", "m_DisconnectQ", "m_Connections", "m_ConnectLock", "m_ReceiveConnectRequest",
         "m_ReceiveDisconnectRequest" })
 public class ServiceConnectInfo extends Structure {
-    public ConnectQueue m_Queue;
+    public ConnectQueue m_ConnectQ;
     public DisconnectQueue m_DisconnectQ;
     public Pointer m_Connections;
     public Pointer m_ConnectLock;
@@ -47,7 +47,7 @@ public class ServiceConnectInfo extends Structure {
         }
 
         return "ConnectInfo" + ws
-                + m_Queue.toString(indentation + 1) + ws
+                + m_ConnectQ.toString(indentation + 1) + ws
                 + m_DisconnectQ.toString(indentation + 1) + ws
                 + "m_Connections: " + m_Connections + ws
                 + "m_ConnectLock: " + m_ConnectLock + ws

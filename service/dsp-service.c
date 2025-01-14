@@ -15,35 +15,7 @@
 #include "macros.h"
 #include "protocol.h"
 
-// static void *memoryInformation = NULL;
-
 static struct InstallSharedData *installShdata = NULL;
-
-// static int32_t s_InitMemory() {
-//     int32_t rc = 0;
-//     int memoryInfoFd;
-//     loff_t memorySize;
-
-//     memorySize = sizeof(struct InstallSharedData) + sizeof(struct
-//     InstallInfo) +
-//                  sizeof(struct ConnectResponseInformation) +
-//                  (2 * CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest)) +
-//                  (QMB_Q_MAX_SIZE * sizeof(struct QMBCall));
-
-//     memoryInfoFd = createShmObject("memoryInformation", O_RDWR,
-//                                    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-//                                        S_IROTH | S_IWOTH,
-//                                    memorySize, true);
-//     DIE(memoryInfoFd < 0, "Could not create information shared memory
-//     object");
-
-//     memoryInformation = mmap(NULL, memorySize, PROT_READ | PROT_WRITE,
-//                              MAP_SHARED, memoryInfoFd, 0);
-//     DIE(memoryInformation == MAP_FAILED,
-//         "Could not mmap memory information zone");
-
-//     return rc;
-// }
 
 void initService() {
     int rc;
@@ -83,13 +55,13 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
     installShmFd = createShmObject(
         INSTALL_MZONE, O_RDWR,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-        sizeof(struct InstallInfo) + sizeof(struct InstallInformation), true);
+        sizeof(struct InstallInfo), true);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
     struct InstallInfo *installMemZone =
         mmap(installShdata,
-             sizeof(struct InstallInfo) + sizeof(struct InstallInformation),
+             sizeof(struct InstallInfo),
              PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 

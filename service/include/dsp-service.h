@@ -29,7 +29,7 @@ struct ServiceReturnInfo {
 };
 
 struct ServiceConnectInfo {
-    struct ConnectQueue m_Queue;
+    struct ConnectQueue m_ConnectQ;
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
     pthread_spinlock_t *m_ConnectLock;

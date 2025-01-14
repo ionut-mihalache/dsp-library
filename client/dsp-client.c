@@ -64,23 +64,20 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     int rc;
     int installShmFd;
     struct InstallInformation *installInfo;
-    struct InstallInformation *installInfoSentinel;
     uint8_t connected = false;
     uint16_t i;
 
     installShmFd = createShmObject(
         INSTALL_MZONE, O_RDWR,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-        sizeof(struct InstallInfo) + sizeof(struct InstallInformation), false);
+        sizeof(struct InstallInfo), false);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
     struct InstallInfo *installMemZone = mmap(
-        NULL, sizeof(struct InstallInfo) + sizeof(struct InstallInformation),
+        NULL, sizeof(struct InstallInfo),
         PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
-
-    installInfoSentinel = (struct InstallInformation *)(installMemZone + 1);
 
     for (i = 0; i < SERVICES_NUMBER; ++i) {
         if (!installMemZone->m_Info[i].m_Available) {

@@ -16,25 +16,6 @@ static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
                    sizeof(struct QMBCall));
         } while (0));
 
-    // rc = pthread_mutex_lock(p_Queue->m_Lock);
-    // DIE(rc != 0, "Could not lock mutex!");
-    // while (*p_Queue->m_Size == 0) {
-    //     rc = pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
-    //     DIE(rc != 0, "Could not wait for condition!");
-    // }
-
-    // memcpy(p_CallInfo, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
-    //        sizeof(struct QMBCall));
-
-    // (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % QMB_Q_MAX_SIZE;
-    // (*p_Queue->m_Size)--;
-
-    // rc = pthread_cond_broadcast(p_Queue->m_EmptyCond);
-    // DIE(rc != 0, "Could not signal condition!");
-
-    // rc = pthread_mutex_unlock(p_Queue->m_Lock);
-    // DIE(rc != 0, "Could not unlock mutex!");
-
     return rc;
 }
 
@@ -53,25 +34,6 @@ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
                      .m_Metadata.m_Size,
                  p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr].m_CallInfo);
         } while (0));
-
-    // pthread_mutex_lock(p_Queue->m_Lock);
-    // while (*p_Queue->m_Size == 0) {
-    //     pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
-    // }
-
-    // memcpy(p_CallInfo, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
-    //        sizeof(struct HMBCall));
-
-    // LOGF("%s: Message length: %u. Message: %s.\n", __func__,
-    //      p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallMetadata.m_Size,
-    //      p_Queue->m_Data[*p_Queue->m_PopIdxPtr].m_CallInfo);
-
-    // (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) % HMB_Q_MAX_SIZE;
-    // (*p_Queue->m_Size)--;
-
-    // pthread_cond_broadcast(p_Queue->m_EmptyCond);
-
-    // pthread_mutex_unlock(p_Queue->m_Lock);
 
     return rc;
 }

@@ -16,22 +16,6 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
                    sizeof(struct QMBCall));
         } while (0));
 
-    // pthread_mutex_lock(p_Queue->m_Lock);
-    // while (*p_Queue->m_Size == 0) {
-    //     pthread_cond_wait(p_Queue->m_FullCond, p_Queue->m_Lock);
-    // }
-
-    // memcpy(p_ReturnData, &p_Queue->m_Data[*p_Queue->m_PopIdxPtr],
-    //        sizeof(struct QMBCall));
-
-    // (*p_Queue->m_PopIdxPtr) = ((*p_Queue->m_PopIdxPtr) + 1) %
-    // RETURNQ_MAX_SIZE;
-    // (*p_Queue->m_Size)--;
-
-    // pthread_cond_broadcast(p_Queue->m_EmptyCond);
-
-    // pthread_mutex_unlock(p_Queue->m_Lock);
-
     return rc;
 }
 
@@ -173,24 +157,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                                        p_ConnectInfo, p_RequestInfo);
         } while (0));
 
-    // pthread_mutex_lock(queue->m_Lock);
-    // while (*queue->m_Size == CONNECTQ_MAX_SIZE) {
-    //     pthread_cond_wait(queue->m_EmptyCond, queue->m_Lock);
-    // }
-
-    // idx = *queue->m_PushIdxPtr;
-    // s_ProcessConnectionRequest(p_ReturnInfo, &queue->m_Data[idx],
-    // p_ConnectInfo,
-    //                            p_RequestInfo);
-
-    // (*queue->m_PushIdxPtr) = ((*queue->m_PushIdxPtr) + 1) %
-    // CONNECTQ_MAX_SIZE;
-    // (*queue->m_Size)++;
-
-    // pthread_cond_broadcast(queue->m_FullCond);
-
-    // pthread_mutex_unlock(queue->m_Lock);
-
     LOGF("Connect request sent.\n");
 
     /**
@@ -212,31 +178,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
         } while (0));
 
     LOGF("Connect request response received.\n");
-
-    // pthread_mutex_lock(p_ReturnInfo->m_ResponseQueue.m_Lock);
-    // while (*p_ReturnInfo->m_ResponseQueue.m_Size == 0) {
-    //     pthread_cond_wait(p_ReturnInfo->m_ResponseQueue.m_FullCond,
-    //                       p_ReturnInfo->m_ResponseQueue.m_Lock);
-    // }
-
-    // /**
-    //  * WIP: Add the information to the response queue. Now the signal is
-    //  enough
-    //  */
-    // idx = *p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr;
-
-    // memcpy(&p_ReturnInfo->m_ConnectResponseInformation,
-    //        &p_ReturnInfo->m_ResponseQueue.m_Data[idx],
-    //        sizeof(struct ConnectResponseInformation));
-
-    // (*p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr) =
-    //     ((*p_ReturnInfo->m_ResponseQueue.m_PopIdxPtr) + 1) %
-    //     p_ReturnInfo->m_ResponseQueue.m_MaxSize;
-    // (*p_ReturnInfo->m_ResponseQueue.m_Size)--;
-
-    // pthread_cond_broadcast(p_ReturnInfo->m_ResponseQueue.m_EmptyCond);
-
-    // pthread_mutex_unlock(p_ReturnInfo->m_ResponseQueue.m_Lock);
 
     return rc;
 }

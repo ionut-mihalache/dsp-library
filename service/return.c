@@ -19,27 +19,6 @@ static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
                    p_ReturnData, sizeof(struct QMBCall));
         } while (0));
 
-    // rc = pthread_mutex_lock(p_Queue->m_Lock);
-    // DIE(rc != 0, "Could not lock mutex!");
-
-    // while (*p_Queue->m_Size == RETURNQ_MAX_SIZE) {
-    //     rc = pthread_cond_wait(p_Queue->m_EmptyCond, p_Queue->m_Lock);
-    //     DIE(rc != 0, "Could not wait for condition!");
-    // }
-
-    // memcpy(&p_Queue->m_Data[*p_Queue->m_PushIdxPtr], p_ReturnData,
-    //        sizeof(struct QMBCall));
-
-    // (*p_Queue->m_PushIdxPtr) =
-    //     ((*p_Queue->m_PushIdxPtr) + 1) % RETURNQ_MAX_SIZE;
-    // (*p_Queue->m_Size)++;
-
-    // rc = pthread_cond_broadcast(p_Queue->m_FullCond);
-    // DIE(rc != 0, "Could not broadcast condition!");
-
-    // rc = pthread_mutex_unlock(p_Queue->m_Lock);
-    // DIE(rc != 0, "Could not unlock mutex!");
-
     return rc;
 }
 

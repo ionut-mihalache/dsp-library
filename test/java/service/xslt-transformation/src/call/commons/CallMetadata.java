@@ -1,4 +1,4 @@
-package call.abstract_classes;
+package call.commons;
 
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
@@ -12,7 +12,7 @@ import com.sun.jna.Structure.FieldOrder;
  */
 
 @FieldOrder({ "m_Size", "m_ConnId", "m_DataReady" })
-public abstract class CallMetadata extends Structure {
+public class CallMetadata extends Structure {
     public int m_Size;
     public int m_ConnId;
     public byte m_DataReady;
