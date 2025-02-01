@@ -9,13 +9,15 @@ static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
                           struct QMBCall *p_CallData) {
     int32_t rc = 0;
 
-    LOGF("Start call.\n");
+    // LOGF("Start call.\n");
     QPUSH(
         p_Queue, QMB_Q_MAX_SIZE, do {
+            // LOGF("push idx[%u] - pop idx[%u] - size[%u]\n", *p_Queue->m_Metadata.m_PushIdxPtr,
+            //      *p_Queue->m_Metadata.m_PopIdxPtr, *p_Queue->m_Metadata.m_Size);
             memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
                    p_CallData, sizeof(struct QMBCall));
         } while (0));
-    LOGF("End call.\n");
+    // LOGF("End call.\n");
 
     return rc;
 }
@@ -27,7 +29,7 @@ static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
     QPUSH(
         p_Queue, HMB_Q_MAX_SIZE, do {
             memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
-                   p_CallData, sizeof(struct QMBCall));
+                   p_CallData, sizeof(struct HMBCall));
         } while (0));
 
     return rc;

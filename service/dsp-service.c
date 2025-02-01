@@ -21,7 +21,7 @@ void initService() {
     int rc;
     int installShdFd;
 
-    LOGF("Service init...\n");
+    // LOGF("Service init...\n");
 
     installShdFd = createShmObject(INSTALL_MZONE, O_RDWR,
                                    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
@@ -40,7 +40,7 @@ void initService() {
     rc = pthread_spin_init(&installShdata->m_InstallMZoneLk,
                            PTHREAD_PROCESS_SHARED);
     DIE(rc != 0, "Could not init install shared spinlock");
-    LOGF("Service initialized.\n");
+    // LOGF("Service initialized.\n");
 }
 
 void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,

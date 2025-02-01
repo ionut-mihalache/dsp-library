@@ -157,7 +157,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                                        p_ConnectInfo, p_RequestInfo);
         } while (0));
 
-    LOGF("Connect request sent.\n");
+    // LOGF("Connect request sent.\n");
 
     /**
      * Wait for the response from the service to announce that the communication
@@ -177,7 +177,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                    sizeof(struct ConnectResponseInformation));
         } while (0));
 
-    LOGF("Connect request response received.\n");
+    // LOGF("Connect request response received.\n");
 
     return rc;
 }
@@ -198,7 +198,7 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
             connId = p_ResponseInfo->m_Id;
 
             queue->m_Data[idx].m_ConnectionIdx = connId;
-            pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+            // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
 
             // p_ReturnInfo->
 
@@ -211,7 +211,7 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
             //             p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
             // DIE(rc < 0, "Could not unmap return queue");
 
-            pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+            // pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
         } while (0));
 
     // pthread_mutex_lock(queue->m_Lock);

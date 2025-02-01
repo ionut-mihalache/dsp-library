@@ -2,7 +2,6 @@ package main;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +42,7 @@ class ConnectThread extends Thread {
     }
 
     public void run() {
+        // int connections = 0;
         while (true) {
             ServiceReturnInfo returnInfo = new ServiceReturnInfo();
 
@@ -50,6 +50,8 @@ class ConnectThread extends Thread {
 
             int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
             m_Connections.add(connId, returnInfo);
+            // connections++;
+            // System.out.println("Received connections: " + connections);
         }
     }
 }
@@ -63,6 +65,11 @@ class DisconnectThread extends Thread {
 
     public void run() {
         while (true) {
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
         }
     }
@@ -77,29 +84,22 @@ public class Main {
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
-        // ConnectThread connectThread = new ConnectThread(connectInfo, connections);
-        // DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
+        ConnectThread connectThread = new ConnectThread(connectInfo, connections);
+        DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
-        // connectThread.start();
-        // disconnectThread.start();
-
-        int callsNumber = 0;
+        connectThread.start();
+        disconnectThread.start();
 
         while (true) {
             try {
-                ServiceReturnInfo returnInfo = new ServiceReturnInfo();
-
-                connectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, connectInfo);
-
-                int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
-                connections.add(connId, returnInfo);
-
                 QMBCall callData = new QMBCall();
-                callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData, callInfo.m_QMBQueue);
+                callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData,
+                        callInfo.m_QMBQueue);
 
-                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0, callData.m_Metadata.m_Size);
+                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0,
+                        callData.m_Metadata.m_Size);
 
-                Path xsltPath = Paths.get("transformations/transform_version_v6.xsl");
+                Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
 
                 String result = main.getXmlTransformed(iiaData, xsltData);
@@ -112,17 +112,8 @@ public class Main {
                 returnData.m_Metadata.m_ConnId = callData.m_Metadata.m_ConnId;
 
                 connections.get(callData.m_Metadata.m_ConnId).m_SendReturnFnQMB
-                        .sendQMBReturn(connections.get(callData.m_Metadata.m_ConnId).m_QMBQueue, returnData);
-
-                System.out.println("Return " + callsNumber + " calls.");
-
-                callsNumber++;
-
-                // if (callsNumber % 10 == 0) {
-                connectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(connectInfo);
-                // }
-            } catch (IOException e) {
-                e.printStackTrace();
+                        .sendQMBReturn(connections.get(callData.m_Metadata.m_ConnId).m_QMBQueue,
+                                returnData);
             } catch (Exception e) {
                 e.printStackTrace();
             }

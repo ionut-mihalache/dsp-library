@@ -11,6 +11,11 @@ static int32_t s_QPopQMB(struct QMBCall *p_CallInfo,
 
     QPOP(
         p_Queue, QMB_Q_MAX_SIZE, do {
+            // LOGF("push idx[%u] - pop idx[%u] - size[%u] - connId[%u]\n",
+            //      *p_Queue->m_Metadata.m_PushIdxPtr,
+            //      *p_Queue->m_Metadata.m_PopIdxPtr, *p_Queue->m_Metadata.m_Size,
+            //      p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr]
+            //          .m_Metadata.m_ConnId);
             memcpy(p_CallInfo,
                    &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
                    sizeof(struct QMBCall));
@@ -28,11 +33,6 @@ static int32_t s_QPopHMB(struct HMBCall *p_CallInfo,
             memcpy(p_CallInfo,
                    &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
                    sizeof(struct HMBCall));
-
-            LOGF("%s: Message length: %u. Message: %s.\n", __func__,
-                 p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr]
-                     .m_Metadata.m_Size,
-                 p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr].m_CallInfo);
         } while (0));
 
     return rc;

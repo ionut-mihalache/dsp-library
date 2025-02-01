@@ -126,8 +126,8 @@ void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
 struct ConnectResponseInformation *
 getConnectResponse(struct ClientReturnInfo *p_ReturnInfo) {
     if (*p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size == 0) {
-        LOGF("Returning response request connection id: %u.\n",
-             p_ReturnInfo->m_ResponseQueue.m_Data[0].m_Id);
+        // LOGF("Returning response request connection id: %u.\n",
+        //      p_ReturnInfo->m_ResponseQueue.m_Data[0].m_Id);
         return &p_ReturnInfo->m_ResponseQueue.m_Data[0];
     }
 
