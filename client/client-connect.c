@@ -20,39 +20,24 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
 }
 
 static int32_t s_ProcessConnectionRequest(
-    struct ClientReturnInfo *p_ReturnInfo,
+    uint32_t p_ConnId, struct ClientReturnInfo *p_ReturnInfo,
     struct ConnectRequest *p_ConnectRequest,
     struct ClientConnectInfo *p_ConnectInfo,
     struct ClientConnectRequestInformation *p_ConnectInformation) {
     int requestResponseQFd;
     int returnQFd;
     int32_t rc = 0;
-    uint32_t connId;
-
-    /**
-     *  search for a free spot in the opened connections for the service
-     *  send the request to the service with the connection index
-     *  WIP: wait for the service to establish the connection on its side
-     */
-    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
-        if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
-            p_ConnectInfo->m_Connections[connId].m_Connected = true;
-            break;
-        }
-    }
-    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
 
     /**
      * With the connection index found we need to construct the request for the
      * service
      */
-    p_ConnectRequest->m_ConnectionIdx = connId;
+    p_ConnectRequest->m_ConnectionIdx = p_ConnId;
 
-    memcpy(p_ConnectInfo->m_Connections[connId].m_RequestResponseQName,
+    memcpy(p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQName,
            p_ConnectInformation->m_ReturnQName,
            strlen(p_ConnectInformation->m_ReturnQName));
-    memcpy(p_ConnectInfo->m_Connections[connId].m_ReturnQName,
+    memcpy(p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQName,
            p_ConnectInformation->m_RequestResponseQName,
            strlen(p_ConnectInformation->m_RequestResponseQName));
 
@@ -105,37 +90,37 @@ static int32_t s_ProcessConnectionRequest(
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");
 
-    p_ConnectInfo->m_Connections[connId].m_RequestResponseQPushIdx = 0;
-    p_ConnectInfo->m_Connections[connId].m_RequestResponseQPopIdx = 0;
-    p_ConnectInfo->m_Connections[connId].m_RequestResponseQSize = 0;
+    p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx = 0;
+    p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx = 0;
+    p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize = 0;
 
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
-        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQFullCond;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQFullCond;
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
-        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQEmptyCond;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQEmptyCond;
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
-        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQMutex;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQMutex;
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
-        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQPushIdx;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx;
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
-        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQPopIdx;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx;
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
-        &p_ConnectInfo->m_Connections[connId].m_RequestResponseQSize;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize;
 
     p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
     p_ReturnInfo->m_QMBQueue.m_Metadata.m_FullCond =
-        &p_ConnectInfo->m_Connections[connId].m_ReturnQFullCond;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
     p_ReturnInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
-        &p_ConnectInfo->m_Connections[connId].m_ReturnQEmptyCond;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond;
     p_ReturnInfo->m_QMBQueue.m_Metadata.m_Lock =
-        &p_ConnectInfo->m_Connections[connId].m_ReturnQMutex;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex;
     p_ReturnInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
-        &p_ConnectInfo->m_Connections[connId].m_ReturnQPushIdx;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdx;
     p_ReturnInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
-        &p_ConnectInfo->m_Connections[connId].m_ReturnQPopIdx;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdx;
     p_ReturnInfo->m_QMBQueue.m_Metadata.m_Size =
-        &p_ConnectInfo->m_Connections[connId].m_ReturnQSize;
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
 
     p_ReturnInfo->m_ReturnFnQMB = m_ReturnFnQMB;
 
@@ -148,13 +133,29 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                      struct ClientConnectRequestInformation *p_RequestInfo) {
     int32_t rc = 0;
     uint32_t idx;
+    uint32_t connId;
     struct ConnectQueue *queue = &p_ConnectInfo->m_ConnectQ;
+
+    /**
+     *  search for a free spot in the opened connections for the service
+     *  send the request to the service with the connection index
+     *  WIP: wait for the service to establish the connection on its side
+     */
+    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
+        if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
+            p_ConnectInfo->m_Connections[connId].m_Connected = true;
+            break;
+        }
+    }
+    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
 
     QPUSH(
         queue, CONNECTQ_MAX_SIZE, do {
             idx = *queue->m_Metadata.m_PushIdxPtr;
-            s_ProcessConnectionRequest(p_ReturnInfo, &queue->m_Data[idx],
-                                       p_ConnectInfo, p_RequestInfo);
+            s_ProcessConnectionRequest(connId, p_ReturnInfo,
+                                       &queue->m_Data[idx], p_ConnectInfo,
+                                       p_RequestInfo);
         } while (0));
 
     // LOGF("Connect request sent.\n");

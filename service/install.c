@@ -132,36 +132,34 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     QPOP(
         queue, CONNECTQ_MAX_SIZE, do {
             idx = *queue->m_Metadata.m_PopIdxPtr;
-
             connId = queue->m_Data[idx].m_ConnectionIdx;
-
-            pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-
-            // LOGF("Disconnecting %s (%u)...\n",
-            //      p_ConnectInfo->m_Connections[connId].m_ReturnQName, connId);
-            rc = munmap(
-                p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
-                p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
-            DIE(rc < 0, "Could not unmap request response queue");
-            p_ConnectInfo->m_Connections[connId].m_RequestResponseQ = NULL;
-
-            rc = munmap(p_ConnectInfo->m_Connections[connId].m_ReturnQ,
-                        p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
-            DIE(rc < 0, "Could not unmap return queue");
-            p_ConnectInfo->m_Connections[connId].m_ReturnQ = NULL;
-
-            rc = shm_unlink(
-                p_ConnectInfo->m_Connections[connId].m_RequestResponseQName);
-            DIE(rc != 0,
-                "Could not unlink request response queue shared memory object");
-
-            rc = shm_unlink(p_ConnectInfo->m_Connections[connId].m_ReturnQName);
-            DIE(rc != 0, "Could no unlink return queue shared memory object");
-
-            p_ConnectInfo->m_Connections[connId].m_Connected = false;
-
-            pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
         } while (0));
+
+    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+
+    // LOGF("Disconnecting %s (%u)...\n",
+    //      p_ConnectInfo->m_Connections[connId].m_ReturnQName, connId);
+    rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
+                p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
+    DIE(rc < 0, "Could not unmap request response queue");
+    p_ConnectInfo->m_Connections[connId].m_RequestResponseQ = NULL;
+
+    rc = munmap(p_ConnectInfo->m_Connections[connId].m_ReturnQ,
+                p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
+    DIE(rc < 0, "Could not unmap return queue");
+    p_ConnectInfo->m_Connections[connId].m_ReturnQ = NULL;
+
+    rc =
+        shm_unlink(p_ConnectInfo->m_Connections[connId].m_RequestResponseQName);
+    DIE(rc != 0,
+        "Could not unlink request response queue shared memory object");
+
+    rc = shm_unlink(p_ConnectInfo->m_Connections[connId].m_ReturnQName);
+    DIE(rc != 0, "Could no unlink return queue shared memory object");
+
+    p_ConnectInfo->m_Connections[connId].m_Connected = false;
+
+    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
 
     return rc;
 }

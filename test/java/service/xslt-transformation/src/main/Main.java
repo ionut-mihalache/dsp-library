@@ -65,11 +65,11 @@ class DisconnectThread extends Thread {
 
     public void run() {
         while (true) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+            // try {
+            //     Thread.sleep(500);
+            // } catch (InterruptedException e) {
+            //     e.printStackTrace();
+            // }
             m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
         }
     }
