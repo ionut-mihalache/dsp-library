@@ -5,8 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -34,9 +34,9 @@ interface LibDSP extends Library {
 
 class ConnectThread extends Thread {
     private ServiceConnectInfo m_ConnectInfo;
-    private ArrayList<ServiceReturnInfo> m_Connections;
+    private HashMap<Integer, ServiceReturnInfo> m_Connections;
 
-    ConnectThread(ServiceConnectInfo p_ConnectInfo, ArrayList<ServiceReturnInfo> p_Connections) {
+    ConnectThread(ServiceConnectInfo p_ConnectInfo, HashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_ConnectInfo = p_ConnectInfo;
         m_Connections = p_Connections;
     }
@@ -49,7 +49,8 @@ class ConnectThread extends Thread {
             m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, m_ConnectInfo);
 
             int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
-            m_Connections.add(connId, returnInfo);
+            System.out.println("Connection id " + connId);
+            m_Connections.put(connId, returnInfo);
             // connections++;
             // System.out.println("Received connections: " + connections);
         }
@@ -66,9 +67,9 @@ class DisconnectThread extends Thread {
     public void run() {
         while (true) {
             // try {
-            //     Thread.sleep(500);
+            // Thread.sleep(500);
             // } catch (InterruptedException e) {
-            //     e.printStackTrace();
+            // e.printStackTrace();
             // }
             m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
         }
@@ -80,7 +81,7 @@ public class Main {
         Main main = new Main();
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
-        ArrayList<ServiceReturnInfo> connections = new ArrayList<ServiceReturnInfo>();
+        HashMap<Integer, ServiceReturnInfo> connections = new HashMap<Integer, ServiceReturnInfo>();
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
 
