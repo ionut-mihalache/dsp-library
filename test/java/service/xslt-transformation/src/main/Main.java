@@ -42,17 +42,13 @@ class ConnectThread extends Thread {
     }
 
     public void run() {
-        // int connections = 0;
         while (true) {
             ServiceReturnInfo returnInfo = new ServiceReturnInfo();
 
             m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, m_ConnectInfo);
 
             int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
-            System.out.println("Connection id " + connId);
             m_Connections.put(connId, returnInfo);
-            // connections++;
-            // System.out.println("Received connections: " + connections);
         }
     }
 }
@@ -66,11 +62,6 @@ class DisconnectThread extends Thread {
 
     public void run() {
         while (true) {
-            // try {
-            // Thread.sleep(500);
-            // } catch (InterruptedException e) {
-            // e.printStackTrace();
-            // }
             m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
         }
     }
