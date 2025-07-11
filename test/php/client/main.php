@@ -1,4 +1,6 @@
 <?php
+// sleep(5);
+
 $ffi = FFI::cdef(
     "
     struct CallMetadata {
@@ -134,13 +136,47 @@ $ffi = FFI::cdef(
     "/home/user/dsp-library/libdsp.so"
 );
 
+function dspConnect($ffi, $connectInfoPtr, $callInfoPtr, $serviceStrId)
+{
+    $ffi->dspConnect($connectInfoPtr, $callInfoPtr, $serviceStrId);
+}
+
+function sendConnectRequest($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr)
+{
+    $ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
+}
+
+function setQMBCallData($ffi, $callDataPtr, $dataBuffer, $size)
+{
+    echo "Prepare call information\n";
+    return $ffi->setQMBCallData($callDataPtr, $dataBuffer, $size);
+}
+
+function callQMB($ffi, $callInfoPtr, $callDataPtr)
+{
+    echo "Send call request\n";
+    $ffi->callQMB($callInfoPtr, $callDataPtr);
+}
+
+function returnQMB($ffi, $returnDataPtr, $returnInfoPtr)
+{
+    echo "Receive call request\n";
+    $ffi->returnQMB($returnDataPtr, $returnInfoPtr);
+}
+
+function sendDisconnectRequest($ffi, $connectInfoPtr, $requestInfoPtr)
+{
+    echo "Send disconnect request\n";
+    $ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
+}
+
 $connectInfo = $ffi->new("struct ClientConnectInfo");
 $connectInfoPtr = FFI::addr($connectInfo);
 
 $callInfo = $ffi->new("struct ClientCallInfo");
 $callInfoPtr = FFI::addr($callInfo);
 
-$ffi->dspConnect($connectInfoPtr, $callInfoPtr, "xslt-transformation");
+dspConnect($ffi, $connectInfoPtr, $callInfoPtr, "xslt-transformation");
 
 $returnInfo = $ffi->new("struct ClientReturnInfo");
 $returnInfoPtr = FFI::addr($returnInfo);
@@ -163,7 +199,7 @@ $requestInfo->m_ResponseQSize = 1;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
-$ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
+sendConnectRequest($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 
 $callData = $ffi->new("struct QMBCall");
 $callDataPtr = FFI::addr($callData);
@@ -181,16 +217,14 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
     $iiaDataBuffer[$i] = ord($iiaData[$i]);
 }
 
-echo "Prepare call information\n";
-$ffi->setQMBCallData($callDataPtr, $iiaDataBuffer, strlen($iiaData));
-echo "Send call request\n";
-$ffi->callQMB($callInfoPtr, $callDataPtr);
+setQMBCallData($ffi, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
+
+callQMB($ffi, $callInfoPtr, $callDataPtr);
 
 $returnData = $ffi->new("struct QMBCall");
 $returnDataPtr = FFI::addr($returnData);
 
-echo "Receive call request\n";
-$ffi->returnQMB($returnDataPtr, $returnInfoPtr);
+returnQMB($ffi, $returnDataPtr, $returnInfoPtr);
 
 $result = "";
 for ($i = 0; $i < $returnData->m_Metadata->m_Size; ++$i) {
@@ -201,4 +235,4 @@ echo $result . "\n";
 
 
 $requestInfoPtr = FFI::addr($returnInfo->m_ConnectResponseInformation);
-$ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
+sendDisconnectRequest($ffi, $connectInfoPtr, $requestInfoPtr);
