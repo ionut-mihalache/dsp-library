@@ -6,22 +6,28 @@ if [ "$#" -lt 3 ]; then
 fi
 
 runClients() {
-    clientsNr=$1
-    for i in $(seq 1 $clientsNr); do
-        php main.php &
-    done
+    clientPath=$1
+    clientsNr=$2
+    echo "Running $clientsNr clients with client path: $clientPath"
+    # for i in $(seq 1 $clientsNr); do
+    #     php main.php &
+    # done
 }
 
 runBenchmark() {
     profilerPath=$1
     shift
-    client_absolute_path=$1
+    clientAbsolutepath=$1
     shift
 
-    echo "Running $clientsNr clients..."
     for clientsNr in "$@"; do
-        echo "Starting $clientsNr clients..."
-        # runClients $clientsNr
+        samplingTime=$((clientsNr <= 128 ? (clientsNr < 128 ? 10 : clientsNr) : (clientsNr < 1024 ? 30 : 60)))
+        flamegraphTitle="service_benchmark_clients_${clientsNr}_sampling_${samplingTime}s"
+        echo "Starting benchmark with $clientsNr clients, sampling time: $samplingTime seconds, flamegraph title: $flamegraphTitle"
+        echo "Profiler path: $profilerPath/build/bin"
+        # ${profilerPath}/build/bin/asprof -e cpu -d $samplingTime -f ${flamegraphTitle}.html &
+        # profilerPath -e cpu -d
+        runClients $clientAbsolutepath $clientsNr
         wait
         echo "All $clientsNr clients have finished."
     done
@@ -30,3 +36,4 @@ runBenchmark() {
 
 runBenchmark $@
 # ./build/bin/asprof -e cpu -d 50 -f cpu-flame-php.html 31421
+# ./build/bin/asprof -e cpu -d 50 -f cpu-flame-java.html $(pgrep java)
