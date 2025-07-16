@@ -67,9 +67,46 @@ class DisconnectThread extends Thread {
     }
 }
 
+class ProcessCallThread extends Thread {
+    private QMBCall m_CallData;
+    private HashMap<Integer, ServiceReturnInfo> m_Connections;
+    private Main m_Main;
+
+    ProcessCallThread(QMBCall p_CallData, HashMap<Integer, ServiceReturnInfo> p_Connections) {
+        m_CallData = p_CallData;
+        m_Connections = p_Connections;
+        m_Main = new Main();
+    }
+
+    public void run() {
+        try {
+            byte[] iiaData = Arrays.copyOfRange(m_CallData.m_CallInfo, 0,
+                    m_CallData.m_Metadata.m_Size);
+
+            Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
+            byte[] xsltData = Files.readAllBytes(xsltPath);
+
+            String result = m_Main.getXmlTransformed(iiaData, xsltData);
+
+            byte[] resByteArr = result.getBytes();
+
+            QMBCall returnData = new QMBCall();
+            System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
+            returnData.m_Metadata.m_Size = resByteArr.length;
+            returnData.m_Metadata.m_ConnId = m_CallData.m_Metadata.m_ConnId;
+
+            m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_SendReturnFnQMB
+                    .sendQMBReturn(m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_QMBQueue,
+                            returnData);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+
 public class Main {
     public static void main(String[] args) {
-        Main main = new Main();
+        // Main main = new Main();
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
         HashMap<Integer, ServiceReturnInfo> connections = new HashMap<Integer, ServiceReturnInfo>();
@@ -88,24 +125,27 @@ public class Main {
                 callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData,
                         callInfo.m_QMBQueue);
 
-                byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0,
-                        callData.m_Metadata.m_Size);
+                ProcessCallThread processCallThread = new ProcessCallThread(callData, connections);
+                processCallThread.start();
 
-                Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
-                byte[] xsltData = Files.readAllBytes(xsltPath);
+                // byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0,
+                // callData.m_Metadata.m_Size);
 
-                String result = main.getXmlTransformed(iiaData, xsltData);
+                // Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
+                // byte[] xsltData = Files.readAllBytes(xsltPath);
 
-                byte[] resByteArr = result.getBytes();
+                // String result = main.getXmlTransformed(iiaData, xsltData);
 
-                QMBCall returnData = new QMBCall();
-                System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
-                returnData.m_Metadata.m_Size = resByteArr.length;
-                returnData.m_Metadata.m_ConnId = callData.m_Metadata.m_ConnId;
+                // byte[] resByteArr = result.getBytes();
 
-                connections.get(callData.m_Metadata.m_ConnId).m_SendReturnFnQMB
-                        .sendQMBReturn(connections.get(callData.m_Metadata.m_ConnId).m_QMBQueue,
-                                returnData);
+                // QMBCall returnData = new QMBCall();
+                // System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
+                // returnData.m_Metadata.m_Size = resByteArr.length;
+                // returnData.m_Metadata.m_ConnId = callData.m_Metadata.m_ConnId;
+
+                // connections.get(callData.m_Metadata.m_ConnId).m_SendReturnFnQMB
+                // .sendQMBReturn(connections.get(callData.m_Metadata.m_ConnId).m_QMBQueue,
+                // returnData);
             } catch (Exception e) {
                 e.printStackTrace();
             }

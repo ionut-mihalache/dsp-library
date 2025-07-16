@@ -9,31 +9,52 @@ runClients() {
     clientPath=$1
     clientsNr=$2
     echo "Running $clientsNr clients with client path: $clientPath"
-    # for i in $(seq 1 $clientsNr); do
-    #     php main.php &
-    # done
+    for i in $(seq 1 $clientsNr); do
+        php $clientPath/main.php &
+    done
 }
 
 runBenchmark() {
     profilerPath=$1
     shift
-    clientAbsolutepath=$1
+    clientAbsolutePath=$1
     shift
 
     for clientsNr in "$@"; do
         samplingTime=$((clientsNr <= 128 ? (clientsNr < 128 ? 10 : clientsNr) : (clientsNr < 1024 ? 30 : 60)))
-        flamegraphTitle="service_benchmark_clients_${clientsNr}_sampling_${samplingTime}s"
-        echo "Starting benchmark with $clientsNr clients, sampling time: $samplingTime seconds, flamegraph title: $flamegraphTitle"
-        echo "Profiler path: $profilerPath/build/bin"
-        # ${profilerPath}/build/bin/asprof -e cpu -d $samplingTime -f ${flamegraphTitle}.html &
-        # profilerPath -e cpu -d
-        runClients $clientAbsolutepath $clientsNr
+        samplingTime=$((samplingTime + 1))
+        cpuFlamegraphTitle="service_cpu_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        allocFlamegraphTitle="service_alloc_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        cacheMissFlamegraphTitle="service_cache_miss_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        cpuAllocFlamegraphTitle="service_cpu_alloc_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+
+        # ${profilerPath}/build/bin/asprof -e cpu -o flamegraph -d $samplingTime -f ./cpu/$(date +%s)_$cpuFlamegraphTitle.html --title $cpuFlamegraphTitle $(pgrep -f 'java -cp') &
+        # ${profilerPath}/build/bin/asprof -e alloc -o flamegraph -d $samplingTime -f alloc/$(date +%s)_$allocFlamegraphTitle.html --title $allocFlamegraphTitle $(pgrep -f 'java -cp') &
+        # ${profilerPath}/build/bin/asprof -e cache-misses -o flamegraph -d $samplingTime -f cache-misses/$(date +%s)_$cacheMissFlamegraphTitle.html --title $cacheMissFlamegraphTitle $(pgrep -f 'java -cp') &
+        timestamp=$(date +%s)
+        ${profilerPath}/build/bin/asprof -e cpu,alloc -o jfr -d $samplingTime -f ${timestamp}_${cpuAllocFlamegraphTitle}.jfr $(pgrep -f 'java -cp') &
+
+        sleep 1 # Give some time for the profiler to start
+
+        runClients $clientAbsolutePath $clientsNr
+
         wait
+
+        ${profilerPath}/build/bin/jfrconv --cpu -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title thread_${cpuFlamegraphTitle}
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/thread_${timestamp}_${cpuFlamegraphTitle}.html
+        ${profilerPath}/build/bin/jfrconv --alloc -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title thread_${allocFlamegraphTitle}
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/thread_${timestamp}_${allocFlamegraphTitle}.html
+
+        ${profilerPath}/build/bin/jfrconv --cpu ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title ${cpuFlamegraphTitle}
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/${timestamp}_${cpuFlamegraphTitle}.html
+        ${profilerPath}/build/bin/jfrconv --alloc ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title ${allocFlamegraphTitle}
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/${timestamp}_${allocFlamegraphTitle}.html
+
+        rm ${timestamp}_${cpuAllocFlamegraphTitle}.jfr
+
         echo "All $clientsNr clients have finished."
     done
     echo "Benchmark completed."
 }
 
 runBenchmark $@
-# ./build/bin/asprof -e cpu -d 50 -f cpu-flame-php.html 31421
-# ./build/bin/asprof -e cpu -d 50 -f cpu-flame-java.html $(pgrep java)
