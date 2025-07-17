@@ -38,7 +38,7 @@
 #define GB_Q_MAX_SIZE ((uint32_t)1)
 #define DGB_Q_MAX_SIZE ((uint32_t)1)
 
-#define CONNECTQ_MAX_SIZE ((uint32_t)32)
+#define CONNECTQ_MAX_SIZE ((uint32_t)128)
 #define RETURNQ_MAX_SIZE ((uint32_t)1)
 #define RETURN_RESPONSEQ_MAX_SIZE ((uint32_t)1)
 

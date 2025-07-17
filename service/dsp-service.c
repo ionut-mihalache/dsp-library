@@ -52,21 +52,17 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
 
     initService();
 
-    installShmFd = createShmObject(
-        INSTALL_MZONE, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-        sizeof(struct InstallInfo), true);
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR,
+                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+                                       S_IROTH | S_IWOTH,
+                                   sizeof(struct InstallInfo), true);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
     struct InstallInfo *installMemZone =
-        mmap(installShdata,
-             sizeof(struct InstallInfo),
-             PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
+        mmap(installShdata, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
+             MAP_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
-
-    rc = close(installShmFd);
-    DIE(rc != 0, "Could not close installShmFd");
 
     int32_t freeIdx = -1;
     uint8_t *freeBytePtr = NULL;
@@ -100,8 +96,20 @@ check_free_index:
 spin_lock_unlock:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
-    struct InstallInformation *installInfo =
-        &installMemZone->m_Info[freeByteIdx];
+    rc = munmap(installMemZone, sizeof(struct InstallInfo));
+    DIE(rc != 0, "Could not unmap install memory zone");
+
+    /**
+     * Map only the information of the service
+     */
+    struct InstallInformation *installInfo = (struct InstallInformation *)mmap(
+        NULL, sizeof(struct InstallInformation), PROT_READ | PROT_WRITE,
+        MAP_SHARED, installShmFd,
+        freeByteIdx * sizeof(struct InstallInformation));
+    DIE(installInfo == MAP_FAILED, "Could not map service information");
+
+    rc = close(installShmFd);
+    DIE(rc != 0, "Could not close installShmFd");
 
     installInfo->m_ProcId = getpid();
     installInfo->m_Available = true;
