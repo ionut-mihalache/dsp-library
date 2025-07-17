@@ -10,7 +10,7 @@ runClients() {
     clientsNr=$2
     echo "Running $clientsNr clients with client path: $clientPath"
     for i in $(seq 1 $clientsNr); do
-        php $clientPath/main.php &
+        php $clientPath/main.php > /dev/null &
     done
 }
 
