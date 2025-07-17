@@ -1,10 +1,10 @@
-# usage: ./benchmark.sh profiler_absolute_path client_absolute_path clientsNr1 clientsNr2 ...
-# Example: ./benchmark.sh /path/to/profiler /path/to/client 1 2 3 4 5
-if [ "$#" -lt 3 ]; then
-    echo "Usage: $0 profiler_absolute_path client_absolute_path clientsNr1 clientsNr2 ..."
+# usage: ./benchmark.sh flamegraph_absolute_path profiler_absolute_path client_absolute_path clientsNr1 clientsNr2 ...
+# # Example: ./benchmark.sh /path/to/flamegraph /path/to/profiler /path/to/client 1 2 4 8 16 32 64 128 256 512 1024
+# It is expected that the flamegraph used is https://github.com/brendangregg/Flamegraph
+if [ "$#" -lt 4 ]; then
+    echo "Usage: $0 flamegraph_absolute_path profiler_absolute_path client_absolute_path clientsNr1 clientsNr2 ..."
     exit 1
 fi
-
 runClients() {
     clientPath=$1
     clientsNr=$2
@@ -15,6 +15,8 @@ runClients() {
 }
 
 runBenchmark() {
+    flamegraphPath=$1
+    shift
     profilerPath=$1
     shift
     clientAbsolutePath=$1
@@ -40,17 +42,45 @@ runBenchmark() {
 
         wait
 
-        ${profilerPath}/build/bin/jfrconv --cpu -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title thread_${cpuFlamegraphTitle}
-        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/thread_${timestamp}_${cpuFlamegraphTitle}.html
-        ${profilerPath}/build/bin/jfrconv --alloc -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title thread_${allocFlamegraphTitle}
-        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/thread_${timestamp}_${allocFlamegraphTitle}.html
+        ${profilerPath}/build/bin/jfrconv --cpu -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed # --title thread_${cpuFlamegraphTitle}
+        # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/thread_${timestamp}_${cpuFlamegraphTitle}.html
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${cpuFlamegraphTitle}.collapsed
+        ${flamegraphPath}/flamegraph.pl --title thread_${cpuFlamegraphTitle} ./${timestamp}_${cpuFlamegraphTitle}.collapsed > ./cpu/thread_${timestamp}_${cpuFlamegraphTitle}.svg
+        rm ./${timestamp}_${cpuFlamegraphTitle}.collapsed
 
-        ${profilerPath}/build/bin/jfrconv --cpu ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title ${cpuFlamegraphTitle}
-        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/${timestamp}_${cpuFlamegraphTitle}.html
-        ${profilerPath}/build/bin/jfrconv --alloc ${timestamp}_${cpuAllocFlamegraphTitle}.jfr --title ${allocFlamegraphTitle}
-        mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/${timestamp}_${allocFlamegraphTitle}.html
+        ${profilerPath}/build/bin/jfrconv --alloc -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed #--title thread_${allocFlamegraphTitle}
+        # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/thread_${timestamp}_${allocFlamegraphTitle}.html
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${allocFlamegraphTitle}.collapsed
+        ${flamegraphPath}/flamegraph.pl --title thread_${allocFlamegraphTitle} ./${timestamp}_${allocFlamegraphTitle}.collapsed > ./alloc/thread_${timestamp}_${allocFlamegraphTitle}.svg
+        rm ./${timestamp}_${allocFlamegraphTitle}.collapsed
+
+        ${profilerPath}/build/bin/jfrconv --cpu ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed # --title ${cpuFlamegraphTitle}
+        # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/${timestamp}_${cpuFlamegraphTitle}.html
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${cpuFlamegraphTitle}.collapsed
+        ${flamegraphPath}/flamegraph.pl --title ${cpuFlamegraphTitle} ./${timestamp}_${cpuFlamegraphTitle}.collapsed > ./cpu/${timestamp}_${cpuFlamegraphTitle}.svg
+        rm ./${timestamp}_${cpuFlamegraphTitle}.collapsed
+
+        ${profilerPath}/build/bin/jfrconv --alloc ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed #--title ${allocFlamegraphTitle}
+        # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/${timestamp}_${allocFlamegraphTitle}.html
+        mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${allocFlamegraphTitle}.collapsed
+        ${flamegraphPath}/flamegraph.pl --title ${allocFlamegraphTitle} ./${timestamp}_${allocFlamegraphTitle}.collapsed > ./alloc/${timestamp}_${allocFlamegraphTitle}.svg
+        rm ./${timestamp}_${allocFlamegraphTitle}.collapsed
 
         rm ${timestamp}_${cpuAllocFlamegraphTitle}.jfr
+
+        cd ./cpu
+        inkscape ./thread_${timestamp}_${cpuFlamegraphTitle}.svg --export-pdf=thread_${timestamp}_${cpuFlamegraphTitle}.pdf 2>/dev/null
+        rm ./thread_${timestamp}_${cpuFlamegraphTitle}.svg
+        inkscape ./${timestamp}_${cpuFlamegraphTitle}.svg --export-pdf=${timestamp}_${cpuFlamegraphTitle}.pdf 2>/dev/null
+        rm ./${timestamp}_${cpuFlamegraphTitle}.svg
+        cd -
+
+        cd ./alloc
+        inkscape ./thread_${timestamp}_${allocFlamegraphTitle}.svg --export-pdf=thread_${timestamp}_${allocFlamegraphTitle}.pdf 2>/dev/null
+        rm ./thread_${timestamp}_${allocFlamegraphTitle}.svg
+        inkscape ./${timestamp}_${allocFlamegraphTitle}.svg --export-pdf=${timestamp}_${allocFlamegraphTitle}.pdf 2>/dev/null
+        rm ./${timestamp}_${allocFlamegraphTitle}.svg
+        cd -
 
         echo "All $clientsNr clients have finished."
     done
