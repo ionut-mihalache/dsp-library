@@ -5,6 +5,7 @@ if [ "$#" -lt 4 ]; then
     echo "Usage: $0 flamegraph_absolute_path profiler_absolute_path client_absolute_path clientsNr1 clientsNr2 ..."
     exit 1
 fi
+
 runClients() {
     clientPath=$1
     clientsNr=$2
@@ -21,6 +22,8 @@ runBenchmark() {
     shift
     clientAbsolutePath=$1
     shift
+
+    flamegraphAttributes="--width 3000 --minWidth=5 --fontsize 14"
 
     for clientsNr in "$@"; do
         samplingTime=$((clientsNr <= 128 ? (clientsNr < 128 ? 10 : clientsNr) : (clientsNr < 1024 ? 30 : 60)))
@@ -45,25 +48,25 @@ runBenchmark() {
         ${profilerPath}/build/bin/jfrconv --cpu -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed # --title thread_${cpuFlamegraphTitle}
         # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/thread_${timestamp}_${cpuFlamegraphTitle}.html
         mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${cpuFlamegraphTitle}.collapsed
-        ${flamegraphPath}/flamegraph.pl --title thread_${cpuFlamegraphTitle} ./${timestamp}_${cpuFlamegraphTitle}.collapsed > ./cpu/thread_${timestamp}_${cpuFlamegraphTitle}.svg
+        ${flamegraphPath}/flamegraph.pl ${flamegraphAttributes} --title thread_${cpuFlamegraphTitle} ./${timestamp}_${cpuFlamegraphTitle}.collapsed > ./cpu/thread_${timestamp}_${cpuFlamegraphTitle}.svg
         rm ./${timestamp}_${cpuFlamegraphTitle}.collapsed
 
         ${profilerPath}/build/bin/jfrconv --alloc -t ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed #--title thread_${allocFlamegraphTitle}
         # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/thread_${timestamp}_${allocFlamegraphTitle}.html
         mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${allocFlamegraphTitle}.collapsed
-        ${flamegraphPath}/flamegraph.pl --title thread_${allocFlamegraphTitle} ./${timestamp}_${allocFlamegraphTitle}.collapsed > ./alloc/thread_${timestamp}_${allocFlamegraphTitle}.svg
+        ${flamegraphPath}/flamegraph.pl ${flamegraphAttributes} --title thread_${allocFlamegraphTitle} ./${timestamp}_${allocFlamegraphTitle}.collapsed > ./alloc/thread_${timestamp}_${allocFlamegraphTitle}.svg
         rm ./${timestamp}_${allocFlamegraphTitle}.collapsed
 
         ${profilerPath}/build/bin/jfrconv --cpu ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed # --title ${cpuFlamegraphTitle}
         # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./cpu/${timestamp}_${cpuFlamegraphTitle}.html
         mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${cpuFlamegraphTitle}.collapsed
-        ${flamegraphPath}/flamegraph.pl --title ${cpuFlamegraphTitle} ./${timestamp}_${cpuFlamegraphTitle}.collapsed > ./cpu/${timestamp}_${cpuFlamegraphTitle}.svg
+        ${flamegraphPath}/flamegraph.pl ${flamegraphAttributes} --title ${cpuFlamegraphTitle} ./${timestamp}_${cpuFlamegraphTitle}.collapsed > ./cpu/${timestamp}_${cpuFlamegraphTitle}.svg
         rm ./${timestamp}_${cpuFlamegraphTitle}.collapsed
 
         ${profilerPath}/build/bin/jfrconv --alloc ${timestamp}_${cpuAllocFlamegraphTitle}.jfr -o collapsed #--title ${allocFlamegraphTitle}
         # mv ${timestamp}_${cpuAllocFlamegraphTitle}.html ./alloc/${timestamp}_${allocFlamegraphTitle}.html
         mv ${timestamp}_${cpuAllocFlamegraphTitle}.collapsed ./${timestamp}_${allocFlamegraphTitle}.collapsed
-        ${flamegraphPath}/flamegraph.pl --title ${allocFlamegraphTitle} ./${timestamp}_${allocFlamegraphTitle}.collapsed > ./alloc/${timestamp}_${allocFlamegraphTitle}.svg
+        ${flamegraphPath}/flamegraph.pl ${flamegraphAttributes} --title ${allocFlamegraphTitle} ./${timestamp}_${allocFlamegraphTitle}.collapsed > ./alloc/${timestamp}_${allocFlamegraphTitle}.svg
         rm ./${timestamp}_${allocFlamegraphTitle}.collapsed
 
         rm ${timestamp}_${cpuAllocFlamegraphTitle}.jfr
