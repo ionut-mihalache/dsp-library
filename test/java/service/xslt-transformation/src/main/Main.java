@@ -127,25 +127,6 @@ public class Main {
 
                 ProcessCallThread processCallThread = new ProcessCallThread(callData, connections);
                 processCallThread.start();
-
-                // byte[] iiaData = Arrays.copyOfRange(callData.m_CallInfo, 0,
-                // callData.m_Metadata.m_Size);
-
-                // Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
-                // byte[] xsltData = Files.readAllBytes(xsltPath);
-
-                // String result = main.getXmlTransformed(iiaData, xsltData);
-
-                // byte[] resByteArr = result.getBytes();
-
-                // QMBCall returnData = new QMBCall();
-                // System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
-                // returnData.m_Metadata.m_Size = resByteArr.length;
-                // returnData.m_Metadata.m_ConnId = callData.m_Metadata.m_ConnId;
-
-                // connections.get(callData.m_Metadata.m_ConnId).m_SendReturnFnQMB
-                // .sendQMBReturn(connections.get(callData.m_Metadata.m_ConnId).m_QMBQueue,
-                // returnData);
             } catch (Exception e) {
                 e.printStackTrace();
             }
