@@ -10,8 +10,28 @@ runClients() {
     clientPath=$1
     clientsNr=$2
     echo "Running $clientsNr clients with client path: $clientPath"
+
+    running=0
+    maxRunning=256
+    currentBatchNr=1
+
     for i in $(seq 1 $clientsNr); do
+        if (( (i - 1) % maxRunning == 0 )); then
+            echo "Starting batch" ${currentBatchNr}
+            ((currentBatchNr++))
+        fi
         php $clientPath/main.php > /dev/null &
+        ((running++))
+
+        if (( running >= maxRunning )); then
+            sleep 1
+            running=0
+        fi
+
+        # if (( i % maxRunning == 0 )); then
+        #     ((currentBatchNr++))
+        # fi
+        # sleep 0.01
     done
 }
 
@@ -24,6 +44,10 @@ parseProfilingResult() {
     collapsedFile=$5
 
     outPath=$6
+
+    if [ ! -d ${outPath} ]; then
+        mkdir ${outPath}
+    fi
 
     flamegraphAttributes="--width 3000 --minWidth 5 --fontsize 14"
 
@@ -44,8 +68,13 @@ convertSVGToPDF() {
     svgFile=$1
     outPath=$2
 
+    if [ ! -d ${outPath} ]; then
+        echo "Out path "${outPath}" does not exist!"
+        return 1
+    fi
+
     cd ${outPath}
-    inkscape ./${svgFile}.svg --export-pdf=thread_${svgFile}.pdf 2>/dev/null
+    inkscape ./thread_${svgFile}.svg --export-pdf=thread_${svgFile}.pdf 2>/dev/null
     # rm ./thread_${svgFile}.svg
     inkscape ./${svgFile}.svg --export-pdf=${svgFile}.pdf 2>/dev/null
     # rm ./${svgFile}.svg
@@ -61,40 +90,52 @@ runBenchmark() {
     shift
 
     for clientsNr in "$@"; do
-        samplingTime=$((clientsNr <= 128 ? (clientsNr < 128 ? 10 : clientsNr) : (clientsNr < 1024 ? 30 : 60)))
-        samplingTime=$((samplingTime + 1))
-        cpuFlamegraphTitle="service_cpu_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
-        allocFlamegraphTitle="service_alloc_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
-        cacheMissFlamegraphTitle="service_cache_miss_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
-        cpuAllocFlamegraphTitle="service_cpu_alloc_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
-        nativeMemFlamegraphTitle="service_nativemem_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
-        lockFlamegraphTitle="service_lock_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
-        cpuAllocNativeMemFlamegraphTitle="service_cpu_alloc_nativemem_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
-        cpuAllocNativeMemLockFlamegraphTitle="service_cpu_alloc_nativemem_lock_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        # samplingTime=$((clientsNr <= 128 ? (clientsNr < 128 ? 16 : clientsNr) : (clientsNr < 1024 ? 32 : 64)))
+        # samplingTime=$((samplingTime + 1))
+        # cpuFlamegraphTitle="service_cpu_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        # allocFlamegraphTitle="service_alloc_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        # cacheMissFlamegraphTitle="service_cache_miss_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        # cpuAllocFlamegraphTitle="service_cpu_alloc_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        # nativeMemFlamegraphTitle="service_nativemem_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        # lockFlamegraphTitle="service_lock_benchmark_${clientsNr}_clients_sampling_${samplingTime}s"
+        cpuFlamegraphTitle="service_cpu_benchmark_${clientsNr}_clients_sampling"
+        allocFlamegraphTitle="service_alloc_benchmark_${clientsNr}_clients_sampling"
+        cacheMissFlamegraphTitle="service_cache_miss_benchmark_${clientsNr}_clients_sampling"
+        cpuAllocFlamegraphTitle="service_cpu_alloc_benchmark_${clientsNr}_clients_sampling"
+        nativeMemFlamegraphTitle="service_nativemem_benchmark_${clientsNr}_clients_sampling"
+        lockFlamegraphTitle="service_lock_benchmark_${clientsNr}_clients_sampling"
+        cpuAllocNativeMemFlamegraphTitle="service_cpu_alloc_nativemem_benchmark_${clientsNr}_clients_sampling"
+        cpuAllocNativeMemLockFlamegraphTitle="service_cpu_alloc_nativemem_lock_benchmark_${clientsNr}_clients_sampling"
 
         # ${profilerPath}/build/bin/asprof -e cpu -o flamegraph -d $samplingTime -f ./cpu/$(date +%s)_$cpuFlamegraphTitle.html --title $cpuFlamegraphTitle $(pgrep -f 'java -cp') &
         # ${profilerPath}/build/bin/asprof -e alloc -o flamegraph -d $samplingTime -f alloc/$(date +%s)_$allocFlamegraphTitle.html --title $allocFlamegraphTitle $(pgrep -f 'java -cp') &
         # ${profilerPath}/build/bin/asprof -e cache-misses -o flamegraph -d $samplingTime -f cache-misses/$(date +%s)_$cacheMissFlamegraphTitle.html --title $cacheMissFlamegraphTitle $(pgrep -f 'java -cp') &
         timestamp=$(date +%s)
-        ${profilerPath}/build/bin/asprof -e cpu,alloc,nativemem,lock -o jfr -d $samplingTime -f ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr $(pgrep -f 'java -cp') &
+        # ${profilerPath}/build/bin/asprof -e cpu,alloc,nativemem,lock -o jfr -d $samplingTime -f ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr $(pgrep -f 'java -cp') &
+        servicePID=$(pgrep -f 'java -cp')
+        ${profilerPath}/build/bin/asprof start -e cpu,alloc,nativemem,lock -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
+        # ${profilerPath}/build/bin/asprof -e cpu,alloc,nativemem,lock -o jfr -d $samplingTime -f ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr $(pgrep -f 'java -cp')
 
-        sleep 1 # Give some time for the profiler to start
+        # sleep 10 # Give some time for the profiler to start
 
         runClients $clientAbsolutePath $clientsNr
 
         wait
 
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --cpu ${timestamp}_${cpuFlamegraphTitle} ./cpu
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --alloc ${timestamp}_${allocFlamegraphTitle} ./alloc
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --nativemem ${timestamp}_${nativeMemFlamegraphTitle} ./native_alloc
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --lock ${timestamp}_${lockFlamegraphTitle} ./lock
+        # ${profilerPath}/build/bin/asprof stop -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
+        ${profilerPath}/build/bin/asprof stop -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
+
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --cpu ${timestamp}_${cpuFlamegraphTitle} ./benchmark_results/cpu
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --alloc ${timestamp}_${allocFlamegraphTitle} ./benchmark_results/alloc
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --nativemem ${timestamp}_${nativeMemFlamegraphTitle} ./benchmark_results/native_alloc
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --lock ${timestamp}_${lockFlamegraphTitle} ./benchmark_results/lock
 
         rm ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr
 
-        convertSVGToPDF ${timestamp}_${cpuFlamegraphTitle} ./cpu
-        convertSVGToPDF ${timestamp}_${allocFlamegraphTitle} ./alloc
-        convertSVGToPDF ${timestamp}_${nativeMemFlamegraphTitle} ./native_alloc
-        convertSVGToPDF ${timestamp}_${lockFlamegraphTitle} ./lock
+        convertSVGToPDF ${timestamp}_${cpuFlamegraphTitle} ./benchmark_results/cpu
+        convertSVGToPDF ${timestamp}_${allocFlamegraphTitle} ./benchmark_results/alloc
+        convertSVGToPDF ${timestamp}_${nativeMemFlamegraphTitle} ./benchmark_results/native_alloc
+        convertSVGToPDF ${timestamp}_${lockFlamegraphTitle} ./benchmark_results/lock
 
         echo "All $clientsNr clients have finished."
     done
@@ -179,3 +220,5 @@ runBenchmark $@
 # inkscape ./${timestamp}_${lockFlamegraphTitle}.svg --export-pdf=${timestamp}_${lockFlamegraphTitle}.pdf 2>/dev/null
 # # rm ./${timestamp}_${lockFlamegraphTitle}.svg
 # cd -
+
+# docker exec -it --user user -e TERM=xterm-256color -w /home/user docker-dsp-library-1 bash
