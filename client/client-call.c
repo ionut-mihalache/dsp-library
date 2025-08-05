@@ -5,6 +5,17 @@
 #include "log.h"
 #include "macros.h"
 
+static enum QType { SMBQ, EMBQ, QMBQ, HMBQ, MBQ, DMBQ, GBQ, DGBQ };
+
+static struct PushInformation {
+    void *m_Q;
+    void *m_CallData;
+    size_t m_CallDataSize;
+    uint32_t m_QMaxSize;
+};
+
+static int32_t s_QPush(struct PushInformation *p_PushInfo) {}
+
 static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
                           struct QMBCall *p_CallData) {
     int32_t rc = 0;
@@ -12,8 +23,10 @@ static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
     // LOGF("Start call.\n");
     QPUSH(
         p_Queue, QMB_Q_MAX_SIZE, do {
-            // LOGF("push idx[%u] - pop idx[%u] - size[%u]\n", *p_Queue->m_Metadata.m_PushIdxPtr,
-            //      *p_Queue->m_Metadata.m_PopIdxPtr, *p_Queue->m_Metadata.m_Size);
+            // LOGF("push idx[%u] - pop idx[%u] - size[%u]\n",
+            // *p_Queue->m_Metadata.m_PushIdxPtr,
+            //      *p_Queue->m_Metadata.m_PopIdxPtr,
+            //      *p_Queue->m_Metadata.m_Size);
             memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
                    p_CallData, sizeof(struct QMBCall));
         } while (0));
