@@ -5,47 +5,140 @@
 #include "log.h"
 #include "macros.h"
 
-static enum QType { SMBQ, EMBQ, QMBQ, HMBQ, MBQ, DMBQ, GBQ, DGBQ };
+enum QType { SMBQ, EMBQ, QMBQ, HMBQ, MBQ, DMBQ, GBQ, DGBQ };
 
-static struct PushInformation {
-    void *m_Q;
-    void *m_CallData;
-    size_t m_CallDataSize;
-    uint32_t m_QMaxSize;
-};
+static int32_t s_QPushA(void *p_Queue, enum QType p_QType, void *p_CallData,
+                        uint32_t p_QMaxSize,
+                        int32_t (*p_HelperFn)(void *, void *)) {
+    int32_t rc = 0;
 
-static int32_t s_QPush(struct PushInformation *p_PushInfo) {}
+    switch (p_QType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case EMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case QMBQ:
+        QPUSH((struct QMBDSPQueue *)p_Queue, p_QMaxSize,
+              do { p_HelperFn(p_Queue, p_CallData); } while (0));
+        break;
+    case HMBQ:
+        QPUSH((struct HMBDSPQueue *)p_Queue, p_QMaxSize,
+              do { p_HelperFn(p_Queue, p_CallData); } while (0));
+        break;
+    case MBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case GBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DGBQ:
+        /**
+         * TODO
+         */
+        break;
+    default:
+        /**
+         * TODO
+         */
+        ;
+    }
+
+    return rc;
+}
+
+static int32_t s_QMBPushHelper(void *p_Queue, void *p_CallData) {
+    int32_t rc = 0;
+    struct QMBDSPQueue *queue = p_Queue;
+    struct QMBCall *callData = p_CallData;
+
+    do {
+        memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
+               sizeof(struct QMBCall));
+    } while (0);
+
+    return rc;
+}
 
 static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
                           struct QMBCall *p_CallData) {
-    int32_t rc = 0;
+    return s_QPushA(p_Queue, QMBQ, p_CallData, QMB_Q_MAX_SIZE, s_QMBPushHelper);
+}
 
-    // LOGF("Start call.\n");
-    QPUSH(
-        p_Queue, QMB_Q_MAX_SIZE, do {
-            // LOGF("push idx[%u] - pop idx[%u] - size[%u]\n",
-            // *p_Queue->m_Metadata.m_PushIdxPtr,
-            //      *p_Queue->m_Metadata.m_PopIdxPtr,
-            //      *p_Queue->m_Metadata.m_Size);
-            memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
-                   p_CallData, sizeof(struct QMBCall));
-        } while (0));
-    // LOGF("End call.\n");
+static int32_t s_HMBPushHelper(void *p_Queue, void *p_CallData) {
+    int32_t rc = 0;
+    struct HMBDSPQueue *queue = p_Queue;
+    struct HMBCall *callData = p_CallData;
+
+    do {
+        memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
+               sizeof(struct HMBCall));
+    } while (0);
 
     return rc;
 }
 
 static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
                           struct HMBCall *p_CallData) {
-    int32_t rc = 0;
+    return s_QPushA(p_Queue, HMBQ, p_CallData, HMB_Q_MAX_SIZE, s_HMBPushHelper);
+}
 
-    QPUSH(
-        p_Queue, HMB_Q_MAX_SIZE, do {
-            memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
-                   p_CallData, sizeof(struct HMBCall));
-        } while (0));
-
-    return rc;
+static int32_t s_QPush(struct PushInformation *p_PushInfo) {
+    switch (p_PushInfo->m_QType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case EMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case QMBQ:
+        return s_QPushQMB(p_PushInfo->m_Q, p_PushInfo->m_CallData);
+    case HMBQ:
+        return s_QPushHMB(p_PushInfo->m_Q, p_PushInfo->m_CallData);
+    case MBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case GBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DGBQ:
+        /**
+         * TODO
+         */
+        break;
+    default:
+        /**
+         * TODO
+         */
+        ;
+    }
 }
 
 int32_t
@@ -92,6 +185,8 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
 
     // LOGF("Connected to \'%s\' with version \'%s\'.\n", p_ServiceStrId,
     //      p_InstallInfo->m_Version);
+
+    p_CallInfo->m_CallFn = s_QPush;
 
     return rc;
 }

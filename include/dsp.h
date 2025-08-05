@@ -94,6 +94,12 @@ struct GBCall {
     struct CallMetadata m_Metadata;
 };
 
+struct PushInformation {
+    void *m_Q;
+    void *m_CallData;
+    enum QType m_QType;
+};
+
 struct ConnectResponseInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     char m_ReturnRequestQName[RETURNQ_NAME_MAX_SIZE];

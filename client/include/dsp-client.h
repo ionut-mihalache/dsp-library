@@ -8,6 +8,11 @@ struct ClientCallInfo {
     struct HMBDSPQueue m_HMBQueue;
     int32_t (*m_CallFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
     int32_t (*m_CallFnHMB)(struct HMBDSPQueue *, struct HMBCall *);
+
+    /**
+     * v0.0.2
+     */
+    int32_t (*m_CallFn)(struct PushInformation *);
 };
 
 struct ClientReturnInfo {
