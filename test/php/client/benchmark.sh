@@ -222,3 +222,4 @@ runBenchmark $@
 # cd -
 
 # docker exec -it --user user -e TERM=xterm-256color -w /home/user docker-dsp-library-1 bash
+# sshfs root@ssh.dev.erasmus.upb.ro:/root/.benchmark_results benchmark_results/
