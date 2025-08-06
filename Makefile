@@ -5,7 +5,6 @@ DEBUG_DEFINES=-D__COMPILE_MODE_DEBUG__
 INCLUDES=-Iutils -Iutils/macros -Iutils/hashmap -Iutils/exit -Iutils/log -Iinclude -Iservice/include -Iclient/include
 OPTIONS=-Wall -Wextra
 OPTIMIZATIONS=-O3
-# OPTIMIZATIONS=
 
 OBJECTS_DIR=object
 

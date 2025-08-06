@@ -5,8 +5,8 @@
 #include "log.h"
 #include "macros.h"
 
-static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
-                             struct QMBDSPQueue *p_Queue) {
+static int32_t s_ReturnFnQMB(struct QMBCall *p_ReturnData,
+                             struct DSPQueue *p_Queue) {
     int32_t rc = 0;
 
     QPOP(
@@ -17,6 +17,58 @@ static int32_t m_ReturnFnQMB(struct QMBCall *p_ReturnData,
         } while (0));
 
     return rc;
+}
+
+static int32_t s_QPop(struct PopInformation *p_PopInfo) {
+    switch (p_PopInfo->m_QType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case EMBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case QMBQ:
+        return s_ReturnFnQMB(p_PopInfo->m_ReturnData, p_PopInfo->m_Q);
+    case HMBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case MBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case DMBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case GBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case DGBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    default:
+        /**
+         * TODO
+         */
+        return (-1);
+    }
+}
+
+static void s_CreateQ(void **p_QPtrRes, size_t p_Size, int p_Fd) {
+    *p_QPtrRes = mmap(NULL, p_Size, PROT_READ, MAP_SHARED, p_Fd, 0);
+    DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
 }
 
 static int32_t s_ProcessConnectionRequest(
@@ -50,7 +102,8 @@ static int32_t s_ProcessConnectionRequest(
            p_ConnectInformation->m_RequestResponseQName,
            strlen(p_ConnectInformation->m_RequestResponseQName));
 
-    p_ReturnInfo->m_QMBQueue.m_MaxSize = RETURNQ_MAX_SIZE;
+    // p_ReturnInfo->m_QMBQueue.m_MaxSize = RETURNQ_MAX_SIZE;
+    p_ReturnInfo->m_Q.m_MaxSize = RETURNQ_MAX_SIZE;
     p_ConnectRequest->m_ReturnQSize =
         RETURNQ_MAX_SIZE; // CHECK: possibly user specified
 
@@ -82,10 +135,58 @@ static int32_t s_ProcessConnectionRequest(
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall), true);
 
-    struct QMBCall *returnQ =
-        mmap(NULL, p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall),
-             PROT_READ, MAP_SHARED, returnQFd, 0);
-    DIE(returnQ == MAP_FAILED, "Could not map return queue memory");
+    void *returnQ;
+
+    switch (p_ConnectInformation->m_QType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case EMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case QMBQ:
+        s_CreateQ(&returnQ,
+                  p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall),
+                  returnQFd);
+        break;
+    case HMBQ:
+        /**
+         * TODO
+         */
+        s_CreateQ(&returnQ,
+                  p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall),
+                  returnQFd);
+        break;
+    case MBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case GBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DGBQ:
+        /**
+         * TODO
+         */
+        break;
+    default:
+        /**
+         * TODO
+         */
+        DIE(true, "QType is not recognized");
+    }
 
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");
@@ -108,21 +209,36 @@ static int32_t s_ProcessConnectionRequest(
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize;
 
-    p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
-    p_ReturnInfo->m_QMBQueue.m_Metadata.m_FullCond =
+    // p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
+    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_FullCond =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
+    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond;
+    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_Lock =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex;
+    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdx;
+    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdx;
+    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_Size =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
+    p_ReturnInfo->m_Q.m_Data = returnQ;
+    p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
-    p_ReturnInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
+    p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond;
-    p_ReturnInfo->m_QMBQueue.m_Metadata.m_Lock =
+    p_ReturnInfo->m_Q.m_Metadata.m_Lock =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex;
-    p_ReturnInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
+    p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdx;
-    p_ReturnInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
+    p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdx;
-    p_ReturnInfo->m_QMBQueue.m_Metadata.m_Size =
+    p_ReturnInfo->m_Q.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
+    p_ReturnInfo->m_Q.m_Type = p_ConnectInformation->m_QType;
 
-    p_ReturnInfo->m_ReturnFnQMB = m_ReturnFnQMB;
+    // p_ReturnInfo->m_ReturnFnQMB = s_ReturnFnQMB;
+    p_ReturnInfo->m_ReturnFn = s_QPop;
 
     return rc;
 }
@@ -158,8 +274,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                                        p_RequestInfo);
         } while (0));
 
-    // LOGF("Connect request sent.\n");
-
     /**
      * Wait for the response from the service to announce that the communication
      * is established
@@ -177,8 +291,6 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                    &p_ReturnInfo->m_ResponseQueue.m_Data[idx],
                    sizeof(struct ConnectResponseInformation));
         } while (0));
-
-    // LOGF("Connect request response received.\n");
 
     return rc;
 }
@@ -199,53 +311,7 @@ s_SendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo,
             connId = p_ResponseInfo->m_Id;
 
             queue->m_Data[idx].m_ConnectionIdx = connId;
-            // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-
-            // p_ReturnInfo->
-
-            // rc =
-            // munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
-            //             p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
-            // DIE(rc < 0, "Could not unmap request response queue");
-
-            // rc = munmap(p_ConnectInfo->m_Connections[connId].m_ReturnQ,
-            //             p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
-            // DIE(rc < 0, "Could not unmap return queue");
-
-            // pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
         } while (0));
-
-    // pthread_mutex_lock(queue->m_Lock);
-    // while (*queue->m_Size == CONNECTQ_MAX_SIZE) {
-    //     pthread_cond_wait(queue->m_EmptyCond, queue->m_Lock);
-    // }
-
-    // idx = *queue->m_PushIdxPtr;
-
-    // connId = p_ResponseInfo->m_Id;
-
-    // queue->m_Data[idx].m_ConnectionIdx = connId;
-    // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-
-    // // p_ReturnInfo->
-
-    // // rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
-    // // p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
-    // // DIE(rc < 0, "Could not unmap request response queue");
-
-    // // rc = munmap(p_ConnectInfo->m_Connections[connId].m_ReturnQ,
-    // //             p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
-    // // DIE(rc < 0, "Could not unmap return queue");
-
-    // pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
-
-    // (*queue->m_PushIdxPtr) = ((*queue->m_PushIdxPtr) + 1) %
-    // CONNECTQ_MAX_SIZE;
-    // (*queue->m_Size)++;
-
-    // pthread_cond_broadcast(queue->m_FullCond);
-
-    // pthread_mutex_unlock(queue->m_Lock);
 
     return rc;
 }

@@ -26,17 +26,91 @@ void sendDisconnectRequest(
                                            p_requestResponseInfo);
 }
 
-void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData) {
+static void s_CallQMB(struct ClientCallInfo *p_CallInfo,
+                      struct QMBCall *p_CallData) {
     p_CallInfo->m_CallFnQMB(&p_CallInfo->m_QMBQueue, p_CallData);
 }
 
-void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData) {
+static void s_CallHMB(struct ClientCallInfo *p_CallInfo,
+                      struct HMBCall *p_CallData) {
     p_CallInfo->m_CallFnHMB(&p_CallInfo->m_HMBQueue, p_CallData);
 }
+
+static void s_CallFnA(struct ClientCallInfo *p_CallInfo, void *p_CallData) {
+    switch (p_CallInfo->m_Q.m_Type) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case EMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case QMBQ:
+        return s_CallQMB(p_CallInfo, p_CallData);
+    case HMBQ:
+        return s_CallHMB(p_CallInfo, p_CallData);
+    case MBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case GBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DGBQ:
+        /**
+         * TODO
+         */
+        break;
+    default:
+        /**
+         * TODO
+         */
+        ;
+    }
+}
+
+void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData) {
+    return s_CallFnA(p_CallInfo, p_CallData);
+}
+
+void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData) {
+    return s_CallFnA(p_CallInfo, p_CallData);
+}
+
+void callFn(struct ClientCallInfo *p_CallInfo, void *p_CallData) {
+    struct PushInformation pushInfo;
+
+    pushInfo.m_Q = &(p_CallInfo->m_Q);
+    pushInfo.m_QType = p_CallInfo->m_Q.m_Type;
+    pushInfo.m_CallData = p_CallData;
+
+    p_CallInfo->m_CallFn(&pushInfo);
+};
 
 void returnQMB(struct QMBCall *p_ReturnData,
                struct ClientReturnInfo *p_ReturnInfo) {
     p_ReturnInfo->m_ReturnFnQMB(p_ReturnData, &p_ReturnInfo->m_QMBQueue);
+}
+
+void returnFn(void *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo) {
+    struct PopInformation popInfo;
+
+    popInfo.m_Q = &(p_ReturnInfo->m_Q);
+    popInfo.m_QType = p_ReturnInfo->m_Q.m_Type;
+    popInfo.m_ReturnData = p_ReturnData;
+
+    p_ReturnInfo->m_ReturnFn(&popInfo);
 }
 
 int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data,
@@ -67,16 +141,16 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     uint8_t connected = false;
     uint16_t i;
 
-    installShmFd = createShmObject(
-        INSTALL_MZONE, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-        sizeof(struct InstallInfo), false);
+    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR,
+                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+                                       S_IROTH | S_IWOTH,
+                                   sizeof(struct InstallInfo), false);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
-    struct InstallInfo *installMemZone = mmap(
-        NULL, sizeof(struct InstallInfo),
-        PROT_READ | PROT_WRITE, MAP_SHARED, installShmFd, 0);
+    struct InstallInfo *installMemZone =
+        mmap(NULL, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
+             MAP_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 
     for (i = 0; i < SERVICES_NUMBER; ++i) {

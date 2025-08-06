@@ -1,4 +1,3 @@
-#include <semaphore.h>
 #include <string.h>
 
 #include "commons.h"
@@ -6,20 +5,135 @@
 #include "macros.h"
 #include "return.h"
 
-sem_t sem;
+// static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
+//                                  struct QMBCall *p_ReturnData) {
+
+//     int32_t rc = 0;
+
+//     QPUSH(
+//         p_Queue, RETURNQ_MAX_SIZE, do {
+//             memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
+//                    p_ReturnData, sizeof(struct QMBCall));
+//         } while (0));
+
+//     return rc;
+// }
+
+static int32_t s_SendReturnFnA(void *p_Queue, enum QType p_QType,
+                               void *p_RetData, uint32_t p_QMaxSize,
+                               int32_t (*p_Fn)(void *, void *)) {
+    int32_t rc = 0;
+
+    switch (p_QType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case EMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case QMBQ:
+        QPUSH((struct QMBDSPQueue *)p_Queue, p_QMaxSize,
+              do { p_Fn(p_Queue, p_RetData); } while (0));
+
+        break;
+    case HMBQ:
+        QPUSH((struct HMBDSPQueue *)p_Queue, p_QMaxSize,
+              do { p_Fn(p_Queue, p_RetData); } while (0));
+
+        break;
+    case MBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case GBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DGBQ:
+        /**
+         * TODO
+         */
+        break;
+    default:
+        /**
+         * TODO
+         */
+        ;
+    }
+
+    return rc;
+}
+
+static int32_t s_SendReturnFnQMBHelper(struct QMBDSPQueue *p_Queue,
+                                       void *p_ReturnData) {
+    int32_t rc = 0;
+    struct QMBCall *returnData = p_ReturnData;
+
+    memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr], returnData,
+           sizeof(struct QMBCall));
+
+    return rc;
+}
 
 static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
                                  struct QMBCall *p_ReturnData) {
+    return s_SendReturnFnA(p_Queue, QMBQ, p_ReturnData, RETURNQ_MAX_SIZE,
+                           s_SendReturnFnQMBHelper);
+}
 
-    int32_t rc = 0;
-
-    QPUSH(
-        p_Queue, RETURNQ_MAX_SIZE, do {
-            memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
-                   p_ReturnData, sizeof(struct QMBCall));
-        } while (0));
-
-    return rc;
+static int32_t s_SendReturnFn(struct PushInformation *p_PushInfo) {
+    switch (p_PushInfo->m_QType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case EMBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case QMBQ:
+        return s_SendReturnFnQMB(p_PushInfo->m_Q, p_PushInfo->m_CallData);
+    case HMBQ:
+        return s_QPushHMB(p_PushInfo->m_Q, p_PushInfo->m_CallData);
+    case MBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case DMBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case GBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    case DGBQ:
+        /**
+         * TODO
+         */
+        return (-1);
+    default:
+        /**
+         * TODO
+         */
+        return (-1);
+    }
 }
 
 int32_t

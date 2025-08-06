@@ -48,6 +48,17 @@
 
 #define OPENED_CONNECTIONS ((uint32_t)2048)
 
+enum QType {
+    SMBQ, // 0
+    EMBQ, // 1
+    QMBQ, // 2
+    HMBQ, // 3
+    MBQ,  // 4
+    DMBQ, // 5
+    GBQ,  // 6
+    DGBQ  // 7
+};
+
 struct CallMetadata {
     uint32_t m_Size;
     uint32_t m_ConnId;
@@ -95,8 +106,14 @@ struct GBCall {
 };
 
 struct PushInformation {
-    void *m_Q;
+    struct DSPQueue *m_Q;
     void *m_CallData;
+    enum QType m_QType;
+};
+
+struct PopInformation {
+    struct DSPQueue *m_Q;
+    void *m_ReturnData;
     enum QType m_QType;
 };
 
@@ -218,6 +235,13 @@ struct QMBDSPQueue {
 struct HMBDSPQueue {
     struct DSPQueueMetadata m_Metadata;
     struct HMBCall *m_Data;
+};
+
+struct DSPQueue {
+    struct DSPQueueMetadata m_Metadata;
+    void *m_Data;
+    uint32_t m_MaxSize;
+    enum QType m_Type;
 };
 
 #define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \

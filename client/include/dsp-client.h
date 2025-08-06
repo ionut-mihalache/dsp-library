@@ -6,6 +6,12 @@
 struct ClientCallInfo {
     struct QMBDSPQueue m_QMBQueue;
     struct HMBDSPQueue m_HMBQueue;
+
+    /**
+     * v0.0.2
+     */
+    struct DSPQueue m_Q;
+
     int32_t (*m_CallFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
     int32_t (*m_CallFnHMB)(struct HMBDSPQueue *, struct HMBCall *);
 
@@ -18,8 +24,19 @@ struct ClientCallInfo {
 struct ClientReturnInfo {
     struct ConnectResponseQueue m_ResponseQueue;
     struct QMBDSPQueue m_QMBQueue;
+    /**
+     * v0.0.2
+     */
+    struct DSPQueue m_Q;
     struct ConnectResponseInformation m_ConnectResponseInformation;
+
     int32_t (*m_ReturnFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
+
+    /**
+     * v0.0.2
+     */
+    int32_t (*m_ReturnFn)(struct PopInformation *);
+    enum QType m_QType;
 };
 
 struct ClientConnectRequestInformation {
@@ -28,6 +45,7 @@ struct ClientConnectRequestInformation {
 
     uint32_t m_ReturnQSize;
     uint32_t m_ResponseQSize;
+    enum QType m_QType;
 };
 
 struct ClientConnectInfo {
@@ -51,9 +69,11 @@ void sendDisconnectRequest(
 
 void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
 void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
+void callFn(struct ClientCallInfo *p_CallInfo, void *p_CallData);
 
 void returnQMB(struct QMBCall *p_ReturnData,
                struct ClientReturnInfo *p_ReturnInfo);
+void returnFn(void *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo);
 
 int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data,
                        uint32_t p_Size);

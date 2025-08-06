@@ -5,11 +5,9 @@
 #include "log.h"
 #include "macros.h"
 
-enum QType { SMBQ, EMBQ, QMBQ, HMBQ, MBQ, DMBQ, GBQ, DGBQ };
-
-static int32_t s_QPushA(void *p_Queue, enum QType p_QType, void *p_CallData,
-                        uint32_t p_QMaxSize,
-                        int32_t (*p_HelperFn)(void *, void *)) {
+static int32_t s_QPushA(struct DSPQueue *p_Queue, enum QType p_QType,
+                        void *p_CallData, uint32_t p_QMaxSize,
+                        int32_t (*p_Fn)(struct DSPQueue *, void *)) {
     int32_t rc = 0;
 
     switch (p_QType) {
@@ -24,12 +22,10 @@ static int32_t s_QPushA(void *p_Queue, enum QType p_QType, void *p_CallData,
          */
         break;
     case QMBQ:
-        QPUSH((struct QMBDSPQueue *)p_Queue, p_QMaxSize,
-              do { p_HelperFn(p_Queue, p_CallData); } while (0));
+        QPUSH(p_Queue, p_QMaxSize, do { p_Fn(p_Queue, p_CallData); } while (0));
         break;
     case HMBQ:
-        QPUSH((struct HMBDSPQueue *)p_Queue, p_QMaxSize,
-              do { p_HelperFn(p_Queue, p_CallData); } while (0));
+        QPUSH(p_Queue, p_QMaxSize, do { p_Fn(p_Queue, p_CallData); } while (0));
         break;
     case MBQ:
         /**
@@ -61,38 +57,34 @@ static int32_t s_QPushA(void *p_Queue, enum QType p_QType, void *p_CallData,
     return rc;
 }
 
-static int32_t s_QMBPushHelper(void *p_Queue, void *p_CallData) {
+static int32_t s_QMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct QMBDSPQueue *queue = p_Queue;
+    struct DSPQueue *queue = p_Queue;
     struct QMBCall *callData = p_CallData;
 
-    do {
-        memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
-               sizeof(struct QMBCall));
-    } while (0);
+    memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
+           sizeof(struct QMBCall));
 
     return rc;
 }
 
-static int32_t s_QPushQMB(struct QMBDSPQueue *p_Queue,
+static int32_t s_QPushQMB(struct DSPQueue *p_Queue,
                           struct QMBCall *p_CallData) {
     return s_QPushA(p_Queue, QMBQ, p_CallData, QMB_Q_MAX_SIZE, s_QMBPushHelper);
 }
 
-static int32_t s_HMBPushHelper(void *p_Queue, void *p_CallData) {
+static int32_t s_HMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct HMBDSPQueue *queue = p_Queue;
+    struct DSPQueue *queue = p_Queue;
     struct HMBCall *callData = p_CallData;
 
-    do {
-        memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
-               sizeof(struct HMBCall));
-    } while (0);
+    memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
+           sizeof(struct HMBCall));
 
     return rc;
 }
 
-static int32_t s_QPushHMB(struct HMBDSPQueue *p_Queue,
+static int32_t s_QPushHMB(struct DSPQueue *p_Queue,
                           struct HMBCall *p_CallData) {
     return s_QPushA(p_Queue, HMBQ, p_CallData, HMB_Q_MAX_SIZE, s_HMBPushHelper);
 }
@@ -103,12 +95,12 @@ static int32_t s_QPush(struct PushInformation *p_PushInfo) {
         /**
          * TODO
          */
-        break;
+        return (-1);
     case EMBQ:
         /**
          * TODO
          */
-        break;
+        return (-1);
     case QMBQ:
         return s_QPushQMB(p_PushInfo->m_Q, p_PushInfo->m_CallData);
     case HMBQ:
@@ -117,27 +109,27 @@ static int32_t s_QPush(struct PushInformation *p_PushInfo) {
         /**
          * TODO
          */
-        break;
+        return (-1);
     case DMBQ:
         /**
          * TODO
          */
-        break;
+        return (-1);
     case GBQ:
         /**
          * TODO
          */
-        break;
+        return (-1);
     case DGBQ:
         /**
          * TODO
          */
-        break;
+        return (-1);
     default:
         /**
          * TODO
          */
-        ;
+        return (-1);
     }
 }
 
@@ -159,20 +151,20 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");
 
-    p_CallInfo->m_CallFnHMB = s_QPushHMB;
+    // p_CallInfo->m_CallFnHMB = s_QPushHMB;
 
-    p_CallInfo->m_CallFnQMB = s_QPushQMB;
-    p_CallInfo->m_QMBQueue.m_Data = callQ;
-    p_CallInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
-        &p_InstallInfo->m_CallQPushIdx;
-    p_CallInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
-        &p_InstallInfo->m_CallQPopIdx;
-    p_CallInfo->m_QMBQueue.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
-    p_CallInfo->m_QMBQueue.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
-    p_CallInfo->m_QMBQueue.m_Metadata.m_FullCond =
-        &p_InstallInfo->m_CallQFullCond;
-    p_CallInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
-        &p_InstallInfo->m_CallQEmptyCond;
+    // p_CallInfo->m_CallFnQMB = s_QPushQMB;
+    // p_CallInfo->m_QMBQueue.m_Data = callQ;
+    // p_CallInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
+    //     &p_InstallInfo->m_CallQPushIdx;
+    // p_CallInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
+    //     &p_InstallInfo->m_CallQPopIdx;
+    // p_CallInfo->m_QMBQueue.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+    // p_CallInfo->m_QMBQueue.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
+    // p_CallInfo->m_QMBQueue.m_Metadata.m_FullCond =
+    //     &p_InstallInfo->m_CallQFullCond;
+    // p_CallInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
+    //     &p_InstallInfo->m_CallQEmptyCond;
 
     // p_CallInfo->m_CallFnHMB = s_QPushHMB;
     // p_CallInfo->m_HMBQueue.m_Data = callQ;
@@ -187,6 +179,14 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     //      p_InstallInfo->m_Version);
 
     p_CallInfo->m_CallFn = s_QPush;
+
+    p_CallInfo->m_Q.m_Data = callQ;
+    p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
+    p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
+    p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+    p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
+    p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
+    p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
 
     return rc;
 }

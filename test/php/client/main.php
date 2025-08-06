@@ -3,6 +3,17 @@
 
 $ffi = FFI::cdef(
     "
+    enum QType {
+        SMBQ, // 0
+        EMBQ, // 1
+        QMBQ, // 2
+        HMBQ, // 3
+        MBQ,  // 4
+        DMBQ, // 5
+        GBQ,  // 6
+        DGBQ  // 7
+    };
+
     struct CallMetadata {
         uint32_t m_Size;
         uint32_t m_ConnId;
