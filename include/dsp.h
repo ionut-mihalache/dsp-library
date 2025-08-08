@@ -171,6 +171,8 @@ struct InstallInformation {
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
     uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
 
+    enum QType m_CallQType;
+
     pid_t m_ProcId;
     uint8_t m_Available;
 } __attribute__((aligned(PAGE_SIZE)));
@@ -214,6 +216,10 @@ struct ConnectRequest {
     uint32_t m_ReturnQSize;
     uint32_t m_ResponseQSize;
     uint32_t m_ConnectionIdx;
+    /**
+     * v0.0.2
+     */
+    enum QType m_ReturnQType;
 };
 
 struct ConnectQueue {

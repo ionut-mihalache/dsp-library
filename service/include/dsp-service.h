@@ -41,8 +41,8 @@ struct ServiceReturnInfo {
      */
     struct DSPQueue m_Q;
 
-    int32_t (*m_SendReturnFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
-    int32_t (*m_SendReturnFnHMB)(struct HMBDSPQueue *, struct HMBCall *);
+    int32_t (*m_SendReturnFnQMB)(struct DSPQueue *, struct QMBCall *);
+    int32_t (*m_SendReturnFnHMB)(struct DSPQueue *, struct HMBCall *);
 
     /**
      * v0.0.2
@@ -66,5 +66,8 @@ void initService();
 void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                 struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
                 const char *p_Version);
+
+void receiveCall(void *, struct ServiceCallInfo *);
+void sendReturn(struct ServiceReturnInfo *, void *);
 
 #endif // __DSP_SERVICE_H

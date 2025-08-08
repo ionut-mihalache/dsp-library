@@ -21,8 +21,6 @@ void initService() {
     int rc;
     int installShdFd;
 
-    // LOGF("Service init...\n");
-
     installShdFd = createShmObject(INSTALL_MZONE, O_RDWR,
                                    S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
                                        S_IROTH | S_IWOTH,
@@ -40,7 +38,6 @@ void initService() {
     rc = pthread_spin_init(&installShdata->m_InstallMZoneLk,
                            PTHREAD_PROCESS_SHARED);
     DIE(rc != 0, "Could not init install shared spinlock");
-    // LOGF("Service initialized.\n");
 }
 
 void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
@@ -161,6 +158,26 @@ spin_lock_unlock:
     configureServiceCallInformation(p_CallInfo, installInfo);
 
     LOGF("Successfully installed new service: (%s, %s).\n", p_StrId, p_Version);
+}
+
+void receiveCall(void *p_CallData, struct ServiceCallInfo *p_CallInfo) {
+    struct PopInformation popInfo;
+
+    popInfo.m_Q = &(p_CallInfo->m_Q);
+    popInfo.m_QType = p_CallInfo->m_Q.m_Type;
+    popInfo.m_ReturnData = p_CallData;
+
+    p_CallInfo->m_ReceiveCallFn(&popInfo);
+}
+
+void sendReturn(struct ServiceReturnInfo *p_ReturnInfo, void *p_ReturnData) {
+    struct PushInformation pushInfo;
+
+    pushInfo.m_Q = &(p_ReturnInfo->m_Q);
+    pushInfo.m_QType = p_ReturnInfo->m_Q.m_Type;
+    pushInfo.m_CallData = p_ReturnData;
+
+    p_ReturnInfo->m_SendReturnFn(&pushInfo);
 }
 
 void dspReturn() {}

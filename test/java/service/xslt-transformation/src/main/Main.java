@@ -20,6 +20,7 @@ import org.w3c.dom.Document;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
+import com.sun.jna.Pointer;
 
 import call.QMBCall;
 import call.ServiceCallInfo;
@@ -30,6 +31,10 @@ interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
 
     void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version);
+
+    void receiveCall(Pointer p_CallData, ServiceCallInfo p_CallInfo);
+
+    void sendReturn(ServiceReturnInfo p_ReturnInfo, Pointer p_ReturnData);
 }
 
 class ConnectThread extends Thread {
@@ -49,6 +54,8 @@ class ConnectThread extends Thread {
 
             int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
             m_Connections.put(connId, returnInfo);
+            // System.out.println("New connection");
+            System.out.println(returnInfo);
         }
     }
 }
@@ -70,12 +77,10 @@ class DisconnectThread extends Thread {
 class ProcessCallThread extends Thread {
     private QMBCall m_CallData;
     private HashMap<Integer, ServiceReturnInfo> m_Connections;
-    private Main m_Main;
 
     ProcessCallThread(QMBCall p_CallData, HashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_CallData = p_CallData;
         m_Connections = p_Connections;
-        m_Main = new Main();
     }
 
     public void run() {
@@ -86,7 +91,7 @@ class ProcessCallThread extends Thread {
             Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            String result = m_Main.getXmlTransformed(iiaData, xsltData);
+            String result = mf_GetXmlTransformed(iiaData, xsltData);
 
             byte[] resByteArr = result.getBytes();
 
@@ -95,12 +100,40 @@ class ProcessCallThread extends Thread {
             returnData.m_Metadata.m_Size = resByteArr.length;
             returnData.m_Metadata.m_ConnId = m_CallData.m_Metadata.m_ConnId;
 
-            m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_SendReturnFnQMB
-                    .sendQMBReturn(m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_QMBQueue,
-                            returnData);
+            // m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_SendReturnFnQMB
+            // .sendQMBReturn(m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_QMBQueue,
+            // returnData);
+
+            LibDSP.INSTANCE.sendReturn(m_Connections.get(m_CallData.m_Metadata.m_ConnId), returnData.getPointer());
+
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Transform a xml file by means of a xslt file
+     *
+     * @param xmlBytes  The content of the xml file
+     * @param xsltBytes The content of the xslt file
+     * @return A xml useful to compute the hash code
+     */
+    private String mf_GetXmlTransformed(byte[] xmlBytes, byte[] xsltBytes) throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new ByteArrayInputStream(xmlBytes));
+
+        System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer(
+                new StreamSource(new ByteArrayInputStream(xsltBytes)));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        transformer.transform(new DOMSource(document), new StreamResult(output));
+
+        return output.toString();
     }
 }
 
@@ -121,40 +154,23 @@ public class Main {
 
         while (true) {
             try {
+                // System.out.println("Why is this happening...");
                 QMBCall callData = new QMBCall();
-                callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData,
-                        callInfo.m_QMBQueue);
 
-                ProcessCallThread processCallThread = new ProcessCallThread(callData, connections);
-                processCallThread.start();
+                LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
+                System.out.println(callData);
+                System.out.println(callInfo);
+                // callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData,
+                // callInfo.m_QMBQueue);
+
+                // callInfo.m_ReceiveCallFn.f_ReceiveCall(callData.getPointer(), callInfo.m_Q);
+
+                // ProcessCallThread processCallThread = new ProcessCallThread(callData,
+                // connections);
+                // processCallThread.start();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
-    }
-
-    /**
-     * Transform a xml file by means of a xslt file
-     *
-     * @param xmlBytes  The content of the xml file
-     * @param xsltBytes The content of the xslt file
-     * @return A xml useful to compute the hash code
-     */
-    public String getXmlTransformed(byte[] xmlBytes, byte[] xsltBytes) throws Exception {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document document = db.parse(new ByteArrayInputStream(xmlBytes));
-
-        System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer(
-                new StreamSource(new ByteArrayInputStream(xsltBytes)));
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-        transformer.transform(new DOMSource(document), new StreamResult(output));
-
-        return output.toString();
     }
 };

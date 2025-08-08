@@ -59,10 +59,10 @@ static int32_t s_QPushA(struct DSPQueue *p_Queue, enum QType p_QType,
 
 static int32_t s_QMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct DSPQueue *queue = p_Queue;
     struct QMBCall *callData = p_CallData;
+    struct QMBCall *qData = p_Queue->m_Data;
 
-    memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], callData,
            sizeof(struct QMBCall));
 
     return rc;
@@ -75,10 +75,10 @@ static int32_t s_QPushQMB(struct DSPQueue *p_Queue,
 
 static int32_t s_HMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct DSPQueue *queue = p_Queue;
     struct HMBCall *callData = p_CallData;
+    struct HMBCall *qData = p_Queue->m_Data;
 
-    memcpy(&queue->m_Data[*queue->m_Metadata.m_PushIdxPtr], callData,
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], callData,
            sizeof(struct HMBCall));
 
     return rc;
@@ -102,9 +102,11 @@ static int32_t s_QPush(struct PushInformation *p_PushInfo) {
          */
         return (-1);
     case QMBQ:
-        return s_QPushQMB(p_PushInfo->m_Q, p_PushInfo->m_CallData);
+        return s_QPushQMB(p_PushInfo->m_Q,
+                          (struct QMBCall *)p_PushInfo->m_CallData);
     case HMBQ:
-        return s_QPushHMB(p_PushInfo->m_Q, p_PushInfo->m_CallData);
+        return s_QPushHMB(p_PushInfo->m_Q,
+                          (struct HMBCall *)p_PushInfo->m_CallData);
     case MBQ:
         /**
          * TODO
@@ -144,9 +146,60 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
                                   S_IWOTH,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);
 
-    struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct QMBCall),
-                                 PROT_WRITE, MAP_SHARED, callQFd, 0);
-    DIE(callQ == MAP_FAILED, "Could not map callQ");
+    // struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct
+    // QMBCall),
+    //                              PROT_WRITE, MAP_SHARED, callQFd, 0);
+    // DIE(callQ == MAP_FAILED, "Could not map callQ");
+
+    void *callQ;
+
+    switch (p_InstallInfo->m_CallQType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case EMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case QMBQ:
+        createQ(&callQ, QMB_Q_MAX_SIZE * sizeof(struct QMBCall), callQFd);
+
+        break;
+    case HMBQ:
+        /**
+         * TODO
+         */
+        createQ(&callQ, HMB_Q_MAX_SIZE * sizeof(struct HMBCall), callQFd);
+        break;
+    case MBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case GBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DGBQ:
+        /**
+         * TODO
+         */
+        break;
+    default:
+        /**
+         * TODO
+         */
+        DIE(true, "QType is not recognized");
+    }
 
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");
@@ -187,6 +240,7 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
     p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
+    p_CallInfo->m_Q.m_Type = p_InstallInfo->m_CallQType;
 
     return rc;
 }

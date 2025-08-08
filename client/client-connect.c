@@ -11,8 +11,9 @@ static int32_t s_ReturnFnQMB(struct QMBCall *p_ReturnData,
 
     QPOP(
         p_Queue, RETURNQ_MAX_SIZE, do {
-            memcpy(p_ReturnData,
-                   &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
+            struct QMBCall *qData = p_Queue->m_Data;
+
+            memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
                    sizeof(struct QMBCall));
         } while (0));
 
@@ -66,11 +67,6 @@ static int32_t s_QPop(struct PopInformation *p_PopInfo) {
     }
 }
 
-static void s_CreateQ(void **p_QPtrRes, size_t p_Size, int p_Fd) {
-    *p_QPtrRes = mmap(NULL, p_Size, PROT_READ, MAP_SHARED, p_Fd, 0);
-    DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
-}
-
 static int32_t s_ProcessConnectionRequest(
     uint32_t p_ConnId, struct ClientReturnInfo *p_ReturnInfo,
     struct ConnectRequest *p_ConnectRequest,
@@ -101,6 +97,8 @@ static int32_t s_ProcessConnectionRequest(
     memcpy(p_ConnectRequest->m_RequestResponseQName,
            p_ConnectInformation->m_RequestResponseQName,
            strlen(p_ConnectInformation->m_RequestResponseQName));
+
+    p_ConnectRequest->m_ReturnQType = p_ConnectInformation->m_QType;
 
     // p_ReturnInfo->m_QMBQueue.m_MaxSize = RETURNQ_MAX_SIZE;
     p_ReturnInfo->m_Q.m_MaxSize = RETURNQ_MAX_SIZE;
@@ -149,17 +147,17 @@ static int32_t s_ProcessConnectionRequest(
          */
         break;
     case QMBQ:
-        s_CreateQ(&returnQ,
-                  p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall),
-                  returnQFd);
+        createQ(&returnQ,
+                p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall),
+                returnQFd);
         break;
     case HMBQ:
         /**
          * TODO
          */
-        s_CreateQ(&returnQ,
-                  p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall),
-                  returnQFd);
+        createQ(&returnQ,
+                p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall),
+                returnQFd);
         break;
     case MBQ:
         /**

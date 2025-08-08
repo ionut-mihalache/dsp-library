@@ -3,8 +3,11 @@ CC=clang
 LINTER_DEFINES=-D_GNU_SOURCE
 DEBUG_DEFINES=-D__COMPILE_MODE_DEBUG__
 INCLUDES=-Iutils -Iutils/macros -Iutils/hashmap -Iutils/exit -Iutils/log -Iinclude -Iservice/include -Iclient/include
-OPTIONS=-Wall -Wextra
+OPTIONS=-Wall -Wextra -Werror
 OPTIMIZATIONS=-O3
+VERSION=0.0.2
+
+LIB=libdsp.so.$(VERSION)
 
 OBJECTS_DIR=object
 
@@ -12,12 +15,13 @@ CREATE_OBJECT_FILE = $(CC) $(OPTIONS) $(DEBUG_DEFINES) $(LINTER_DEFINES) $(INCLU
 
 all: $(OBJECTS_DIR) build
 
-build: libdsp.so
+build: $(LIB)
+	ln -s $(LIB) libdsp.so
 
 $(OBJECTS_DIR):
 	mkdir $(OBJECTS_DIR)
 
-libdsp.so: \
+$(LIB): \
 		$(OBJECTS_DIR)/dsp-service-install.o \
 		$(OBJECTS_DIR)/dsp-service-call.o \
 		$(OBJECTS_DIR)/dsp-service-return.o \
@@ -87,6 +91,7 @@ $(OBJECTS_DIR)/commons.o: utils/commons.c \
 
 clean:
 	rm *.so
+	rm *.so.$(VERSION)
 	rm -rf $(OBJECTS_DIR)
 
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/user/dsp-library

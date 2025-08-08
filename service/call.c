@@ -10,7 +10,7 @@
  */
 static int32_t s_QPopA(struct DSPQueue *p_Queue, enum QType p_QType,
                        void *p_CallInfo, uint32_t p_QMaxSize,
-                       int32_t (*p_Fn)(void *, void *)) {
+                       int32_t (*p_Fn)(void *, struct DSPQueue *)) {
     int32_t rc = 0;
 
     switch (p_QType) {
@@ -64,9 +64,10 @@ static int32_t s_QPopA(struct DSPQueue *p_Queue, enum QType p_QType,
 
 static int32_t s_QMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct QMBCall *callInfo = p_CallInfo;
+    struct QMBCall *callInfo = (struct QMBCall *)p_CallInfo;
+    struct QMBCall *qData = p_Queue->m_Data;
 
-    memcpy(callInfo, &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
+    memcpy(callInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct QMBCall));
 
     return rc;
@@ -88,9 +89,10 @@ static int32_t s_QPopQMB(struct QMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_HMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct QMBCall *callInfo = p_CallInfo;
+    struct HMBCall *callInfo = p_CallInfo;
+    struct HMBCall *qData = p_Queue->m_Data;
 
-    memcpy(callInfo, &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
+    memcpy(callInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct HMBCall));
 
     return rc;
@@ -123,9 +125,11 @@ static int32_t s_QPop(struct PopInformation *p_PopInfo) {
          */
         return (-1);
     case QMBQ:
-        return s_QPopQMB(p_PopInfo->m_ReturnData, p_PopInfo->m_Q);
+        return s_QPopQMB((struct QMBCall *)p_PopInfo->m_ReturnData,
+                         p_PopInfo->m_Q);
     case HMBQ:
-        return s_QPopHMB(p_PopInfo->m_ReturnData, p_PopInfo->m_Q);
+        return s_QPopHMB((struct HMBCall *)p_PopInfo->m_ReturnData,
+                         p_PopInfo->m_Q);
     case MBQ:
         /**
          * TODO
