@@ -80,17 +80,6 @@ $ffi = FFI::cdef(
         struct ConnectRequest *m_Data;
     };
 
-    struct QMBDSPQueue {
-        struct DSPQueueMetadata m_Metadata;
-        struct QMBCall *m_Data;
-        uint32_t m_MaxSize;
-    };
-
-    struct HMBDSPQueue {
-        struct DSPQueueMetadata m_Metadata;
-        struct HMBCall *m_Data;
-    };
-
     struct DSPQueue {
         struct DSPQueueMetadata m_Metadata;
         void *m_Data;
@@ -99,37 +88,16 @@ $ffi = FFI::cdef(
     };
 
     struct ClientCallInfo {
-        struct QMBDSPQueue m_QMBQueue;
-        struct HMBDSPQueue m_HMBQueue;
-
-        /**
-         * v0.0.2
-         */
         struct DSPQueue m_Q;
 
-        int32_t (*m_CallFnQMB)(struct QMBDSPQueue *, struct QMBCall *);
-        int32_t (*m_CallFnHMB)(struct HMBDSPQueue *, struct HMBCall *);
-
-        /**
-         * v0.0.2
-         */
         int32_t (*m_CallFn)(struct PushInformation *);
     };
 
     struct ClientReturnInfo {
         struct ConnectResponseQueue m_ResponseQueue;
-        struct QMBDSPQueue m_QMBQueue;
-        /**
-         * v0.0.2
-         */
         struct DSPQueue m_Q;
         struct ConnectResponseInformation m_ConnectResponseInformation;
 
-        int32_t (*m_ReturnFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
-
-        /**
-         * v0.0.2
-         */
         int32_t (*m_ReturnFn)(struct PopInformation *);
         int m_QType;
     };
