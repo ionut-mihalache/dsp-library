@@ -5,20 +5,6 @@
 #include "macros.h"
 #include "return.h"
 
-// static int32_t s_SendReturnFnQMB(struct QMBDSPQueue *p_Queue,
-//                                  struct QMBCall *p_ReturnData) {
-
-//     int32_t rc = 0;
-
-//     QPUSH(
-//         p_Queue, RETURNQ_MAX_SIZE, do {
-//             memcpy(&p_Queue->m_Data[*p_Queue->m_Metadata.m_PushIdxPtr],
-//                    p_ReturnData, sizeof(struct QMBCall));
-//         } while (0));
-
-//     return rc;
-// }
-
 static int32_t s_SendReturnFnA(struct DSPQueue *p_Queue, enum QType p_QType,
                                void *p_RetData, uint32_t p_QMaxSize,
                                int32_t (*p_Fn)(struct DSPQueue *, void *)) {
@@ -37,8 +23,6 @@ static int32_t s_SendReturnFnA(struct DSPQueue *p_Queue, enum QType p_QType,
         break;
     case QMBQ:
         QPUSH(p_Queue, p_QMaxSize, do { p_Fn(p_Queue, p_RetData); } while (0));
-        LOGF("%s: Queue type is: %d\n", __func__, p_Queue->m_Type);
-        LOGF("%s: Queue size is: %u\n", __func__, *p_Queue->m_Metadata.m_Size);
 
         break;
     case HMBQ:
@@ -149,6 +133,7 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     int returnQFd;
     int requestResponseQFd;
     uint32_t connectionIdx;
+    void *returnQ;
 
     connectionIdx = p_Request->m_ConnectionIdx;
 
@@ -162,12 +147,6 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
         false);
-
-    // struct QMBCall *returnQ =
-    //     mmap(NULL, p_Request->m_ReturnQSize * sizeof(struct QMBCall),
-    //          PROT_WRITE | PROT_READ, MAP_SHARED, returnQFd, 0);
-    // DIE(returnQ == MAP_FAILED, "Could not map return queue memory");
-    void *returnQ;
 
     switch (p_Request->m_ReturnQType) {
     case SMBQ:
@@ -241,21 +220,6 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
         p_Request->m_ReturnQSize * sizeof(struct QMBCall);
 
-    // p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
-
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_FullCond =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQFullCond;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQEmptyCond;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_Lock =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex;
-
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_Size =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
     p_ReturnInfo->m_Q.m_Data = returnQ;
 
     p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
@@ -276,7 +240,6 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ReturnQSize;
 
-    // p_ReturnInfo->m_SendReturnFnQMB = s_SendReturnFnQMB;
     p_ReturnInfo->m_SendReturnFn = s_SendReturnFn;
 
     p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMapSize =

@@ -74,16 +74,6 @@ static int32_t s_QMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_QPopQMB(struct QMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
     return s_QPopA(p_Queue, QMBQ, p_CallInfo, QMB_Q_MAX_SIZE, s_QMBPopHelper);
-    // int32_t rc = 0;
-
-    // QPOP(
-    //     p_Queue, QMB_Q_MAX_SIZE, do {
-    //         memcpy(p_CallInfo,
-    //                &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
-    //                sizeof(struct QMBCall));
-    //     } while (0));
-
-    // return rc;
 }
 
 static int32_t s_HMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
@@ -99,16 +89,6 @@ static int32_t s_HMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_QPopHMB(struct HMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
     return s_QPopA(p_Queue, HMBQ, p_CallInfo, HMB_Q_MAX_SIZE, s_HMBPopHelper);
-    // int32_t rc = 0;
-
-    // QPOP(
-    //     p_Queue, HMB_Q_MAX_SIZE, do {
-    //         memcpy(p_CallInfo,
-    //                &p_Queue->m_Data[*p_Queue->m_Metadata.m_PopIdxPtr],
-    //                sizeof(struct HMBCall));
-    //     } while (0));
-
-    // return rc;
 }
 
 static int32_t s_QPop(struct PopInformation *p_PopInfo) {
@@ -162,18 +142,12 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
                                 struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     int callQFd;
+    void *callQ;
 
     callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
                               S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH |
                                   S_IWOTH,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
-
-    // struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct
-    // QMBCall),
-    //                              PROT_READ, MAP_SHARED, callQFd, 0);
-    // DIE(callQ == MAP_FAILED, "Could not map call queue memory");
-
-    void *callQ;
 
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
@@ -228,20 +202,6 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");
 
-    // p_CallInfo->m_ReceiveCallFnHMB = s_QPopHMB;
-    // p_CallInfo->m_HMBQueue.m_Data = callQ;
-    // p_CallInfo->m_HMBQueue.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
-    // p_CallInfo->m_HMBQueue.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
-    // p_CallInfo->m_HMBQueue.m_Size = &p_InstallInfo->m_CallQSize;
-
-    // p_CallInfo->m_ReceiveCallFnQMB = s_QPopQMB;
-    // p_CallInfo->m_QMBQueue.m_Data = callQ;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
-    //     &p_InstallInfo->m_CallQPushIdx;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
-    //     &p_InstallInfo->m_CallQPopIdx;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
-
     p_CallInfo->m_ReceiveCallFn = s_QPop;
     p_CallInfo->m_Q.m_Data = callQ;
     p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
@@ -271,18 +231,6 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     pthread_cond_init(&p_InstallInfo->m_CallQEmptyCond, &condAttr);
 
     pthread_condattr_destroy(&condAttr);
-
-    // p_CallInfo->m_HMBQueue.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
-    // p_CallInfo->m_HMBQueue.m_Metadata.m_FullCond =
-    //     &p_InstallInfo->m_CallQFullCond;
-    // p_CallInfo->m_HMBQueue.m_Metadata.m_EmptyCond =
-    //     &p_InstallInfo->m_CallQEmptyCond;
-
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_FullCond =
-    //     &p_InstallInfo->m_CallQFullCond;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
-    //     &p_InstallInfo->m_CallQEmptyCond;
 
     p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;

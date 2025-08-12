@@ -160,12 +160,7 @@ $ffi = FFI::cdef(
 
     void sendDisconnectRequest(struct ClientConnectInfo *p_ConnectInfo, struct ConnectResponseInformation *p_requestResponseInfo);
 
-    void callQMB(struct ClientCallInfo *p_CallInfo, struct QMBCall *p_CallData);
-    void callHMB(struct ClientCallInfo *p_CallInfo, struct HMBCall *p_CallData);
-
     void callFn(struct ClientCallInfo *p_CallInfo, void *p_CallData);
-
-    void returnQMB(struct QMBCall *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo);
 
     void returnFn(void *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo);
 
@@ -194,12 +189,6 @@ function setQMBCallData($p_Ffi, $callDataPtr, $dataBuffer, $size)
 {
     echo "Prepare call information\n";
     return $p_Ffi->setQMBCallData($callDataPtr, $dataBuffer, $size);
-}
-
-function callQMB($p_Ffi, $callInfoPtr, $callDataPtr)
-{
-    echo "Send call request\n";
-    $p_Ffi->callQMB($callInfoPtr, $callDataPtr);
 }
 
 function callFn($p_Ffi, $p_CallInfoPtr, $p_CallDataPtr)

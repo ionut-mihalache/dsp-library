@@ -84,10 +84,8 @@ class ProcessCallThread extends Thread {
 
     public void run() {
         try {
-            System.out.println(m_CallData);
             byte[] iiaData = Arrays.copyOfRange(m_CallData.m_CallInfo, 0,
                     m_CallData.m_Metadata.m_Size);
-            System.out.println("Data size is: " + m_CallData.m_Metadata.m_Size);
 
             Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);

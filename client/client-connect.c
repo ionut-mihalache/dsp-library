@@ -75,6 +75,7 @@ static int32_t s_ProcessConnectionRequest(
     int requestResponseQFd;
     int returnQFd;
     int32_t rc = 0;
+    void *returnQ;
 
     /**
      * With the connection index found we need to construct the request for the
@@ -100,7 +101,6 @@ static int32_t s_ProcessConnectionRequest(
 
     p_ConnectRequest->m_ReturnQType = p_ConnectInformation->m_QType;
 
-    // p_ReturnInfo->m_QMBQueue.m_MaxSize = RETURNQ_MAX_SIZE;
     p_ReturnInfo->m_Q.m_MaxSize = RETURNQ_MAX_SIZE;
     p_ConnectRequest->m_ReturnQSize =
         RETURNQ_MAX_SIZE; // CHECK: possibly user specified
@@ -132,8 +132,6 @@ static int32_t s_ProcessConnectionRequest(
         p_ConnectInformation->m_ReturnQName, O_RDWR,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall), true);
-
-    void *returnQ;
 
     switch (p_ConnectInformation->m_QType) {
     case SMBQ:
@@ -207,19 +205,6 @@ static int32_t s_ProcessConnectionRequest(
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize;
 
-    // p_ReturnInfo->m_QMBQueue.m_Data = returnQ;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_FullCond =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_Lock =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdx;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdx;
-    // p_ReturnInfo->m_QMBQueue.m_Metadata.m_Size =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
     p_ReturnInfo->m_Q.m_Data = returnQ;
     p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
@@ -235,7 +220,6 @@ static int32_t s_ProcessConnectionRequest(
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
     p_ReturnInfo->m_Q.m_Type = p_ConnectInformation->m_QType;
 
-    // p_ReturnInfo->m_ReturnFnQMB = s_ReturnFnQMB;
     p_ReturnInfo->m_ReturnFn = s_QPop;
 
     return rc;

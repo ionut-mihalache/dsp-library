@@ -15,38 +15,15 @@ struct InstallSharedData {
 };
 
 struct ServiceCallInfo {
-    struct HMBDSPQueue m_HMBQueue;
-    struct QMBDSPQueue m_QMBQueue;
-    /**
-     * v0.0.2
-     */
     struct DSPQueue m_Q;
-
-    int32_t (*m_ReceiveCallFnHMB)(struct HMBCall *, struct HMBDSPQueue *);
-    int32_t (*m_ReceiveCallFnQMB)(struct QMBCall *, struct QMBDSPQueue *);
-
-    /**
-     * v0.0.2
-     */
     int32_t (*m_ReceiveCallFn)(struct PopInformation *);
 };
 
 struct ServiceReturnInfo {
     struct ConnectResponseQueue m_ResponseQueue;
-    struct QMBDSPQueue m_QMBQueue;
     struct ConnectResponseInformation m_ConnectResponseInformation;
-
-    /**
-     * v0.0.2
-     */
     struct DSPQueue m_Q;
 
-    int32_t (*m_SendReturnFnQMB)(struct DSPQueue *, struct QMBCall *);
-    int32_t (*m_SendReturnFnHMB)(struct DSPQueue *, struct HMBCall *);
-
-    /**
-     * v0.0.2
-     */
     int32_t (*m_SendReturnFn)(struct PushInformation *);
 };
 

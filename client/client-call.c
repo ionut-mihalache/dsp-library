@@ -140,13 +140,12 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
                                struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     int callQFd;
+    void *callQ;
 
     callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
                               S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH |
                                   S_IWOTH,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);
-
-    void *callQ;
 
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:

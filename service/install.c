@@ -68,8 +68,6 @@ s_SendConnectResponse(struct ServiceReturnInfo *p_ReturnInfo,
                       struct ConnectResponseInformation *p_ResponseInfo) {
     int32_t rc = 0;
 
-    // LOGF("Sending the response to the client...\n");
-
     /**
      * Send the response to the client to announce that the communication is
      * established
@@ -85,8 +83,6 @@ s_SendConnectResponse(struct ServiceReturnInfo *p_ReturnInfo,
             memcpy(&p_ReturnInfo->m_ConnectResponseInformation, p_ResponseInfo,
                    sizeof(struct ConnectResponseInformation));
         } while (0));
-
-    // LOGF("Response sent to the client\n");
 
     return rc;
 }
@@ -113,8 +109,6 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
                    RETURNQ_NAME_MAX_SIZE);
             responseInfo.m_Id =
                 queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ConnectionIdx;
-            // LOGF("Connecting %s (%u)...\n", responseInfo.m_ReturnQName,
-            //      responseInfo.m_Id);
         } while (0));
 
     s_SendConnectResponse(p_ReturnInfo, &responseInfo);
@@ -137,8 +131,6 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
 
-    // LOGF("Disconnecting %s (%u)...\n",
-    //      p_ConnectInfo->m_Connections[connId].m_ReturnQName, connId);
     rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
                 p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
     DIE(rc < 0, "Could not unmap request response queue");
