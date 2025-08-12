@@ -8,20 +8,35 @@ OPTIMIZATIONS=-O3
 VERSION=0.0.2
 
 LIB=libdsp.so.$(VERSION)
+LIB_NAME=libdsp.so
 
 OBJECTS_DIR=object
+LIBS_DIR=lib
 
 CREATE_OBJECT_FILE = $(CC) $(OPTIONS) $(DEBUG_DEFINES) $(LINTER_DEFINES) $(INCLUDES) $(OPTIMIZATIONS) -c $(1) -o $(2) -fPIC
 
-all: $(OBJECTS_DIR) build
+all: $(OBJECTS_DIR) $(LIBS_DIR) build
 
-build: $(LIB)
-	ln -s $(LIB) libdsp.so
+build: $(LIB_NAME)
+
+$(LIB_NAME): $(LIBS_DIR)/$(LIB)
+	@if [ -L $(LIB_NAME) ]; then \
+		if [ "$$(readlink $(LIB_NAME))" != "$(LIBS_DIR)/$(LIB)" ]; then \
+			echo "ln -sf $(LIBS_DIR)/$(LIB) $(LIB_NAME)"; \
+			ln -sf $(LIBS_DIR)/$(LIB) $(LIB_NAME); \
+		fi; \
+	else \
+		echo "ln -s $(LIBS_DIR)/$(LIB) $(LIB_NAME)"; \
+		ln -s $(LIBS_DIR)/$(LIB) $(LIB_NAME); \
+	fi
 
 $(OBJECTS_DIR):
 	mkdir $(OBJECTS_DIR)
 
-$(LIB): \
+$(LIBS_DIR):
+	mkdir $(LIBS_DIR)
+
+$(LIBS_DIR)/$(LIB): \
 		$(OBJECTS_DIR)/dsp-service-install.o \
 		$(OBJECTS_DIR)/dsp-service-call.o \
 		$(OBJECTS_DIR)/dsp-service-return.o \
@@ -90,8 +105,8 @@ $(OBJECTS_DIR)/commons.o: utils/commons.c \
 	$(call CREATE_OBJECT_FILE,$<,$@)
 
 clean:
-	rm *.so
-	rm *.so.$(VERSION)
+	rm $(LIB_NAME)
+	rm -rf $(LIBS_DIR)
 	rm -rf $(OBJECTS_DIR)
 
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/user/dsp-library
