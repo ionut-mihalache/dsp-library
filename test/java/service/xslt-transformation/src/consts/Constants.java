@@ -1,6 +1,8 @@
 package consts;
 
 public class Constants {
+    public static final int SMB = 1 << 16;
+    public static final int EMB = 1 << 17;
     public static final int QMB = 1 << 18;
     public static final int HMB = 1 << 19;
     public static final int MB = 1 << 20;

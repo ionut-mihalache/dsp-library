@@ -46,22 +46,70 @@ void returnFn(void *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo) {
     p_ReturnInfo->m_ReturnFn(&popInfo);
 }
 
-int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data,
-                       uint32_t p_Size) {
+int32_t setCallData(int p_Type, void *p_CallInfo, uint8_t *p_Data,
+                    uint32_t p_Size) {
     int32_t rc = 0;
 
-    memcpy(p_CallInfo->m_CallInfo, p_Data, p_Size);
-    p_CallInfo->m_Metadata.m_Size = p_Size;
+    switch (p_Type) {
+    case SMBQ: {
+        struct SMBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
 
-    return rc;
-}
+        break;
+    }
+    case EMBQ: {
+        struct EMBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
 
-int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data,
-                       uint32_t p_Size) {
-    int32_t rc = 0;
+        break;
+    }
+    case QMBQ: {
+        struct QMBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
 
-    memcpy(p_CallInfo->m_CallInfo, p_Data, p_Size);
-    p_CallInfo->m_Metadata.m_Size = p_Size;
+        break;
+    }
+    case HMBQ: {
+        struct HMBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
+
+        break;
+    }
+    case MBQ: {
+        struct MBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
+
+        break;
+    }
+    case DMBQ: {
+        struct DMBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
+
+        break;
+    }
+    case HGBQ: {
+        struct HGBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
+
+        break;
+    }
+    case GBQ: {
+        struct GBCall *callInfo = p_CallInfo;
+        memcpy(callInfo->m_CallInfo, p_Data, p_Size);
+        callInfo->m_Metadata.m_Size = p_Size;
+
+        break;
+    }
+    default:
+        DIE(true, "Type not recognized");
+    }
 
     return rc;
 }

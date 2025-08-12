@@ -51,10 +51,8 @@ void callFn(struct ClientCallInfo *p_CallInfo, void *p_CallData);
 
 void returnFn(void *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo);
 
-int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data,
-                       uint32_t p_Size);
-int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data,
-                       uint32_t p_Size);
+int32_t setCallData(int p_Type, void *p_CallInfo, uint8_t *p_Data,
+                    uint32_t p_Size);
 
 void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
                 struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId);

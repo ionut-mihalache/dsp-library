@@ -22,9 +22,10 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
-import call.QMBCall;
+import call.SMBCall;
 import call.ServiceCallInfo;
 import call.ServiceReturnInfo;
+import call.abstract_classes.Call;
 import connect.ServiceConnectInfo;
 
 interface LibDSP extends Library {
@@ -74,10 +75,10 @@ class DisconnectThread extends Thread {
 }
 
 class ProcessCallThread extends Thread {
-    private QMBCall m_CallData;
+    private Call m_CallData;
     private HashMap<Integer, ServiceReturnInfo> m_Connections;
 
-    ProcessCallThread(QMBCall p_CallData, HashMap<Integer, ServiceReturnInfo> p_Connections) {
+    ProcessCallThread(Call p_CallData, HashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_CallData = p_CallData;
         m_Connections = p_Connections;
     }
@@ -94,7 +95,8 @@ class ProcessCallThread extends Thread {
 
             byte[] resByteArr = result.getBytes();
 
-            QMBCall returnData = new QMBCall();
+            SMBCall returnData = new SMBCall();
+
             System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
             returnData.m_Metadata.m_Size = resByteArr.length;
             returnData.m_Metadata.m_ConnId = m_CallData.m_Metadata.m_ConnId;
@@ -139,7 +141,7 @@ public class Main {
         ServiceCallInfo callInfo = new ServiceCallInfo();
         HashMap<Integer, ServiceReturnInfo> connections = new HashMap<Integer, ServiceReturnInfo>();
 
-        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1", 2);
+        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1", 0);
 
         ConnectThread connectThread = new ConnectThread(connectInfo, connections);
         DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
@@ -149,7 +151,7 @@ public class Main {
 
         while (true) {
             try {
-                QMBCall callData = new QMBCall();
+                SMBCall callData = new SMBCall();
 
                 LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
 

@@ -135,8 +135,7 @@ $ffi = FFI::cdef(
     void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
                 struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId);
 
-    int32_t setQMBCallData(struct QMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
-    int32_t setHMBCallData(struct HMBCall *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
+    int32_t setCallData(int p_Type, void *p_CallInfo, uint8_t *p_Data, uint32_t p_Size);
 
     struct ConnectResponseInformation *getConnectResponse(struct ClientReturnInfo *p_ReturnInfo);
 ",
@@ -153,10 +152,10 @@ function sendConnectRequest($p_Ffi, $returnInfoPtr, $connectInfoPtr, $requestInf
     $p_Ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 }
 
-function setQMBCallData($p_Ffi, $callDataPtr, $dataBuffer, $size)
+function setCallData($p_Ffi, $p_Type, $p_CallDataPtr, $p_DataBuffer, $p_Size)
 {
     echo "Prepare call information\n";
-    return $p_Ffi->setQMBCallData($callDataPtr, $dataBuffer, $size);
+    return $p_Ffi->setCallData($p_Type, $p_CallDataPtr, $p_DataBuffer, $p_Size);
 }
 
 function callFn($p_Ffi, $p_CallInfoPtr, $p_CallDataPtr)
@@ -207,13 +206,15 @@ $responseQName = "response-q-" . $uniqueId;
 FFI::memset($requestInfo->m_RequestResponseQName, 0, 256);
 FFI::memcpy($requestInfo->m_RequestResponseQName, $responseQName, strlen($responseQName));
 $requestInfo->m_ResponseQSize = 1;
-$requestInfo->m_QType = 2;
+// $requestInfo->m_QType = 2;
+$requestInfo->m_QType = 0;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
 sendConnectRequest($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 
-$callData = $ffi->new("struct QMBCall");
+// $callData = $ffi->new("struct QMBCall");
+$callData = $ffi->new("struct SMBCall");
 $callDataPtr = FFI::addr($callData);
 
 $callData->m_Metadata->m_ConnId = $returnInfo->m_ConnectResponseInformation->m_Id;
@@ -227,11 +228,13 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
     $iiaDataBuffer[$i] = ord($iiaData[$i]);
 }
 
-setQMBCallData($ffi, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
+// setCallData($ffi, 2, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
+setCallData($ffi, 0, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
 callFn($ffi, $callInfoPtr, $callDataPtr);
 
-$returnData = $ffi->new("struct QMBCall");
+// $returnData = $ffi->new("struct QMBCall");
+$returnData = $ffi->new("struct SMBCall");
 $returnDataPtr = FFI::addr($returnData);
 
 returnFn($ffi, $returnDataPtr, $returnInfoPtr);

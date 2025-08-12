@@ -31,12 +31,14 @@
 #define GB 1 << 30
 #define DGB 1ULL << 31
 
+#define SMB_Q_MAX_SIZE ((uint32_t)32)
+#define EMB_Q_MAX_SIZE ((uint32_t)16)
 #define QMB_Q_MAX_SIZE ((uint32_t)8)
 #define HMB_Q_MAX_SIZE ((uint32_t)4)
 #define MB_Q_MAX_SIZE ((uint32_t)2)
 #define DMB_Q_MAX_SIZE ((uint32_t)1)
+#define HGB_Q_MAX_SIZE ((uint32_t)1)
 #define GB_Q_MAX_SIZE ((uint32_t)1)
-#define DGB_Q_MAX_SIZE ((uint32_t)1)
 
 #define CONNECTQ_MAX_SIZE ((uint32_t)128)
 #define RETURNQ_MAX_SIZE ((uint32_t)1)
@@ -55,8 +57,8 @@ enum QType {
     HMBQ, // 3
     MBQ,  // 4
     DMBQ, // 5
-    GBQ,  // 6
-    DGBQ  // 7
+    HGBQ, // 6
+    GBQ   // 7
 };
 
 struct CallMetadata {
@@ -230,17 +232,6 @@ struct ConnectQueue {
 struct DisconnectQueue {
     struct DSPQueueMetadata m_Metadata;
     struct ConnectRequest *m_Data;
-};
-
-struct QMBDSPQueue {
-    struct DSPQueueMetadata m_Metadata;
-    struct QMBCall *m_Data;
-    uint32_t m_MaxSize;
-};
-
-struct HMBDSPQueue {
-    struct DSPQueueMetadata m_Metadata;
-    struct HMBCall *m_Data;
 };
 
 struct DSPQueue {

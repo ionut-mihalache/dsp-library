@@ -5,102 +5,143 @@
 #include "log.h"
 #include "macros.h"
 
-static int32_t s_QPushA(struct DSPQueue *p_Queue, enum QType p_QType,
-                        void *p_CallData, uint32_t p_QMaxSize,
-                        int32_t (*p_Fn)(struct DSPQueue *, void *)) {
+static int32_t s_SMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
+    struct SMBCall *qData = p_Queue->m_Data;
 
-    switch (p_QType) {
-    case SMBQ:
-        /**
-         * TODO
-         */
-        break;
-    case EMBQ:
-        /**
-         * TODO
-         */
-        break;
-    case QMBQ:
-        QPUSH(p_Queue, p_QMaxSize, do { p_Fn(p_Queue, p_CallData); } while (0));
-        break;
-    case HMBQ:
-        QPUSH(p_Queue, p_QMaxSize, do { p_Fn(p_Queue, p_CallData); } while (0));
-        break;
-    case MBQ:
-        /**
-         * TODO
-         */
-        break;
-    case DMBQ:
-        /**
-         * TODO
-         */
-        break;
-    case GBQ:
-        /**
-         * TODO
-         */
-        break;
-    case DGBQ:
-        /**
-         * TODO
-         */
-        break;
-    default:
-        /**
-         * TODO
-         */
-        ;
-    }
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
+           sizeof(struct SMBCall));
+
+    return rc;
+}
+
+static int32_t s_EMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
+    int32_t rc = 0;
+    struct EMBCall *qData = p_Queue->m_Data;
+
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
+           sizeof(struct EMBCall));
 
     return rc;
 }
 
 static int32_t s_QMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct QMBCall *callData = p_CallData;
     struct QMBCall *qData = p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], callData,
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct QMBCall));
 
     return rc;
 }
 
-static int32_t s_QPushQMB(struct DSPQueue *p_Queue,
-                          struct QMBCall *p_CallData) {
-    return s_QPushA(p_Queue, QMBQ, p_CallData, QMB_Q_MAX_SIZE, s_QMBPushHelper);
-}
-
 static int32_t s_HMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct HMBCall *callData = p_CallData;
     struct HMBCall *qData = p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], callData,
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct HMBCall));
 
     return rc;
 }
 
+static int32_t s_MBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
+    int32_t rc = 0;
+    struct MBCall *qData = p_Queue->m_Data;
+
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
+           sizeof(struct MBCall));
+
+    return rc;
+}
+
+static int32_t s_DMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
+    int32_t rc = 0;
+    struct DMBCall *qData = p_Queue->m_Data;
+
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
+           sizeof(struct DMBCall));
+
+    return rc;
+}
+
+static int32_t s_HGBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
+    int32_t rc = 0;
+    struct HGBCall *qData = p_Queue->m_Data;
+
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
+           sizeof(struct HGBCall));
+
+    return rc;
+}
+
+static int32_t s_GBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
+    int32_t rc = 0;
+    struct GBCall *qData = p_Queue->m_Data;
+
+    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
+           sizeof(struct GBCall));
+
+    return rc;
+}
+
+static int32_t s_QPushA(struct DSPQueue *p_Queue, void *p_CallData,
+                        uint32_t p_QMaxSize,
+                        int32_t (*p_Fn)(struct DSPQueue *, void *)) {
+    int32_t rc = 0;
+
+    QPUSH(
+        p_Queue, p_QMaxSize, do { rc = p_Fn(p_Queue, p_CallData); } while (0));
+
+    return rc;
+}
+
+static int32_t s_QPushSMB(struct DSPQueue *p_Queue,
+                          struct SMBCall *p_CallData) {
+    return s_QPushA(p_Queue, p_CallData, SMB_Q_MAX_SIZE, s_SMBPushHelper);
+}
+
+static int32_t s_QPushEMB(struct DSPQueue *p_Queue,
+                          struct EMBCall *p_CallData) {
+    return s_QPushA(p_Queue, p_CallData, EMB_Q_MAX_SIZE, s_EMBPushHelper);
+}
+
+static int32_t s_QPushQMB(struct DSPQueue *p_Queue,
+                          struct QMBCall *p_CallData) {
+    return s_QPushA(p_Queue, p_CallData, QMB_Q_MAX_SIZE, s_QMBPushHelper);
+}
+
 static int32_t s_QPushHMB(struct DSPQueue *p_Queue,
                           struct HMBCall *p_CallData) {
-    return s_QPushA(p_Queue, HMBQ, p_CallData, HMB_Q_MAX_SIZE, s_HMBPushHelper);
+    return s_QPushA(p_Queue, p_CallData, HMB_Q_MAX_SIZE, s_HMBPushHelper);
+}
+
+static int32_t s_QPushMB(struct DSPQueue *p_Queue, struct MBCall *p_CallData) {
+    return s_QPushA(p_Queue, p_CallData, MB_Q_MAX_SIZE, s_MBPushHelper);
+}
+
+static int32_t s_QPushDMB(struct DSPQueue *p_Queue,
+                          struct DMBCall *p_CallData) {
+    return s_QPushA(p_Queue, p_CallData, DMB_Q_MAX_SIZE, s_DMBPushHelper);
+}
+
+static int32_t s_QPushHGB(struct DSPQueue *p_Queue,
+                          struct HGBCall *p_CallData) {
+    return s_QPushA(p_Queue, p_CallData, HGB_Q_MAX_SIZE, s_HGBPushHelper);
+}
+
+static int32_t s_QPushGB(struct DSPQueue *p_Queue, struct GBCall *p_CallData) {
+    return s_QPushA(p_Queue, p_CallData, GB_Q_MAX_SIZE, s_GBPushHelper);
 }
 
 static int32_t s_QPush(struct PushInformation *p_PushInfo) {
     switch (p_PushInfo->m_QType) {
     case SMBQ:
-        /**
-         * TODO
-         */
-        return (-1);
+        return s_QPushSMB(p_PushInfo->m_Q,
+                          (struct SMBCall *)p_PushInfo->m_CallData);
     case EMBQ:
-        /**
-         * TODO
-         */
-        return (-1);
+        return s_QPushEMB(p_PushInfo->m_Q,
+                          (struct EMBCall *)p_PushInfo->m_CallData);
     case QMBQ:
         return s_QPushQMB(p_PushInfo->m_Q,
                           (struct QMBCall *)p_PushInfo->m_CallData);
@@ -108,25 +149,17 @@ static int32_t s_QPush(struct PushInformation *p_PushInfo) {
         return s_QPushHMB(p_PushInfo->m_Q,
                           (struct HMBCall *)p_PushInfo->m_CallData);
     case MBQ:
-        /**
-         * TODO
-         */
-        return (-1);
+        return s_QPushMB(p_PushInfo->m_Q,
+                         (struct MBCall *)p_PushInfo->m_CallData);
     case DMBQ:
-        /**
-         * TODO
-         */
-        return (-1);
+        return s_QPushDMB(p_PushInfo->m_Q,
+                          (struct DMBCall *)p_PushInfo->m_CallData);
+    case HGBQ:
+        return s_QPushHGB(p_PushInfo->m_Q,
+                          (struct HGBCall *)p_PushInfo->m_CallData);
     case GBQ:
-        /**
-         * TODO
-         */
-        return (-1);
-    case DGBQ:
-        /**
-         * TODO
-         */
-        return (-1);
+        return s_QPushGB(p_PushInfo->m_Q,
+                         (struct GBCall *)p_PushInfo->m_CallData);
     default:
         /**
          * TODO
@@ -142,53 +175,86 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     int callQFd;
     void *callQ;
 
-    callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
-                              S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH |
-                                  S_IWOTH,
-                              QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);
-
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
-        /**
-         * TODO
-         */
+        callQFd = createShmObject(
+            p_InstallInfo->m_CallQName, O_RDWR,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+            SMB_Q_MAX_SIZE * sizeof(struct SMBCall), false);
+
+        createQ(&callQ, SMB_Q_MAX_SIZE * sizeof(struct SMBCall), PROT_WRITE,
+                callQFd);
+
         break;
     case EMBQ:
-        /**
-         * TODO
-         */
+        callQFd = createShmObject(
+            p_InstallInfo->m_CallQName, O_RDWR,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+            EMB_Q_MAX_SIZE * sizeof(struct EMBCall), false);
+
+        createQ(&callQ, EMB_Q_MAX_SIZE * sizeof(struct EMBCall), PROT_WRITE,
+                callQFd);
+
         break;
     case QMBQ:
+        callQFd = createShmObject(
+            p_InstallInfo->m_CallQName, O_RDWR,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+            QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);
+
         createQ(&callQ, QMB_Q_MAX_SIZE * sizeof(struct QMBCall), PROT_WRITE,
                 callQFd);
 
         break;
     case HMBQ:
-        /**
-         * TODO
-         */
+        callQFd = createShmObject(
+            p_InstallInfo->m_CallQName, O_RDWR,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+            HMB_Q_MAX_SIZE * sizeof(struct HMBCall), false);
+
         createQ(&callQ, HMB_Q_MAX_SIZE * sizeof(struct HMBCall), PROT_WRITE,
                 callQFd);
+
         break;
     case MBQ:
-        /**
-         * TODO
-         */
+        callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
+                                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+                                      S_IROTH | S_IWOTH,
+                                  MB_Q_MAX_SIZE * sizeof(struct MBCall), false);
+
+        createQ(&callQ, MB_Q_MAX_SIZE * sizeof(struct MBCall), PROT_WRITE,
+                callQFd);
+
         break;
     case DMBQ:
-        /**
-         * TODO
-         */
+        callQFd = createShmObject(
+            p_InstallInfo->m_CallQName, O_RDWR,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+            DMB_Q_MAX_SIZE * sizeof(struct DMBCall), false);
+
+        createQ(&callQ, DMB_Q_MAX_SIZE * sizeof(struct DMBCall), PROT_WRITE,
+                callQFd);
+
+        break;
+    case HGBQ:
+        callQFd = createShmObject(
+            p_InstallInfo->m_CallQName, O_RDWR,
+            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+            HGB_Q_MAX_SIZE * sizeof(struct HGBCall), false);
+
+        createQ(&callQ, HGB_Q_MAX_SIZE * sizeof(struct HGBCall), PROT_WRITE,
+                callQFd);
+
         break;
     case GBQ:
-        /**
-         * TODO
-         */
-        break;
-    case DGBQ:
-        /**
-         * TODO
-         */
+        callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
+                                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
+                                      S_IROTH | S_IWOTH,
+                                  GB_Q_MAX_SIZE * sizeof(struct GBCall), false);
+
+        createQ(&callQ, GB_Q_MAX_SIZE * sizeof(struct GBCall), PROT_WRITE,
+                callQFd);
+
         break;
     default:
         /**
