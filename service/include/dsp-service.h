@@ -65,7 +65,7 @@ void initService();
 
 void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                 struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
-                const char *p_Version);
+                const char *p_Version, int p_CallQType);
 
 void receiveCall(void *, struct ServiceCallInfo *);
 void sendReturn(struct ServiceReturnInfo *, void *);

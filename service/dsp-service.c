@@ -42,7 +42,7 @@ void initService() {
 
 void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                 struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
-                const char *p_Version) {
+                const char *p_Version, int p_CallQType) {
     int rc;
     int installShmFd;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
@@ -152,6 +152,7 @@ spin_lock_unlock:
     installInfo->m_CallQPushIdx = 0;
     installInfo->m_CallQPopIdx = 0;
     installInfo->m_CallQSize = 0;
+    installInfo->m_CallQType = p_CallQType;
 
     initializeServiceConnections(installInfo);
     configureServiceConnectInformation(p_ConnectInfo, installInfo);

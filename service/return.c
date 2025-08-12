@@ -37,6 +37,8 @@ static int32_t s_SendReturnFnA(struct DSPQueue *p_Queue, enum QType p_QType,
         break;
     case QMBQ:
         QPUSH(p_Queue, p_QMaxSize, do { p_Fn(p_Queue, p_RetData); } while (0));
+        LOGF("%s: Queue type is: %d\n", __func__, p_Queue->m_Type);
+        LOGF("%s: Queue size is: %u\n", __func__, *p_Queue->m_Metadata.m_Size);
 
         break;
     case HMBQ:
@@ -180,7 +182,7 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
         break;
     case QMBQ:
         createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct QMBCall),
-                returnQFd);
+                PROT_WRITE | PROT_READ, returnQFd);
 
         break;
     case HMBQ:
@@ -188,7 +190,7 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
          * TODO
          */
         createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct HMBCall),
-                returnQFd);
+                PROT_WRITE | PROT_READ, returnQFd);
         break;
     case MBQ:
         /**
@@ -226,9 +228,6 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
         PROT_WRITE | PROT_READ, MAP_SHARED, requestResponseQFd, 0);
     DIE(requestResponseQ == MAP_FAILED,
         "Could not map request response queue memory");
-
-    rc = close(returnQFd);
-    DIE(rc != 0, "Could not close return queue shared object file descriptor");
 
     rc = close(requestResponseQFd);
     DIE(rc != 0,
@@ -272,6 +271,8 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
     p_ReturnInfo->m_Q.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
+
+    p_ReturnInfo->m_Q.m_Type = p_Request->m_ReturnQType;
 
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ReturnQSize;
 

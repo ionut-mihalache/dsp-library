@@ -14,11 +14,12 @@ import queues.commons.DSPQueueMetadata;
  * };
  */
 
-@FieldOrder({ "m_Metadata", "m_Data", "m_MaxSize" })
+@FieldOrder({ "m_Metadata", "m_Data", "m_MaxSize", "m_Type" })
 public class DSPQueue extends Structure {
     public DSPQueueMetadata m_Metadata;
     public Pointer m_Data;
     public int m_MaxSize;
+    public int m_Type;
 
     public DSPQueue() {
         super();
@@ -43,6 +44,7 @@ public class DSPQueue extends Structure {
                 + "m_PushIdxPtr: " + m_Metadata.m_PushIdxPtr + ws
                 + "m_PopIdxPtr: " + m_Metadata.m_PopIdxPtr + ws
                 + "m_Size: " + m_Metadata.m_Size + ws
-                + "m_MaxSize: " + m_MaxSize;
+                + "m_MaxSize: " + m_MaxSize + ws
+                + "m_Type: " + m_Type;
     }
 }

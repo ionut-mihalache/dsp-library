@@ -149,7 +149,7 @@ static int32_t s_ProcessConnectionRequest(
     case QMBQ:
         createQ(&returnQ,
                 p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall),
-                returnQFd);
+                PROT_READ, returnQFd);
         break;
     case HMBQ:
         /**
@@ -157,7 +157,7 @@ static int32_t s_ProcessConnectionRequest(
          */
         createQ(&returnQ,
                 p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall),
-                returnQFd);
+                PROT_READ, returnQFd);
         break;
     case MBQ:
         /**

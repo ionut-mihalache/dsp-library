@@ -64,10 +64,9 @@ static int32_t s_QPopA(struct DSPQueue *p_Queue, enum QType p_QType,
 
 static int32_t s_QMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct QMBCall *callInfo = (struct QMBCall *)p_CallInfo;
     struct QMBCall *qData = p_Queue->m_Data;
 
-    memcpy(callInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
+    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct QMBCall));
 
     return rc;
@@ -169,9 +168,62 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
                                   S_IWOTH,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
 
-    struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct QMBCall),
-                                 PROT_READ, MAP_SHARED, callQFd, 0);
-    DIE(callQ == MAP_FAILED, "Could not map call queue memory");
+    // struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct
+    // QMBCall),
+    //                              PROT_READ, MAP_SHARED, callQFd, 0);
+    // DIE(callQ == MAP_FAILED, "Could not map call queue memory");
+
+    void *callQ;
+
+    switch (p_InstallInfo->m_CallQType) {
+    case SMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case EMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case QMBQ:
+        createQ(&callQ, QMB_Q_MAX_SIZE * sizeof(struct QMBCall), PROT_READ,
+                callQFd);
+
+        break;
+    case HMBQ:
+        /**
+         * TODO
+         */
+        createQ(&callQ, HMB_Q_MAX_SIZE * sizeof(struct HMBCall), PROT_READ,
+                callQFd);
+        break;
+    case MBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DMBQ:
+        /**
+         * TODO
+         */
+        break;
+    case GBQ:
+        /**
+         * TODO
+         */
+        break;
+    case DGBQ:
+        /**
+         * TODO
+         */
+        break;
+    default:
+        /**
+         * TODO
+         */
+        DIE(true, "QType is not recognized");
+    }
 
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");
@@ -195,6 +247,7 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
     p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
     p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+    p_CallInfo->m_Q.m_Type = p_InstallInfo->m_CallQType;
 
     pthread_mutexattr_t attr;
     rc = pthread_mutexattr_init(&attr);

@@ -18,6 +18,6 @@
 int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
                     loff_t p_Size, uint8_t p_Unlink);
 
-void createQ(void **p_QPtrRes, size_t p_Size, int p_Fd);
+void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd);
 
 #endif // DSP_COMMONS_H

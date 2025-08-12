@@ -146,11 +146,6 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
                                   S_IWOTH,
                               QMB_Q_MAX_SIZE * sizeof(struct QMBCall), false);
 
-    // struct QMBCall *callQ = mmap(NULL, QMB_Q_MAX_SIZE * sizeof(struct
-    // QMBCall),
-    //                              PROT_WRITE, MAP_SHARED, callQFd, 0);
-    // DIE(callQ == MAP_FAILED, "Could not map callQ");
-
     void *callQ;
 
     switch (p_InstallInfo->m_CallQType) {
@@ -165,14 +160,16 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
          */
         break;
     case QMBQ:
-        createQ(&callQ, QMB_Q_MAX_SIZE * sizeof(struct QMBCall), callQFd);
+        createQ(&callQ, QMB_Q_MAX_SIZE * sizeof(struct QMBCall), PROT_WRITE,
+                callQFd);
 
         break;
     case HMBQ:
         /**
          * TODO
          */
-        createQ(&callQ, HMB_Q_MAX_SIZE * sizeof(struct HMBCall), callQFd);
+        createQ(&callQ, HMB_Q_MAX_SIZE * sizeof(struct HMBCall), PROT_WRITE,
+                callQFd);
         break;
     case MBQ:
         /**
@@ -203,33 +200,6 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
 
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");
-
-    // p_CallInfo->m_CallFnHMB = s_QPushHMB;
-
-    // p_CallInfo->m_CallFnQMB = s_QPushQMB;
-    // p_CallInfo->m_QMBQueue.m_Data = callQ;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_PushIdxPtr =
-    //     &p_InstallInfo->m_CallQPushIdx;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_PopIdxPtr =
-    //     &p_InstallInfo->m_CallQPopIdx;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_FullCond =
-    //     &p_InstallInfo->m_CallQFullCond;
-    // p_CallInfo->m_QMBQueue.m_Metadata.m_EmptyCond =
-    //     &p_InstallInfo->m_CallQEmptyCond;
-
-    // p_CallInfo->m_CallFnHMB = s_QPushHMB;
-    // p_CallInfo->m_HMBQueue.m_Data = callQ;
-    // p_CallInfo->m_HMBQueue.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
-    // p_CallInfo->m_HMBQueue.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
-    // p_CallInfo->m_HMBQueue.m_Size = &p_InstallInfo->m_CallQSize;
-    // p_CallInfo->m_HMBQueue.m_Lock = &p_InstallInfo->m_CallQMutex;
-    // p_CallInfo->m_HMBQueue.m_FullCond = &p_InstallInfo->m_CallQFullCond;
-    // p_CallInfo->m_HMBQueue.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
-
-    // LOGF("Connected to \'%s\' with version \'%s\'.\n", p_ServiceStrId,
-    //      p_InstallInfo->m_Version);
 
     p_CallInfo->m_CallFn = s_QPush;
 

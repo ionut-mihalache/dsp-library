@@ -1,5 +1,4 @@
 <?php
-// sleep(5);
 
 $ffi = FFI::cdef(
     "
@@ -136,8 +135,8 @@ $ffi = FFI::cdef(
     };
 
     struct ClientConnectRequestInformation {
-        char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
-        char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
+        char m_ReturnQName[256];
+        char m_RequestResponseQName[256];
 
         uint32_t m_ReturnQSize;
         uint32_t m_ResponseQSize;
@@ -181,38 +180,38 @@ $ffi = FFI::cdef(
     "/home/user/dsp-library/libdsp.so"
 );
 
-function dspConnect($ffi, $connectInfoPtr, $callInfoPtr, $serviceStrId)
+function dspConnect($p_Ffi, $connectInfoPtr, $callInfoPtr, $serviceStrId)
 {
-    $ffi->dspConnect($connectInfoPtr, $callInfoPtr, $serviceStrId);
+    $p_Ffi->dspConnect($connectInfoPtr, $callInfoPtr, $serviceStrId);
 }
 
-function sendConnectRequest($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr)
+function sendConnectRequest($p_Ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr)
 {
-    $ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
+    $p_Ffi->sendConnectRequest($returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 }
 
-function setQMBCallData($ffi, $callDataPtr, $dataBuffer, $size)
+function setQMBCallData($p_Ffi, $callDataPtr, $dataBuffer, $size)
 {
     echo "Prepare call information\n";
-    return $ffi->setQMBCallData($callDataPtr, $dataBuffer, $size);
+    return $p_Ffi->setQMBCallData($callDataPtr, $dataBuffer, $size);
 }
 
-function callQMB($ffi, $callInfoPtr, $callDataPtr)
+function callQMB($p_Ffi, $callInfoPtr, $callDataPtr)
 {
     echo "Send call request\n";
-    $ffi->callQMB($callInfoPtr, $callDataPtr);
+    $p_Ffi->callQMB($callInfoPtr, $callDataPtr);
 }
 
-function callFn($p_Fii, $p_CallInfoPtr, $p_CallDataPtr)
+function callFn($p_Ffi, $p_CallInfoPtr, $p_CallDataPtr)
 {
     echo "Send call request\n";
     $p_Ffi->callFn($p_CallInfoPtr, $p_CallDataPtr);
 }
 
-function returnQMB($ffi, $returnDataPtr, $returnInfoPtr)
+function returnQMB($p_Ffi, $returnDataPtr, $returnInfoPtr)
 {
     echo "Receive call request\n";
-    $ffi->returnQMB($returnDataPtr, $returnInfoPtr);
+    $p_Ffi->returnQMB($returnDataPtr, $returnInfoPtr);
 }
 
 function returnFn($p_Ffi, $p_ReturnDataPtr, $p_ReturnInfoPtr)
@@ -221,10 +220,10 @@ function returnFn($p_Ffi, $p_ReturnDataPtr, $p_ReturnInfoPtr)
     $p_Ffi->returnFn($p_ReturnDataPtr, $p_ReturnInfoPtr);
 }
 
-function sendDisconnectRequest($ffi, $connectInfoPtr, $requestInfoPtr)
+function sendDisconnectRequest($p_Ffi, $connectInfoPtr, $requestInfoPtr)
 {
     echo "Send disconnect request\n";
-    $ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
+    $p_Ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
 }
 
 $connectInfo = $ffi->new("struct ClientConnectInfo");
@@ -273,13 +272,11 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
 
 setQMBCallData($ffi, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
-// callQMB($ffi, $callInfoPtr, $callDataPtr);
 callFn($ffi, $callInfoPtr, $callDataPtr);
 
 $returnData = $ffi->new("struct QMBCall");
 $returnDataPtr = FFI::addr($returnData);
 
-// returnQMB($ffi, $returnDataPtr, $returnInfoPtr);
 returnFn($ffi, $returnDataPtr, $returnInfoPtr);
 
 $result = "";

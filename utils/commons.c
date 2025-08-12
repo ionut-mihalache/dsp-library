@@ -58,8 +58,7 @@ end:
     return shmFd;
 }
 
-void createQ(void **p_QPtrRes, size_t p_Size, int p_Fd) {
-    *p_QPtrRes = mmap(NULL, p_Size, PROT_READ, MAP_SHARED, p_Fd, 0);
+void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
+    *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED, p_Fd, 0);
     DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
 }
-

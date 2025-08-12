@@ -30,7 +30,8 @@ import connect.ServiceConnectInfo;
 interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
 
-    void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version);
+    void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version,
+            int p_CallQType);
 
     void receiveCall(Pointer p_CallData, ServiceCallInfo p_CallInfo);
 
@@ -54,8 +55,6 @@ class ConnectThread extends Thread {
 
             int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
             m_Connections.put(connId, returnInfo);
-            // System.out.println("New connection");
-            System.out.println(returnInfo);
         }
     }
 }
@@ -85,8 +84,10 @@ class ProcessCallThread extends Thread {
 
     public void run() {
         try {
+            System.out.println(m_CallData);
             byte[] iiaData = Arrays.copyOfRange(m_CallData.m_CallInfo, 0,
                     m_CallData.m_Metadata.m_Size);
+            System.out.println("Data size is: " + m_CallData.m_Metadata.m_Size);
 
             Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
@@ -100,10 +101,7 @@ class ProcessCallThread extends Thread {
             returnData.m_Metadata.m_Size = resByteArr.length;
             returnData.m_Metadata.m_ConnId = m_CallData.m_Metadata.m_ConnId;
 
-            // m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_SendReturnFnQMB
-            // .sendQMBReturn(m_Connections.get(m_CallData.m_Metadata.m_ConnId).m_QMBQueue,
-            // returnData);
-
+            returnData.write();
             LibDSP.INSTANCE.sendReturn(m_Connections.get(m_CallData.m_Metadata.m_ConnId), returnData.getPointer());
 
         } catch (Exception e) {
@@ -139,12 +137,11 @@ class ProcessCallThread extends Thread {
 
 public class Main {
     public static void main(String[] args) {
-        // Main main = new Main();
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
         HashMap<Integer, ServiceReturnInfo> connections = new HashMap<Integer, ServiceReturnInfo>();
 
-        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1");
+        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1", 2);
 
         ConnectThread connectThread = new ConnectThread(connectInfo, connections);
         DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
@@ -154,20 +151,15 @@ public class Main {
 
         while (true) {
             try {
-                // System.out.println("Why is this happening...");
                 QMBCall callData = new QMBCall();
 
                 LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
-                System.out.println(callData);
-                System.out.println(callInfo);
-                // callInfo.m_ReceiveCallFnQMB.m_ReceiveCallFnQMB(callData,
-                // callInfo.m_QMBQueue);
 
-                // callInfo.m_ReceiveCallFn.f_ReceiveCall(callData.getPointer(), callInfo.m_Q);
+                callData.read();
 
-                // ProcessCallThread processCallThread = new ProcessCallThread(callData,
-                // connections);
-                // processCallThread.start();
+                ProcessCallThread processCallThread = new ProcessCallThread(callData,
+                        connections);
+                processCallThread.start();
             } catch (Exception e) {
                 e.printStackTrace();
             }
