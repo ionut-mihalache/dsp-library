@@ -22,11 +22,20 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
+import call.DMBCall;
+import call.EMBCall;
+import call.GBCall;
+import call.HGBCall;
+import call.HMBCall;
+import call.MBCall;
+import call.QMBCall;
 import call.SMBCall;
 import call.ServiceCallInfo;
 import call.ServiceReturnInfo;
 import call.abstract_classes.Call;
 import connect.ServiceConnectInfo;
+
+import consts.Constants;
 
 interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
@@ -95,7 +104,40 @@ class ProcessCallThread extends Thread {
 
             byte[] resByteArr = result.getBytes();
 
-            SMBCall returnData = new SMBCall();
+            ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.m_Metadata.m_ConnId);
+
+            Call returnData;
+
+            switch (serviceReturnInfo.m_Q.m_Type) {
+                case Constants.SMBQ:
+                    returnData = new SMBCall();
+                    break;
+                case Constants.EMBQ:
+                    returnData = new EMBCall();
+                    break;
+                case Constants.QMBQ:
+                    returnData = new QMBCall();
+                    break;
+                case Constants.HMBQ:
+                    returnData = new HMBCall();
+                    break;
+                case Constants.MBQ:
+                    returnData = new MBCall();
+                    break;
+                case Constants.DMBQ:
+                    returnData = new DMBCall();
+                    break;
+                case Constants.HGBQ:
+                    returnData = new HGBCall();
+                    break;
+                case Constants.GBQ:
+                    returnData = new GBCall();
+                    break;
+                default:
+                    System.err.println("Return queue type not recognized!");
+                    returnData = null;
+                    break;
+            }
 
             System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
             returnData.m_Metadata.m_Size = resByteArr.length;
@@ -141,7 +183,7 @@ public class Main {
         ServiceCallInfo callInfo = new ServiceCallInfo();
         HashMap<Integer, ServiceReturnInfo> connections = new HashMap<Integer, ServiceReturnInfo>();
 
-        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1", 0);
+        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.1", Constants.SMBQ);
 
         ConnectThread connectThread = new ConnectThread(connectInfo, connections);
         DisconnectThread disconnectThread = new DisconnectThread(connectInfo);

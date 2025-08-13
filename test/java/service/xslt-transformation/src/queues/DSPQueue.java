@@ -11,6 +11,7 @@ import queues.commons.DSPQueueMetadata;
  * struct DSPQueueMetadata m_Metadata;
  * void *m_Data;
  * uint32_t m_MaxSize;
+ * int m_Type;
  * };
  */
 

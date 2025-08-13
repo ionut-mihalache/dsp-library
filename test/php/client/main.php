@@ -1,18 +1,18 @@
 <?php
 
+enum QType: int {
+    case SMBQ = 0;
+    case EMBQ = 1;
+    case QMBQ = 2;
+    case HMBQ = 3;
+    case MBQ = 4;
+    case DMBQ = 5;
+    case HGBQ = 6;
+    case GBQ = 7;
+};
+
 $ffi = FFI::cdef(
     "
-    enum QType {
-        SMBQ, // 0
-        EMBQ, // 1
-        QMBQ, // 2
-        HMBQ, // 3
-        MBQ,  // 4
-        DMBQ, // 5
-        GBQ,  // 6
-        DGBQ  // 7
-    };
-
     struct CallMetadata {
         uint32_t m_Size;
         uint32_t m_ConnId;
@@ -70,6 +70,16 @@ $ffi = FFI::cdef(
         struct CallMetadata m_Metadata;
     };
 
+    struct HGBCall {
+        uint8_t m_CallInfo[1 << 29];
+        struct CallMetadata m_Metadata;
+    };
+
+    struct GBCall {
+        uint8_t m_CallInfo[1 << 30];
+        struct CallMetadata m_Metadata;
+    };
+
     struct ConnectQueue {
         struct DSPQueueMetadata m_Metadata;
         struct ConnectRequest *m_Data;
@@ -90,7 +100,7 @@ $ffi = FFI::cdef(
     struct ClientCallInfo {
         struct DSPQueue m_Q;
 
-        int32_t (*m_CallFn)(struct PushInformation *);
+        int32_t (*m_CallFn)(void *);
     };
 
     struct ClientReturnInfo {
@@ -98,7 +108,7 @@ $ffi = FFI::cdef(
         struct DSPQueue m_Q;
         struct ConnectResponseInformation m_ConnectResponseInformation;
 
-        int32_t (*m_ReturnFn)(struct PopInformation *);
+        int32_t (*m_ReturnFn)(void *);
         int m_QType;
     };
 
@@ -182,6 +192,48 @@ function sendDisconnectRequest($p_Ffi, $connectInfoPtr, $requestInfoPtr)
     $p_Ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
 }
 
+function getCallDataPtr($p_Ffi, $p_CallInfo)
+{
+    $callData = null;
+    switch ($p_CallInfo->m_Q->m_Type) {
+        case QType::SMBQ->value:
+            $callData = $p_Ffi->new("struct SMBCall");
+            break;
+        case QType::EMBQ->value:
+            $callData = $p_Ffi->new("struct EMBCall");
+            break;
+        case QType::QMBQ->value:
+            $callData = $p_Ffi->new("struct QMBCall");
+            break;
+        case QType::HMBQ->value:
+            $callData = $p_Ffi->new("struct HMBCall");
+            break;
+        case QType::MBQ->value:
+            $callData = $p_Ffi->new("struct MBCall");
+            break;
+        case QType::DMBQ->value:
+            $callData = $p_Ffi->new("struct DMBCall");
+            break;
+        case QType::HGBQ->value:
+            $callData = $p_Ffi->new("struct HGBCall");
+            break;
+        case QType::GBQ->value:
+            $callData = $p_Ffi->new("struct GBCall");
+            break;
+        default:
+            echo "Call queue type not recognized.\n";
+            $callData = null;
+    }
+
+    if ($callData) {
+        $callDataPtr = FFI::addr($callData);
+
+        return [$callData, $callDataPtr];
+    }
+
+    return [null, null];
+}
+
 $connectInfo = $ffi->new("struct ClientConnectInfo");
 $connectInfoPtr = FFI::addr($connectInfo);
 
@@ -206,16 +258,13 @@ $responseQName = "response-q-" . $uniqueId;
 FFI::memset($requestInfo->m_RequestResponseQName, 0, 256);
 FFI::memcpy($requestInfo->m_RequestResponseQName, $responseQName, strlen($responseQName));
 $requestInfo->m_ResponseQSize = 1;
-// $requestInfo->m_QType = 2;
-$requestInfo->m_QType = 0;
+$requestInfo->m_QType = QType::SMBQ->value;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
 sendConnectRequest($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
 
-// $callData = $ffi->new("struct QMBCall");
-$callData = $ffi->new("struct SMBCall");
-$callDataPtr = FFI::addr($callData);
+[$callData, $callDataPtr] = getCallDataPtr($ffi, $callInfo);
 
 $callData->m_Metadata->m_ConnId = $returnInfo->m_ConnectResponseInformation->m_Id;
 
@@ -228,12 +277,10 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
     $iiaDataBuffer[$i] = ord($iiaData[$i]);
 }
 
-// setCallData($ffi, 2, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
-setCallData($ffi, 0, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
+setCallData($ffi, QType::SMBQ->value, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
 callFn($ffi, $callInfoPtr, $callDataPtr);
 
-// $returnData = $ffi->new("struct QMBCall");
 $returnData = $ffi->new("struct SMBCall");
 $returnDataPtr = FFI::addr($returnData);
 

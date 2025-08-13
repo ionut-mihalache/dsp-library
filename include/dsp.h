@@ -22,14 +22,14 @@
 
 #define FUNC_NAME_MAX_LENGTH ((uint32_t)32)
 
-#define SMB 1 << 16
-#define EMB 1 << 17
-#define QMB 1 << 18
-#define HMB 1 << 19
-#define MB 1 << 20
-#define DMB 1 << 21
-#define GB 1 << 30
-#define DGB 1ULL << 31
+#define SMB (1 << 16)
+#define EMB (1 << 17)
+#define QMB (1 << 18)
+#define HMB (1 << 19)
+#define MB (1 << 20)
+#define DMB (1 << 21)
+#define HGB (1 << 29)
+#define GB (1 << 30)
 
 #define SMB_Q_MAX_SIZE ((uint32_t)32)
 #define EMB_Q_MAX_SIZE ((uint32_t)16)
@@ -98,12 +98,12 @@ struct DMBCall {
 };
 
 struct HGBCall {
-    uint8_t m_CallInfo[GB];
+    uint8_t m_CallInfo[HGB];
     struct CallMetadata m_Metadata;
 };
 
 struct GBCall {
-    uint8_t m_CallInfo[DGB];
+    uint8_t m_CallInfo[GB];
     struct CallMetadata m_Metadata;
 };
 
@@ -111,18 +111,6 @@ struct CommunicationInfo {
     struct DSPQueue *m_Q;
     void *m_Data;
 };
-
-// struct PushInformation {
-//     struct DSPQueue *m_Q;
-//     void *m_CallData;
-//     enum QType m_QType;
-// };
-
-// struct PopInformation {
-//     struct DSPQueue *m_Q;
-//     void *m_ReturnData;
-//     enum QType m_QType;
-// };
 
 struct ConnectResponseInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
