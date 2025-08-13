@@ -134,32 +134,24 @@ static int32_t s_QPushGB(struct DSPQueue *p_Queue, struct GBCall *p_CallData) {
     return s_QPushA(p_Queue, p_CallData, GB_Q_MAX_SIZE, s_GBPushHelper);
 }
 
-static int32_t s_QPush(struct PushInformation *p_PushInfo) {
-    switch (p_PushInfo->m_QType) {
+static int32_t s_QPush(struct CommunicationInfo *p_CInfo) {
+    switch (p_CInfo->m_Q->m_Type) {
     case SMBQ:
-        return s_QPushSMB(p_PushInfo->m_Q,
-                          (struct SMBCall *)p_PushInfo->m_CallData);
+        return s_QPushSMB(p_CInfo->m_Q, (struct SMBCall *)p_CInfo->m_Data);
     case EMBQ:
-        return s_QPushEMB(p_PushInfo->m_Q,
-                          (struct EMBCall *)p_PushInfo->m_CallData);
+        return s_QPushEMB(p_CInfo->m_Q, (struct EMBCall *)p_CInfo->m_Data);
     case QMBQ:
-        return s_QPushQMB(p_PushInfo->m_Q,
-                          (struct QMBCall *)p_PushInfo->m_CallData);
+        return s_QPushQMB(p_CInfo->m_Q, (struct QMBCall *)p_CInfo->m_Data);
     case HMBQ:
-        return s_QPushHMB(p_PushInfo->m_Q,
-                          (struct HMBCall *)p_PushInfo->m_CallData);
+        return s_QPushHMB(p_CInfo->m_Q, (struct HMBCall *)p_CInfo->m_Data);
     case MBQ:
-        return s_QPushMB(p_PushInfo->m_Q,
-                         (struct MBCall *)p_PushInfo->m_CallData);
+        return s_QPushMB(p_CInfo->m_Q, (struct MBCall *)p_CInfo->m_Data);
     case DMBQ:
-        return s_QPushDMB(p_PushInfo->m_Q,
-                          (struct DMBCall *)p_PushInfo->m_CallData);
+        return s_QPushDMB(p_CInfo->m_Q, (struct DMBCall *)p_CInfo->m_Data);
     case HGBQ:
-        return s_QPushHGB(p_PushInfo->m_Q,
-                          (struct HGBCall *)p_PushInfo->m_CallData);
+        return s_QPushHGB(p_CInfo->m_Q, (struct HGBCall *)p_CInfo->m_Data);
     case GBQ:
-        return s_QPushGB(p_PushInfo->m_Q,
-                         (struct GBCall *)p_PushInfo->m_CallData);
+        return s_QPushGB(p_CInfo->m_Q, (struct GBCall *)p_CInfo->m_Data);
     default:
         /**
          * TODO

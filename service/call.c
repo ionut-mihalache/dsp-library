@@ -130,32 +130,24 @@ static int32_t s_QPopGB(struct GBCall *p_CallInfo, struct DSPQueue *p_Queue) {
     return s_QPopA(p_Queue, p_CallInfo, GB_Q_MAX_SIZE, s_GBPopHelper);
 }
 
-static int32_t s_QPop(struct PopInformation *p_PopInfo) {
-    switch (p_PopInfo->m_QType) {
+static int32_t s_QPop(struct CommunicationInfo *p_CInfo) {
+    switch (p_CInfo->m_Q->m_Type) {
     case SMBQ:
-        return s_QPopSMB((struct SMBCall *)p_PopInfo->m_ReturnData,
-                         p_PopInfo->m_Q);
+        return s_QPopSMB((struct SMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case EMBQ:
-        return s_QPopEMB((struct EMBCall *)p_PopInfo->m_ReturnData,
-                         p_PopInfo->m_Q);
+        return s_QPopEMB((struct EMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case QMBQ:
-        return s_QPopQMB((struct QMBCall *)p_PopInfo->m_ReturnData,
-                         p_PopInfo->m_Q);
+        return s_QPopQMB((struct QMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case HMBQ:
-        return s_QPopHMB((struct HMBCall *)p_PopInfo->m_ReturnData,
-                         p_PopInfo->m_Q);
+        return s_QPopHMB((struct HMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case MBQ:
-        return s_QPopMB((struct MBCall *)p_PopInfo->m_ReturnData,
-                        p_PopInfo->m_Q);
+        return s_QPopMB((struct MBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case DMBQ:
-        return s_QPopDMB((struct DMBCall *)p_PopInfo->m_ReturnData,
-                         p_PopInfo->m_Q);
+        return s_QPopDMB((struct DMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case HGBQ:
-        return s_QPopHGB((struct HGBCall *)p_PopInfo->m_ReturnData,
-                         p_PopInfo->m_Q);
+        return s_QPopHGB((struct HGBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case GBQ:
-        return s_QPopGB((struct GBCall *)p_PopInfo->m_ReturnData,
-                        p_PopInfo->m_Q);
+        return s_QPopGB((struct GBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     default:
         /**
          * TODO

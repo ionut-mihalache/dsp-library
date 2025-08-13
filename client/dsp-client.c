@@ -27,23 +27,21 @@ void sendDisconnectRequest(
 }
 
 void callFn(struct ClientCallInfo *p_CallInfo, void *p_CallData) {
-    struct PushInformation pushInfo;
+    struct CommunicationInfo cInfo;
 
-    pushInfo.m_Q = &(p_CallInfo->m_Q);
-    pushInfo.m_QType = p_CallInfo->m_Q.m_Type;
-    pushInfo.m_CallData = p_CallData;
+    cInfo.m_Q = &(p_CallInfo->m_Q);
+    cInfo.m_Data = p_CallData;
 
-    p_CallInfo->m_CallFn(&pushInfo);
+    p_CallInfo->m_CallFn(&cInfo);
 };
 
 void returnFn(void *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo) {
-    struct PopInformation popInfo;
+    struct CommunicationInfo cInfo;
 
-    popInfo.m_Q = &(p_ReturnInfo->m_Q);
-    popInfo.m_QType = p_ReturnInfo->m_Q.m_Type;
-    popInfo.m_ReturnData = p_ReturnData;
+    cInfo.m_Q = &(p_ReturnInfo->m_Q);
+    cInfo.m_Data = p_ReturnData;
 
-    p_ReturnInfo->m_ReturnFn(&popInfo);
+    p_ReturnInfo->m_ReturnFn(&cInfo);
 }
 
 int32_t setCallData(int p_Type, void *p_CallInfo, uint8_t *p_Data,

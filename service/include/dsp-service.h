@@ -16,7 +16,7 @@ struct InstallSharedData {
 
 struct ServiceCallInfo {
     struct DSPQueue m_Q;
-    int32_t (*m_ReceiveCallFn)(struct PopInformation *);
+    int32_t (*m_ReceiveCallFn)(struct CommunicationInfo *);
 };
 
 struct ServiceReturnInfo {
@@ -24,7 +24,7 @@ struct ServiceReturnInfo {
     struct ConnectResponseInformation m_ConnectResponseInformation;
     struct DSPQueue m_Q;
 
-    int32_t (*m_SendReturnFn)(struct PushInformation *);
+    int32_t (*m_SendReturnFn)(struct CommunicationInfo *);
 };
 
 struct ServiceConnectInfo {

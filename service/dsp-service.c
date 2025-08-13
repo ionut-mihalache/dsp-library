@@ -162,23 +162,21 @@ spin_lock_unlock:
 }
 
 void receiveCall(void *p_CallData, struct ServiceCallInfo *p_CallInfo) {
-    struct PopInformation popInfo;
+    struct CommunicationInfo cInfo;
 
-    popInfo.m_Q = &(p_CallInfo->m_Q);
-    popInfo.m_QType = p_CallInfo->m_Q.m_Type;
-    popInfo.m_ReturnData = p_CallData;
+    cInfo.m_Q = &(p_CallInfo->m_Q);
+    cInfo.m_Data = p_CallData;
 
-    p_CallInfo->m_ReceiveCallFn(&popInfo);
+    p_CallInfo->m_ReceiveCallFn(&cInfo);
 }
 
 void sendReturn(struct ServiceReturnInfo *p_ReturnInfo, void *p_ReturnData) {
-    struct PushInformation pushInfo;
+    struct CommunicationInfo cInfo;
 
-    pushInfo.m_Q = &(p_ReturnInfo->m_Q);
-    pushInfo.m_QType = p_ReturnInfo->m_Q.m_Type;
-    pushInfo.m_CallData = p_ReturnData;
+    cInfo.m_Q = &(p_ReturnInfo->m_Q);
+    cInfo.m_Data = p_ReturnData;
 
-    p_ReturnInfo->m_SendReturnFn(&pushInfo);
+    p_ReturnInfo->m_SendReturnFn(&cInfo);
 }
 
 void dspReturn() {}

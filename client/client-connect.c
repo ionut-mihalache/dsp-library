@@ -153,32 +153,24 @@ static int32_t s_ReturnFnGB(struct GBCall *p_ReturnData,
                        s_ReturnFnGBHelper);
 }
 
-static int32_t s_QPop(struct PopInformation *p_PopInfo) {
-    switch (p_PopInfo->m_QType) {
+static int32_t s_QPop(struct CommunicationInfo *p_CInfo) {
+    switch (p_CInfo->m_Q->m_Type) {
     case SMBQ:
-        return s_ReturnFnSMB((struct SMBCall *)p_PopInfo->m_ReturnData,
-                             p_PopInfo->m_Q);
+        return s_ReturnFnSMB((struct SMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case EMBQ:
-        return s_ReturnFnEMB((struct EMBCall *)p_PopInfo->m_ReturnData,
-                             p_PopInfo->m_Q);
+        return s_ReturnFnEMB((struct EMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case QMBQ:
-        return s_ReturnFnQMB((struct QMBCall *)p_PopInfo->m_ReturnData,
-                             p_PopInfo->m_Q);
+        return s_ReturnFnQMB((struct QMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case HMBQ:
-        return s_ReturnFnHMB((struct HMBCall *)p_PopInfo->m_ReturnData,
-                             p_PopInfo->m_Q);
+        return s_ReturnFnHMB((struct HMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case MBQ:
-        return s_ReturnFnMB((struct MBCall *)p_PopInfo->m_ReturnData,
-                            p_PopInfo->m_Q);
+        return s_ReturnFnMB((struct MBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case DMBQ:
-        return s_ReturnFnDMB((struct DMBCall *)p_PopInfo->m_ReturnData,
-                             p_PopInfo->m_Q);
+        return s_ReturnFnDMB((struct DMBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case HGBQ:
-        return s_ReturnFnHGB((struct HGBCall *)p_PopInfo->m_ReturnData,
-                             p_PopInfo->m_Q);
+        return s_ReturnFnHGB((struct HGBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     case GBQ:
-        return s_ReturnFnGB((struct GBCall *)p_PopInfo->m_ReturnData,
-                            p_PopInfo->m_Q);
+        return s_ReturnFnGB((struct GBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     default:
         /**
          * TODO

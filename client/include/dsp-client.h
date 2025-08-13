@@ -6,7 +6,7 @@
 struct ClientCallInfo {
     struct DSPQueue m_Q;
 
-    int32_t (*m_CallFn)(struct PushInformation *);
+    int32_t (*m_CallFn)(struct CommunicationInfo *);
 };
 
 struct ClientReturnInfo {
@@ -14,7 +14,7 @@ struct ClientReturnInfo {
     struct DSPQueue m_Q;
     struct ConnectResponseInformation m_ConnectResponseInformation;
 
-    int32_t (*m_ReturnFn)(struct PopInformation *);
+    int32_t (*m_ReturnFn)(struct CommunicationInfo *);
 
     enum QType m_QType;
 };

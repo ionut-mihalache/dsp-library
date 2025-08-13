@@ -151,32 +151,30 @@ static int32_t s_SendReturnFnGB(struct DSPQueue *p_Queue,
                            s_SendReturnFnGBHelper);
 }
 
-static int32_t s_SendReturnFn(struct PushInformation *p_PushInfo) {
-    switch (p_PushInfo->m_QType) {
+static int32_t s_SendReturnFn(struct CommunicationInfo *p_CInfo) {
+    switch (p_CInfo->m_Q->m_Type) {
     case SMBQ:
-        return s_SendReturnFnSMB(p_PushInfo->m_Q,
-                                 (struct SMBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnSMB(p_CInfo->m_Q,
+                                 (struct SMBCall *)p_CInfo->m_Data);
     case EMBQ:
-        return s_SendReturnFnEMB(p_PushInfo->m_Q,
-                                 (struct EMBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnEMB(p_CInfo->m_Q,
+                                 (struct EMBCall *)p_CInfo->m_Data);
     case QMBQ:
-        return s_SendReturnFnQMB(p_PushInfo->m_Q,
-                                 (struct QMBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnQMB(p_CInfo->m_Q,
+                                 (struct QMBCall *)p_CInfo->m_Data);
     case HMBQ:
-        return s_SendReturnFnHMB(p_PushInfo->m_Q,
-                                 (struct HMBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnHMB(p_CInfo->m_Q,
+                                 (struct HMBCall *)p_CInfo->m_Data);
     case MBQ:
-        return s_SendReturnFnMB(p_PushInfo->m_Q,
-                                (struct MBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnMB(p_CInfo->m_Q, (struct MBCall *)p_CInfo->m_Data);
     case DMBQ:
-        return s_SendReturnFnDMB(p_PushInfo->m_Q,
-                                 (struct DMBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnDMB(p_CInfo->m_Q,
+                                 (struct DMBCall *)p_CInfo->m_Data);
     case HGBQ:
-        return s_SendReturnFnHGB(p_PushInfo->m_Q,
-                                 (struct HGBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnHGB(p_CInfo->m_Q,
+                                 (struct HGBCall *)p_CInfo->m_Data);
     case GBQ:
-        return s_SendReturnFnGB(p_PushInfo->m_Q,
-                                (struct GBCall *)p_PushInfo->m_CallData);
+        return s_SendReturnFnGB(p_CInfo->m_Q, (struct GBCall *)p_CInfo->m_Data);
     default:
         /**
          * TODO

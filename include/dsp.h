@@ -107,17 +107,22 @@ struct GBCall {
     struct CallMetadata m_Metadata;
 };
 
-struct PushInformation {
+struct CommunicationInfo {
     struct DSPQueue *m_Q;
-    void *m_CallData;
-    enum QType m_QType;
+    void *m_Data;
 };
 
-struct PopInformation {
-    struct DSPQueue *m_Q;
-    void *m_ReturnData;
-    enum QType m_QType;
-};
+// struct PushInformation {
+//     struct DSPQueue *m_Q;
+//     void *m_CallData;
+//     enum QType m_QType;
+// };
+
+// struct PopInformation {
+//     struct DSPQueue *m_Q;
+//     void *m_ReturnData;
+//     enum QType m_QType;
+// };
 
 struct ConnectResponseInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
