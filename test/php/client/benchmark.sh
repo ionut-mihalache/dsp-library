@@ -41,7 +41,7 @@ parseProfilingResult() {
     outPath=$6
 
     if [ ! -d ${outPath} ]; then
-        mkdir ${outPath}
+        mkdir -p ${outPath}
     fi
 
     flamegraphAttributes="--width 3000 --minWidth 5 --fontsize 14"
@@ -82,18 +82,19 @@ runBenchmark() {
     clientAbsolutePath=$1
     shift
 
-    for clientsNr in "$@"; do
-        cpuFlamegraphTitle="service_cpu_benchmark_${clientsNr}_clients_sampling"
-        allocFlamegraphTitle="service_alloc_benchmark_${clientsNr}_clients_sampling"
-        cacheMissFlamegraphTitle="service_cache_miss_benchmark_${clientsNr}_clients_sampling"
-        cpuAllocFlamegraphTitle="service_cpu_alloc_benchmark_${clientsNr}_clients_sampling"
-        nativeMemFlamegraphTitle="service_nativemem_benchmark_${clientsNr}_clients_sampling"
-        lockFlamegraphTitle="service_lock_benchmark_${clientsNr}_clients_sampling"
-        cpuAllocNativeMemFlamegraphTitle="service_cpu_alloc_nativemem_benchmark_${clientsNr}_clients_sampling"
-        cpuAllocNativeMemLockFlamegraphTitle="service_cpu_alloc_nativemem_lock_benchmark_${clientsNr}_clients_sampling"
+    timestamp=$(date +%s)
 
-        timestamp=$(date +%s)
+    for clientsNr in "$@"; do
+        cpuFlamegraphTitle="service_cpu_sampling"
+        allocFlamegraphTitle="service_alloc_sampling"
+        cacheMissFlamegraphTitle="service_cache_miss_sampling"
+        cpuAllocFlamegraphTitle="service_cpu_alloc_sampling"
+        nativeMemFlamegraphTitle="service_nativemem_sampling"
+        lockFlamegraphTitle="service_lock_sampling"
+        cpuAllocNativeMemLockFlamegraphTitle="service_cpu_alloc_nativemem_lock_sampling"
+
         servicePID=$(pgrep -f 'java -cp')
+
         ${profilerPath}/build/bin/asprof start -e cpu,alloc,nativemem,lock -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
 
         runClients $clientAbsolutePath $clientsNr
@@ -102,17 +103,17 @@ runBenchmark() {
 
         ${profilerPath}/build/bin/asprof stop -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
 
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --cpu ${timestamp}_${cpuFlamegraphTitle} ./benchmark_results/cpu
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --alloc ${timestamp}_${allocFlamegraphTitle} ./benchmark_results/alloc
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --nativemem ${timestamp}_${nativeMemFlamegraphTitle} ./benchmark_results/native_alloc
-        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --lock ${timestamp}_${lockFlamegraphTitle} ./benchmark_results/lock
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --cpu ${cpuFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/cpu
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --alloc ${allocFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/alloc
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --nativemem ${nativeMemFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/native_alloc
+        parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --lock ${lockFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/lock
 
         rm ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr
 
-        convertSVGToPDF ${timestamp}_${cpuFlamegraphTitle} ./benchmark_results/cpu
-        convertSVGToPDF ${timestamp}_${allocFlamegraphTitle} ./benchmark_results/alloc
-        convertSVGToPDF ${timestamp}_${nativeMemFlamegraphTitle} ./benchmark_results/native_alloc
-        convertSVGToPDF ${timestamp}_${lockFlamegraphTitle} ./benchmark_results/lock
+        convertSVGToPDF ${cpuFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/cpu
+        convertSVGToPDF ${allocFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/alloc
+        convertSVGToPDF ${nativeMemFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/native_alloc
+        convertSVGToPDF ${lockFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/lock
 
         echo "All $clientsNr clients have finished."
     done
