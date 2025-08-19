@@ -44,7 +44,7 @@ parseProfilingResult() {
         mkdir -p ${outPath}
     fi
 
-    flamegraphAttributes="--width 3000 --minWidth 10 --fontsize 14"
+    flamegraphAttributes="--width 3000 --minWidth 10 --fontsize 14 --flamechart"
     # flamegraphAttributes="--width 1920 --minWidth 5 --fontsize 14"
 
     # ${profilerPath}/build/bin/jfrconv ${type} -t ${jfrFile}.jfr -o collapsed # --title thread_${cpuFlamegraphTitle}
@@ -79,10 +79,14 @@ convertSVGToPDF() {
     cd -
 }
 
-generateLatexTableFromSVGs() {
+generateLatexTableFromSVGsCPU() {
+    rootDir=$1
+    shift
     svgFile=$1
-    outFile=$2
-    sampleDir=$3
+    shift
+    outFile=$1
+    shift
+    sampleDir=$1
 
     WIDTH=80
 
@@ -97,84 +101,116 @@ generateLatexTableFromSVGs() {
     while [ ${#END_LINE} -lt $WIDTH ]; do END_LINE+="="; done
 
     echo ${START_LINE}
-    for dir in $(ls benchmark_results/1755358810 | sort -n); do
-        connect=$(grep "ConnectThread" benchmark_results/1755358810/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        disconnect=$(grep "DisconnectThread" benchmark_results/1755358810/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        receive=$(grep "receiveCall" benchmark_results/1755358810/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        send=$(grep "sendReturn" benchmark_results/1755358810/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+    echo -e "\\\\begin{table}[htbp]" > ${outFile}
+    echo -e "\t\\\\caption{AQUA runtime CPU sampling}" >> ${outFile}
+    echo -e "\t\\\\centering" >> ${outFile}
+    echo -e "\t\\\\begin{tabular}{ccccc}" >> ${outFile}
+    echo -e "\t\t\\\\toprule" >> ${outFile}
+    echo -e "\t\t\\# & \\\\% & \\\\% & \\\\% & \\\\% \\\\\\\\" >> ${outFile}
+    echo -e "\t\tclients & connect & disconnect & receive & send \\\\\\\\" >> ${outFile}
+    echo -e "\t\t\\\\midrule" >> ${outFile}
+    for dir in $(ls ${rootDir} | sort -n); do
+        connect=$(grep "ConnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        disconnect=$(grep "DisconnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        receive=$(grep "receiveCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        send=$(grep "sendReturn" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
 
         echo ${dir} ${connect} ${disconnect} ${receive} ${send}
-    done
-    echo ${END_LINE}
 
-    # $connect=$(grep "ConnectThread" ${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-    # $disconnect=$(grep "DisconnectThread" ${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-    # $receive=$(grep "receiveCall" ${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-    # $send=$(grep "sendReturn" ${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        if [[ -n "$connect" ]]; then
+            connect="${connect%\%}"
+        else
+            connect="< 1"
+        fi
+
+        if [[ -n "$disconnect" ]]; then
+            disconnect="${disconnect%\%}"
+        else
+            disconnect="< 1"
+        fi
+
+        if [[ -n "$receive" ]]; then
+            receive="${receive%\%}"
+        else
+            receive="< 1"
+        fi
+
+        if [[ -n "$send" ]]; then
+            send="${send%\%}"
+        else
+            send="< 1"
+        fi
+
+        echo -e "\t\t${dir} & ${connect} & ${disconnect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
+    done
+    echo -e "\t\t\\\\bottomRule" >> ${outFile}
+    echo -e "\t\\\\end{tabular}" >> ${outFile}
+    echo -e "\t\\\\label{tab:cpu_sampling}" >> ${outFile}
+    echo -e "\\\\end{table}" >> ${outFile}
+    echo ${END_LINE}
 }
 
-generateTopTableFromCollapsed() {
-    collapsedFile=$1
-    outPath=$2
-    tableLabel=$3
+generateLatexTableFromSVGsALLOC() {
+    rootDir=$1
+    shift
+    svgFile=$1
+    shift
+    outFile=$1
+    shift
+    sampleDir=$1
 
-    totalSamples=$(awk '{sum+=$NF} END {print sum}' "$collapsedFile")
-    if [ -z "$totalSamples" ] || [ "$totalSamples" -eq 0 ]; then
-        echo "Warning: $collapsedFile has 0 samples. Skipping table."
-        return
-    fi
+    WIDTH=80
 
+    PADDING=$(( (WIDTH - 10 - ${#sampleDir}) / 2 ))
+    FILL=$(printf '%*s' "$PADDING" '' | tr ' ' '=')
 
-    grep "ConnectThread" 
-    grep "DisconnectThread" service_cpu_sampling.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}'
+    START_LINE="${FILL} START OF ${sampleDir^^} RESULTS ${FILL}"
+    END_LINE="${FILL} END OF ${sampleDir^^} RESULTS ${FILL}"
 
-    awk -v total="$totalSamples" -v label="$tableLabel" '
-    {
-        count = $NF
-        sub(/[ \t]+[0-9]+$/, "", $0)
-        n = split($0, parts, ";")
-        method = parts[n]
-        counts[method] += count
-    }
-    END {
-        printf "\\begin{table}[htbp]\n"
-        printf "\\caption{All methods by sample count (%d samples)}\n", total
-        printf "\\centering\n"
-        printf "\\begin{tabular}{@{}p{7.4cm}rr@{}}\n"
-        printf "\\toprule\nMethod & Samples & \\%% \\\\\n\\midrule\n"
-        PROCINFO["sorted_in"] = "@val_num_desc"
-        for (m in counts) {
-        cnt = counts[m]
-        pct = (cnt/total)*100
+    # If the length is odd, add one more '=' to reach 80 chars
+    while [ ${#START_LINE} -lt $WIDTH ]; do START_LINE+="="; done
+    while [ ${#END_LINE} -lt $WIDTH ]; do END_LINE+="="; done
 
-        g = m
-        gsub(/\\/, "\\\\textbackslash{}", g)
-        gsub(/_/,"\\\\_", g)
-        gsub(/#/,"\\\\#", g)
-        gsub(/%/,"\\\\%", g)
-        gsub(/&/,"\\\\&", g)
-        gsub(/\{/,"\\\\{", g)
-        gsub(/\}/,"\\\\}", g)
-        gsub(/\$/,"\\\\$", g)
+    echo ${START_LINE}
+    echo -e "\\\\begin{table}[htbp]" > ${outFile}
+    echo -e "\t\\\\caption{AQUA runtime ALLOC sampling}" >> ${outFile}
+    echo -e "\t\\\\centering" >> ${outFile}
+    echo -e "\t\\\\begin{tabular}{ccccc}" >> ${outFile}
+    echo -e "\t\t\\\\toprule" >> ${outFile}
+    echo -e "\t\t\\# & \\\\% & \\\\% & \\\\% & \\\\% \\\\\\\\" >> ${outFile}
+    echo -e "\t\tclients & connect \\\\\\\\" >> ${outFile}
+    echo -e "\t\t\\\\midrule" >> ${outFile}
+    for dir in $(ls ${rootDir} | sort -n); do
+        connect=$(grep "ConnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        grep "SMBCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg
+        receive=$(grep "call/SMBCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        # disconnect=$(grep "DisconnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        # receive=$(grep "receiveCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        # send=$(grep "sendReturn" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
 
-        # Add break opportunities (properly) at "/" and "."
-        gsub(/[\/.]/, "&keep[$0]&", g)
+        # echo ${dir} ${connect} ${disconnect} ${receive} ${send}
+        echo ${dir} ${connect} ${receive}
 
-        # Wrap in \texttt{}
-        formatted = "\\texttt{" g "}"
+        if [[ -n "$connect" ]]; then
+            connect="${connect%\%}"
+        else
+            connect="< 1"
+        fi
 
-        printf "%s & %d & %.2f\\\\%% \\\\\n", formatted, cnt, pct
-        }
-        printf "\\bottomrule\n\\end{tabular}\n"
-        printf "\\label{tab:%s}\n\\end{table}\n", label
-    }
-    ' "$collapsedFile" > "${outPath}/table_${tableLabel}.tex"
+        # echo -e "\t\t${dir} & ${connect} & ${disconnect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
+        echo -e "\t\t${dir} & ${connect} \\\\\\\\" >> ${outFile}
+    done
+    echo -e "\t\t\\\\bottomRule" >> ${outFile}
+    echo -e "\t\\\\end{tabular}" >> ${outFile}
+    echo -e "\t\\\\label{tab:alloc_sampling}" >> ${outFile}
+    echo -e "\\\\end{table}" >> ${outFile}
+    echo ${END_LINE}
 }
 
 runBenchmark() {
-    generateLatexTableFromSVGs service_cpu_sampling 2 cpu
-    generateLatexTableFromSVGs service_alloc_sampling 2 alloc
-    exit 1
+    # generateLatexTableFromSVGsCPU benchmark_results/1755358810 service_cpu_sampling benchmark_results/cpu_sampling_table cpu
+    # generateLatexTableFromSVGsALLOC benchmark_results/1755358810 service_alloc_sampling benchmark_results/alloc_sampling_table alloc
+    # exit 1
     flamegraphPath=$1
     shift
     profilerPath=$1
@@ -212,6 +248,7 @@ runBenchmark() {
 
         convertSVGToPDF ${cpuFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/cpu
         convertSVGToPDF ${allocFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/alloc
+
         # convertSVGToPDF ${nativeMemFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/native_alloc
         # convertSVGToPDF ${lockFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/lock
 
@@ -221,6 +258,9 @@ runBenchmark() {
 
         echo "All $clientsNr clients have finished."
     done
+
+    generateLatexTableFromSVGsCPU benchmark_results/${timestamp} service_cpu_sampling benchmark_results/${timestamp}_cpu_sampling_table cpu
+
     echo "Benchmark completed."
 }
 

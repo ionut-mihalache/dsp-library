@@ -188,6 +188,9 @@ public class Main {
         ConnectThread connectThread = new ConnectThread(connectInfo, connections);
         DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
+        connectThread.setName("ConnectThread");
+        disconnectThread.setName("DisconnectThread");
+
         connectThread.start();
         disconnectThread.start();
 
@@ -201,6 +204,7 @@ public class Main {
 
                 ProcessCallThread processCallThread = new ProcessCallThread(callData,
                         connections);
+                processCallThread.setName("CallThread-" + callData.m_Metadata.m_ConnId);
                 processCallThread.start();
             } catch (Exception e) {
                 e.printStackTrace();
