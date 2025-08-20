@@ -8,11 +8,29 @@
 static int32_t s_SendReturnFnSMBHelper(struct DSPQueue *p_Queue,
                                        void *p_ReturnData) {
     int32_t rc = 0;
-    struct SMBCall *qData = p_Queue->m_Data;
+    uint32_t idx;
+    struct SMBCall *qData;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct SMBCall));
+    if (!p_Queue || !p_Queue->m_Data || !p_Queue->m_Metadata.m_PushIdxPtr ||
+        !p_Queue->m_Metadata.m_PopIdxPtr || !p_ReturnData) {
+        ELOGF("queue or return data is not pointer is invalid.\n");
+        rc = -1;
+        goto end;
+    }
 
+    idx = *p_Queue->m_Metadata.m_PushIdxPtr;
+
+    if (idx < 0 || idx >= *p_Queue->m_Metadata.m_Size) {
+        ELOGF("pop index is invalid.\n");
+        rc = -1;
+        goto end;
+    }
+
+    qData = p_Queue->m_Data;
+
+    memcpy(&qData[idx], p_ReturnData, sizeof(struct SMBCall));
+
+end:
     return rc;
 }
 
