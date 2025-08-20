@@ -1,10 +1,10 @@
-package call;
+package calling.return_package;
 
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
 import consts.Constants;
 
-public class HMBCall extends Call {
-    public HMBCall() {
+public class HMBReturn extends Call {
+    public HMBReturn() {
         super();
         m_CallInfo = new byte[Constants.HMB];
         m_Metadata.m_Size = 0;

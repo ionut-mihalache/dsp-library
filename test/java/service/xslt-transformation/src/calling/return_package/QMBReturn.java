@@ -1,10 +1,10 @@
-package call;
+package calling.return_package;
 
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
 import consts.Constants;
 
-public class QMBCall extends Call {
-    public QMBCall() {
+public class QMBReturn extends Call {
+    public QMBReturn() {
         super();
         m_CallInfo = new byte[Constants.QMB];
         m_Metadata.m_Size = 0;

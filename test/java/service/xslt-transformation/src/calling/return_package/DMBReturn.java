@@ -1,10 +1,10 @@
-package call;
+package calling.return_package;
 
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
 import consts.Constants;
 
-public class DMBCall extends Call {
-    public DMBCall() {
+public class DMBReturn extends Call {
+    public DMBReturn() {
         super();
         m_CallInfo = new byte[Constants.DMB];
         m_Metadata.m_Size = 0;

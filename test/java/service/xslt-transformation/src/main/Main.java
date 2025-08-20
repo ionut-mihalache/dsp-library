@@ -22,17 +22,18 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
-import call.DMBCall;
-import call.EMBCall;
-import call.GBCall;
-import call.HGBCall;
-import call.HMBCall;
-import call.MBCall;
-import call.QMBCall;
-import call.SMBCall;
-import call.ServiceCallInfo;
-import call.ServiceReturnInfo;
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
+import calling.call_package.SMBCall;
+import calling.call_package.ServiceCallInfo;
+import calling.return_package.DMBReturn;
+import calling.return_package.EMBReturn;
+import calling.return_package.GBReturn;
+import calling.return_package.HGBReturn;
+import calling.return_package.HMBReturn;
+import calling.return_package.MBReturn;
+import calling.return_package.QMBReturn;
+import calling.return_package.SMBReturn;
+import calling.return_package.ServiceReturnInfo;
 import connect.ServiceConnectInfo;
 
 import consts.Constants;
@@ -110,28 +111,28 @@ class ProcessCallThread extends Thread {
 
             switch (serviceReturnInfo.m_Q.m_Type) {
                 case Constants.SMBQ:
-                    returnData = new SMBCall();
+                    returnData = new SMBReturn();
                     break;
                 case Constants.EMBQ:
-                    returnData = new EMBCall();
+                    returnData = new EMBReturn();
                     break;
                 case Constants.QMBQ:
-                    returnData = new QMBCall();
+                    returnData = new QMBReturn();
                     break;
                 case Constants.HMBQ:
-                    returnData = new HMBCall();
+                    returnData = new HMBReturn();
                     break;
                 case Constants.MBQ:
-                    returnData = new MBCall();
+                    returnData = new MBReturn();
                     break;
                 case Constants.DMBQ:
-                    returnData = new DMBCall();
+                    returnData = new DMBReturn();
                     break;
                 case Constants.HGBQ:
-                    returnData = new HGBCall();
+                    returnData = new HGBReturn();
                     break;
                 case Constants.GBQ:
-                    returnData = new GBCall();
+                    returnData = new GBReturn();
                     break;
                 default:
                     System.err.println("Return queue type not recognized!");

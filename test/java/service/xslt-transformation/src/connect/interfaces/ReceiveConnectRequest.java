@@ -2,7 +2,7 @@ package connect.interfaces;
 
 import com.sun.jna.Callback;
 
-import call.ServiceReturnInfo;
+import calling.return_package.ServiceReturnInfo;
 import connect.ServiceConnectInfo;
 
 public interface ReceiveConnectRequest extends Callback {

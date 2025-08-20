@@ -1,6 +1,6 @@
-package call;
+package calling.call_package;
 
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
 import consts.Constants;
 
 public class SMBCall extends Call {

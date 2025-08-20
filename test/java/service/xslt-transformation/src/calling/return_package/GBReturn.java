@@ -1,10 +1,10 @@
-package call;
+package calling.return_package;
 
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
 import consts.Constants;
 
-public class GBCall extends Call {
-    public GBCall() {
+public class GBReturn extends Call {
+    public GBReturn() {
         super();
         m_CallInfo = new byte[Constants.GB];
         m_Metadata.m_Size = 0;

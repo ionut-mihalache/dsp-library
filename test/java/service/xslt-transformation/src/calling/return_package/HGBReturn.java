@@ -1,10 +1,10 @@
-package call;
+package calling.return_package;
 
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
 import consts.Constants;
 
-public class HGBCall extends Call {
-    public HGBCall() {
+public class HGBReturn extends Call {
+    public HGBReturn() {
         super();
         m_CallInfo = new byte[Constants.HGB];
         m_Metadata.m_Size = 0;

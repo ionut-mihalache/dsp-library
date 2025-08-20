@@ -1,4 +1,4 @@
-package call.interfaces;
+package calling.interfaces;
 
 import com.sun.jna.Callback;
 import com.sun.jna.Pointer;

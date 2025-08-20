@@ -1,10 +1,10 @@
-package call;
+package calling.return_package;
 
-import call.abstract_classes.Call;
+import calling.abstract_classes.Call;
 import consts.Constants;
 
-public class MBCall extends Call {
-    public MBCall() {
+public class MBReturn extends Call {
+    public MBReturn() {
         super();
         m_CallInfo = new byte[Constants.MB];
         m_Metadata.m_Size = 0;

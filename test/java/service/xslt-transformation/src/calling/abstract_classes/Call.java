@@ -1,9 +1,9 @@
-package call.abstract_classes;
+package calling.abstract_classes;
 
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
 
-import call.commons.CallMetadata;
+import calling.commons.CallMetadata;
 
 /**
  * struct Call {

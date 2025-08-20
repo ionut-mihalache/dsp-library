@@ -1,10 +1,9 @@
-package call;
+package calling.call_package;
 
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
 
-import call.interfaces.ReceiveCallFn;
-
+import calling.interfaces.ReceiveCallFn;
 import queues.DSPQueue;
 
 /**

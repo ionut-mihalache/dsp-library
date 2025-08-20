@@ -1,9 +1,9 @@
-package call;
+package calling.return_package;
 
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
 
-import call.interfaces.SendReturnFn;
+import calling.interfaces.SendReturnFn;
 import connect.ConnectResponseInformation;
 import queues.ConnectResponseQueue;
 import queues.DSPQueue;

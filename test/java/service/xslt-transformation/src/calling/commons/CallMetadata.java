@@ -1,4 +1,4 @@
-package call.commons;
+package calling.commons;
 
 import com.sun.jna.Structure;
 import com.sun.jna.Structure.FieldOrder;
