@@ -44,7 +44,7 @@ parseProfilingResult() {
         mkdir -p ${outPath}
     fi
 
-    flamegraphAttributes="--width 3000 --minWidth 10 --fontsize 14 --flamechart"
+    flamegraphAttributes="--width 1920 --height 12 --minWidth 15 --fontsize 12 --flamechart"
     # flamegraphAttributes="--width 1920 --minWidth 5 --fontsize 14"
 
     # ${profilerPath}/build/bin/jfrconv ${type} -t ${jfrFile}.jfr -o collapsed # --title thread_${cpuFlamegraphTitle}
@@ -175,21 +175,17 @@ generateLatexTableFromSVGsALLOC() {
     echo -e "\\\\begin{table}[htbp]" > ${outFile}
     echo -e "\t\\\\caption{AQUA runtime ALLOC sampling}" >> ${outFile}
     echo -e "\t\\\\centering" >> ${outFile}
-    echo -e "\t\\\\begin{tabular}{ccccc}" >> ${outFile}
+    echo -e "\t\\\\begin{tabular}{cccc}" >> ${outFile}
     echo -e "\t\t\\\\toprule" >> ${outFile}
-    echo -e "\t\t\\# & \\\\% & \\\\% & \\\\% & \\\\% \\\\\\\\" >> ${outFile}
-    echo -e "\t\tclients & connect \\\\\\\\" >> ${outFile}
+    echo -e "\t\t\\# & \\\\% & \\\\% & \\\\% \\\\\\\\" >> ${outFile}
+    echo -e "\t\tclients & connect & receive & send \\\\\\\\" >> ${outFile}
     echo -e "\t\t\\\\midrule" >> ${outFile}
     for dir in $(ls ${rootDir} | sort -n); do
         connect=$(grep "ConnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        grep "SMBCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg
-        receive=$(grep "call/SMBCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        # disconnect=$(grep "DisconnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        # receive=$(grep "receiveCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        # send=$(grep "sendReturn" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        receive=$(grep "call_package/SMBCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        send=$(grep "return_package/SMBReturn" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
 
-        # echo ${dir} ${connect} ${disconnect} ${receive} ${send}
-        echo ${dir} ${connect} ${receive}
+        echo ${dir} ${connect} ${receive} ${send}
 
         if [[ -n "$connect" ]]; then
             connect="${connect%\%}"
@@ -197,10 +193,22 @@ generateLatexTableFromSVGsALLOC() {
             connect="< 1"
         fi
 
+        if [[ -n "$receive" ]]; then
+            receive="${receive%\%}"
+        else
+            receive="< 1"
+        fi
+
+        if [[ -n "$send" ]]; then
+            send="${send%\%}"
+        else
+            send="< 1"
+        fi
+
         # echo -e "\t\t${dir} & ${connect} & ${disconnect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
-        echo -e "\t\t${dir} & ${connect} \\\\\\\\" >> ${outFile}
+        echo -e "\t\t${dir} & ${connect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
     done
-    echo -e "\t\t\\\\bottomRule" >> ${outFile}
+    echo -e "\t\t\\\\bottomrule" >> ${outFile}
     echo -e "\t\\\\end{tabular}" >> ${outFile}
     echo -e "\t\\\\label{tab:alloc_sampling}" >> ${outFile}
     echo -e "\\\\end{table}" >> ${outFile}
@@ -208,8 +216,7 @@ generateLatexTableFromSVGsALLOC() {
 }
 
 runBenchmark() {
-    # generateLatexTableFromSVGsCPU benchmark_results/1755358810 service_cpu_sampling benchmark_results/cpu_sampling_table cpu
-    # generateLatexTableFromSVGsALLOC benchmark_results/1755358810 service_alloc_sampling benchmark_results/alloc_sampling_table alloc
+    # generateLatexTableFromSVGsALLOC benchmark_results/1755695703 service_alloc_sampling benchmark_results/1755695703_alloc_sampling_table alloc
     # exit 1
     flamegraphPath=$1
     shift
@@ -260,6 +267,7 @@ runBenchmark() {
     done
 
     generateLatexTableFromSVGsCPU benchmark_results/${timestamp} service_cpu_sampling benchmark_results/${timestamp}_cpu_sampling_table cpu
+    generateLatexTableFromSVGsALLOC benchmark_results/${timestamp} service_alloc_sampling benchmark_results/${timestamp}_alloc_sampling_table alloc
 
     echo "Benchmark completed."
 }
