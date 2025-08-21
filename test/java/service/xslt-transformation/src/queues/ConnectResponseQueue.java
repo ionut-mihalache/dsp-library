@@ -8,15 +8,9 @@ import queues.commons.DSPQueueMetadata;
 
 /**
  * struct ConnectResponseQueue {
+ * struct DSPQueueMetadata m_Metadata;
  * struct ConnectResponseInformation *m_Data;
- * pthread_cond_t *m_FullCond;
- * pthread_cond_t *m_EmptyCond;
- * pthread_mutex_t *m_Lock;
- * uint32_t *m_PushIdxPtr;
- * uint32_t *m_PopIdxPtr;
- * uint32_t *m_Size;
  * uint32_t m_MaxSize;
- * };
  */
 
 @FieldOrder({ "m_Metadata", "m_Data", "m_MaxSize" })

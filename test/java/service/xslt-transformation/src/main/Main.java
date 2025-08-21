@@ -2,11 +2,12 @@ package main;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -37,6 +38,7 @@ import calling.return_package.ServiceReturnInfo;
 import connect.ServiceConnectInfo;
 
 import consts.Constants;
+import queues.commons.ConnectResponseInformation;
 
 interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
@@ -51,9 +53,9 @@ interface LibDSP extends Library {
 
 class ConnectThread extends Thread {
     private ServiceConnectInfo m_ConnectInfo;
-    private HashMap<Integer, ServiceReturnInfo> m_Connections;
+    private ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
 
-    ConnectThread(ServiceConnectInfo p_ConnectInfo, HashMap<Integer, ServiceReturnInfo> p_Connections) {
+    ConnectThread(ServiceConnectInfo p_ConnectInfo, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_ConnectInfo = p_ConnectInfo;
         m_Connections = p_Connections;
     }
@@ -64,7 +66,12 @@ class ConnectThread extends Thread {
 
             m_ConnectInfo.m_ReceiveConnectRequest.receiveConnectRequest(returnInfo, m_ConnectInfo);
 
-            int connId = returnInfo.m_ResponseQueue.m_Data.getInt(512);
+            returnInfo.read();
+
+            ConnectResponseInformation responseInfo = new ConnectResponseInformation(
+                    returnInfo.m_ResponseQueue.m_Data.share(0));
+
+            int connId = responseInfo.m_Id;
             m_Connections.put(connId, returnInfo);
         }
     }
@@ -86,9 +93,9 @@ class DisconnectThread extends Thread {
 
 class ProcessCallThread extends Thread {
     private Call m_CallData;
-    private HashMap<Integer, ServiceReturnInfo> m_Connections;
+    private ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
 
-    ProcessCallThread(Call p_CallData, HashMap<Integer, ServiceReturnInfo> p_Connections) {
+    ProcessCallThread(Call p_CallData, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_CallData = p_CallData;
         m_Connections = p_Connections;
     }
@@ -103,7 +110,7 @@ class ProcessCallThread extends Thread {
 
             String result = mf_GetXmlTransformed(iiaData, xsltData);
 
-            byte[] resByteArr = result.getBytes();
+            byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
 
             ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.m_Metadata.m_ConnId);
 
@@ -182,9 +189,12 @@ public class Main {
     public static void main(String[] args) {
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
-        HashMap<Integer, ServiceReturnInfo> connections = new HashMap<Integer, ServiceReturnInfo>();
+        ConcurrentHashMap<Integer, ServiceReturnInfo> connections = new ConcurrentHashMap<Integer, ServiceReturnInfo>();
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", Constants.SMBQ);
+
+        connectInfo.read();
+        callInfo.read();
 
         ConnectThread connectThread = new ConnectThread(connectInfo, connections);
         DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
