@@ -75,9 +75,9 @@ s_SendConnectResponse(struct ServiceReturnInfo *p_ReturnInfo,
     QPUSH(
         &p_ReturnInfo->m_ResponseQueue, p_ReturnInfo->m_ResponseQueue.m_MaxSize,
         do {
-            memcpy(&p_ReturnInfo->m_ResponseQueue
+            memcpy(&(p_ReturnInfo->m_ResponseQueue
                         .m_Data[*p_ReturnInfo->m_ResponseQueue.m_Metadata
-                                     .m_PushIdxPtr],
+                                     .m_PushIdxPtr]),
                    p_ResponseInfo, sizeof(struct ConnectResponseInformation));
 
             memcpy(&p_ReturnInfo->m_ConnectResponseInformation, p_ResponseInfo,

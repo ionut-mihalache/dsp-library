@@ -20,12 +20,6 @@ static int32_t s_SendReturnFnSMBHelper(struct DSPQueue *p_Queue,
 
     idx = *p_Queue->m_Metadata.m_PushIdxPtr;
 
-    if (idx < 0 || idx >= *p_Queue->m_Metadata.m_Size) {
-        ELOGF("pop index is invalid.\n");
-        rc = -1;
-        goto end;
-    }
-
     qData = p_Queue->m_Data;
 
     memcpy(&qData[idx], p_ReturnData, sizeof(struct SMBCall));
