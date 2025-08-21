@@ -143,7 +143,7 @@ generateLatexTableFromSVGsCPU() {
 
         echo -e "\t\t${dir} & ${connect} & ${disconnect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
     done
-    echo -e "\t\t\\\\bottomRule" >> ${outFile}
+    echo -e "\t\t\\\\bottomrule" >> ${outFile}
     echo -e "\t\\\\end{tabular}" >> ${outFile}
     echo -e "\t\\\\label{tab:cpu_sampling}" >> ${outFile}
     echo -e "\\\\end{table}" >> ${outFile}
@@ -278,4 +278,4 @@ runBenchmark $@
 
 # git clone https://github.com/brendangregg/FlameGraph.git
 # git clone https://github.com/async-profiler/async-profiler.git
-# ./benchmark.sh /home/user/FlameGraph /home/user/async-profiler $(pwd) 500 750 1000 1500 2000 2500 3250 4000
+# ./benchmark.sh /home/user/FlameGraph /home/user/async-profiler $(pwd) 500 750 1000 1500 2000 2500 3250 4000 5000 6000
