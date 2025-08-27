@@ -1,6 +1,7 @@
 <?php
 
-enum QType: int {
+enum QType: int
+{
     case SMBQ = 0;
     case EMBQ = 1;
     case QMBQ = 2;
@@ -192,6 +193,17 @@ function sendDisconnectRequest($p_Ffi, $connectInfoPtr, $requestInfoPtr)
     $p_Ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
 }
 
+function measureFnExec($p_Fn): float
+{
+    $start = microtime(true);
+
+    $p_Fn();
+
+    $end = microtime(true);
+
+    return ($end - $start) * 1_000_000;
+}
+
 function getCallDataPtr($p_Ffi, $p_CallInfo)
 {
     $callData = null;
@@ -234,6 +246,8 @@ function getCallDataPtr($p_Ffi, $p_CallInfo)
     return [null, null];
 }
 
+$benchmark = [];
+
 $connectInfo = $ffi->new("struct ClientConnectInfo");
 $connectInfoPtr = FFI::addr($connectInfo);
 
@@ -262,7 +276,9 @@ $requestInfo->m_QType = QType::SMBQ->value;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
-sendConnectRequest($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
+$benchmark["connect"] = measureFnExec(function () use ($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr) {
+    sendConnectRequest($ffi, $returnInfoPtr, $connectInfoPtr, $requestInfoPtr);
+});
 
 [$callData, $callDataPtr] = getCallDataPtr($ffi, $callInfo);
 
@@ -279,12 +295,16 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
 
 setCallData($ffi, QType::SMBQ->value, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
-callFn($ffi, $callInfoPtr, $callDataPtr);
+$benchmark["call"] = measureFnExec(function () use ($ffi, $callInfoPtr, $callDataPtr) {
+    callFn($ffi, $callInfoPtr, $callDataPtr);
+});
 
 $returnData = $ffi->new("struct SMBCall");
 $returnDataPtr = FFI::addr($returnData);
 
-returnFn($ffi, $returnDataPtr, $returnInfoPtr);
+$benchmark["return"] = measureFnExec(function () use ($ffi, $returnDataPtr, $returnInfoPtr) {
+    returnFn($ffi, $returnDataPtr, $returnInfoPtr);
+});
 
 $result = "";
 for ($i = 0; $i < $returnData->m_Metadata->m_Size; ++$i) {
@@ -294,4 +314,17 @@ for ($i = 0; $i < $returnData->m_Metadata->m_Size; ++$i) {
 echo $result . "\n";
 
 $requestInfoPtr = FFI::addr($returnInfo->m_ConnectResponseInformation);
-sendDisconnectRequest($ffi, $connectInfoPtr, $requestInfoPtr);
+
+$benchmark["disconnect"] = measureFnExec(function () use ($ffi, $connectInfoPtr, $requestInfoPtr) {
+    sendDisconnectRequest($ffi, $connectInfoPtr, $requestInfoPtr);
+});
+
+$file = fopen("benchmark_results/clients/" . $argv[1] . "/client_benchmark_" . $uniqueId . ".csv", 'a');
+fputcsv($file, [
+    $argv[1],
+    $benchmark["connect"],
+    $benchmark["call"],
+    $benchmark["return"],
+    $benchmark["disconnect"]
+]);
+fclose($file);

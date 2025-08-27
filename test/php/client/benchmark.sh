@@ -20,7 +20,7 @@ runClients() {
             echo "Starting batch" ${currentBatchNr}
             ((currentBatchNr++))
         fi
-        php $clientPath/main.php > /dev/null &
+        php $clientPath/main.php ${clientsNr} > /dev/null &
         ((running++))
 
         if (( running >= maxRunning )); then
@@ -239,6 +239,10 @@ runBenchmark() {
         servicePID=$(pgrep -f 'java -cp')
 
         ${profilerPath}/build/bin/asprof start -e cpu,alloc,nativemem,lock -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
+
+        if [ ! -d "benchmark_results/clients/${clientsNr}" ]; then
+            mkdir -p benchmark_results/clients/${clientsNr}
+        fi
 
         runClients $clientAbsolutePath $clientsNr
 
