@@ -23,9 +23,9 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
-import calling.abstract_classes.Call;
 import calling.call_package.SMBCall;
 import calling.call_package.ServiceCallInfo;
+import calling.interfaces.Call;
 import calling.return_package.DMBReturn;
 import calling.return_package.EMBReturn;
 import calling.return_package.GBReturn;
@@ -102,8 +102,8 @@ class ProcessCallThread extends Thread {
 
     public void run() {
         try {
-            byte[] iiaData = Arrays.copyOfRange(m_CallData.m_CallInfo, 0,
-                    m_CallData.m_Metadata.m_Size);
+            byte[] iiaData = Arrays.copyOfRange(m_CallData.getCallInfo(), 0,
+                    m_CallData.getMetadata().m_Size);
 
             Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
@@ -112,7 +112,7 @@ class ProcessCallThread extends Thread {
 
             byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
 
-            ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.m_Metadata.m_ConnId);
+            ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.getMetadata().m_ConnId);
 
             Call returnData;
 
@@ -147,12 +147,12 @@ class ProcessCallThread extends Thread {
                     break;
             }
 
-            System.arraycopy(resByteArr, 0, returnData.m_CallInfo, 0, resByteArr.length);
-            returnData.m_Metadata.m_Size = resByteArr.length;
-            returnData.m_Metadata.m_ConnId = m_CallData.m_Metadata.m_ConnId;
+            System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0, resByteArr.length);
+            returnData.getMetadata().m_Size = resByteArr.length;
+            returnData.getMetadata().m_ConnId = m_CallData.getMetadata().m_ConnId;
 
             returnData.write();
-            LibDSP.INSTANCE.sendReturn(m_Connections.get(m_CallData.m_Metadata.m_ConnId), returnData.getPointer());
+            LibDSP.INSTANCE.sendReturn(m_Connections.get(m_CallData.getMetadata().m_ConnId), returnData.getPointer());
 
         } catch (Exception e) {
             e.printStackTrace();

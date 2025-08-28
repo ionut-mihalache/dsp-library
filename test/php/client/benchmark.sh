@@ -227,6 +227,12 @@ runBenchmark() {
 
     timestamp=$(date +%s)
 
+    if [ ! -d "benchmark_results/clients/${timestamp}" ]; then
+        mkdir -p benchmark_results/clients/${timestamp}
+    fi
+
+    echo "clients_nr,connect,call,return,disconnect" > ./benchmark_results/clients/${timestamp}/client_benchmark.csv
+
     for clientsNr in "$@"; do
         cpuFlamegraphTitle="service_cpu_sampling"
         allocFlamegraphTitle="service_alloc_sampling"
@@ -247,6 +253,10 @@ runBenchmark() {
         runClients $clientAbsolutePath $clientsNr
 
         wait
+
+        # cat benchmark_results/clients/${clientsNr}/* | wc -l
+        cat benchmark_results/clients/${clientsNr}/* >> ./benchmark_results/clients/${timestamp}/client_benchmark.csv
+        rm -rf benchmark_results/clients/${clientsNr}
 
         ${profilerPath}/build/bin/asprof stop -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
 
