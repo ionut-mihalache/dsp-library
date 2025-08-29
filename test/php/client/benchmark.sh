@@ -283,6 +283,10 @@ runBenchmark() {
     generateLatexTableFromSVGsCPU benchmark_results/${timestamp} service_cpu_sampling benchmark_results/${timestamp}_cpu_sampling_table cpu
     generateLatexTableFromSVGsALLOC benchmark_results/${timestamp} service_alloc_sampling benchmark_results/${timestamp}_alloc_sampling_table alloc
 
+    source benchmarking_env/bin/activate
+    python3 create_plots.py ./benchmark_results/${timestamp} benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}_alloc_sampling_table ./benchmark_results/clients/${timestamp}/client_benchmark.csv
+    deactivate
+
     echo "Benchmark completed."
 }
 
