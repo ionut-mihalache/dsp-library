@@ -110,3 +110,6 @@ clean:
 	rm -rf $(OBJECTS_DIR)
 
 # export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/user/dsp-library
+# export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubunu/dsp-library
+# sudo mkdir -p /shared-mem
+# sudo mount -t tmpfs -o size=512M tmpfs /shared-mem

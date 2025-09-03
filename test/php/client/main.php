@@ -150,7 +150,7 @@ $ffi = FFI::cdef(
 
     struct ConnectResponseInformation *getConnectResponse(struct ClientReturnInfo *p_ReturnInfo);
 ",
-    "/home/user/dsp-library/libdsp.so"
+    "/home/ubuntu/dsp-library/libdsp.so"
 );
 
 function dspConnect($p_Ffi, $connectInfoPtr, $callInfoPtr, $serviceStrId)
