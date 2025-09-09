@@ -16,18 +16,14 @@ import consts.Constants;
  * uint32_t m_Id;
  * };
  */
-
 @FieldOrder({ "m_ReturnQName", "m_ReturnRequestQName", "m_Id" })
 public class ConnectResponseInformation extends Structure {
-    public byte[] m_ReturnQName;
-    public byte[] m_ReturnRequestQName;
-    public int m_Id;
+    public byte[] m_ReturnQName = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
+    public byte[] m_ReturnRequestQName = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
+    public int m_Id = 0;
 
     public ConnectResponseInformation() {
         super();
-        m_ReturnQName = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
-        m_ReturnRequestQName = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
-        m_Id = 0;
     }
 
     private String byteArrToString(byte[] p_Arr) {

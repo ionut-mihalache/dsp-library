@@ -15,20 +15,16 @@ import consts.Constants;
  */
 @FieldOrder({ "m_ReturnQ", "m_ReturnRequestQName", "m_Id" })
 public class ConnectResponseInformation extends Structure {
-    public byte[] m_ReturnQ;
-    public byte[] m_ReturnRequestQName;
+    public byte[] m_ReturnQ = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
+    public byte[] m_ReturnRequestQName = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
     public int m_Id;
 
     public ConnectResponseInformation() {
         super();
-        m_ReturnQ = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
-        m_ReturnRequestQName = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
     }
 
     public ConnectResponseInformation(Pointer p_P) {
         super(p_P);
-        m_ReturnQ = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
-        m_ReturnRequestQName = new byte[Constants.RETURNQ_NAME_MAX_SIZE];
         read();
     }
 
