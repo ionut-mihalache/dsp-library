@@ -287,6 +287,9 @@ runBenchmark() {
     python3 create_plots.py ./benchmark_results/${timestamp} benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}_alloc_sampling_table ./benchmark_results/clients/${timestamp}/client_benchmark.csv
     deactivate
 
+    mv benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}/cpu_sampling_table
+    mv benchmark_results/${timestamp}_alloc_sampling_table benchmark_results/${timestamp}/alloc_sampling_table
+
     echo "Benchmark completed."
 }
 
@@ -296,4 +299,4 @@ runBenchmark $@
 
 # git clone https://github.com/brendangregg/FlameGraph.git
 # git clone https://github.com/async-profiler/async-profiler.git
-# ./benchmark.sh /home/user/FlameGraph /home/user/async-profiler $(pwd) 500 750 1000 1500 2000 2500 3250 4000 5000 6000
+# ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 500 750 1000 1500 2000 2500 3250 4000 5000 6000
