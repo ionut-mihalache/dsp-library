@@ -190,17 +190,18 @@ def create_client_exec_time_plot():
             label=col.capitalize(),
         )
         axs[i].set_ylabel("Time (ms)")
-        axs[i].set_title(f"{col.capitalize()} Time vs Number of Clients")
+        # axs[i].set_title(f"{col.capitalize()} Time vs Number of Clients")
         axs[i].grid(True)
 
         # Move legend to the right of the plot
-        # axs[i].legend(frameon=False)
+        axs[i].legend(frameon=False)
 
     axs[-1].set_xlabel("Number of Clients")
     plt.suptitle("Client Metrics vs Number of Clients (Averaged, ms)", fontsize=14)
 
     # Adjust layout to make space for legends on the right
-    plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+    # plt.tight_layout(rect=[0, 0, 0.85, 0.95])
+    plt.tight_layout()
 
     plt.savefig(sys.argv[1] + "/client_metrics_time_per_clients_bw.pdf", format="pdf")
 
