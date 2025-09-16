@@ -6,4 +6,3 @@ bin/*
 gradle/
 gradlew
 gradlew.bat
-build/
