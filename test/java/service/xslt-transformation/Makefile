@@ -3,7 +3,7 @@ MAIN_PACKAGE=main
 OBJECTS_DIR=bin
 OPTIONS=-XX:+PreserveFramePointer
 
-CLASSPATH=./$(SOURCE_DIR):./$(OBJECTS_DIR):../../jar/jna-5.15.0.jar:../../jar/saxon-he-12.5.jar:../../jar/xmlresolver-6.0.11.jar
+CLASSPATH=./$(SOURCE_DIR):./$(OBJECTS_DIR):lib/jna-5.15.0.jar:lib/saxon-he-12.5.jar:lib/jar/xmlresolver-6.0.11.jar
 
 .SUFFIXES: .java .class
 

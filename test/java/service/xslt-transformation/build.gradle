@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    main {
+        java {
+            srcDirs = ["src"]
+        }
+    }
+}
+
+dependencies {
+    // This adds your JNA JAR from the local file system.
+    implementation files("lib/jna-5.15.0.jar")
+    implementation files("lib/saxon-he-12.5.jar")
+    implementation files("lib/xmlresoler-6.0.11.jar")
+}
+
+// Configure the main class for running your application.
+application {
+    mainClassName = 'com.your.package.MainClass'
+}

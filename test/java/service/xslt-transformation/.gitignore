@@ -1,2 +1,9 @@
 *.log
 bin/*
+.fleet/
+.gradle/
+.vscode/
+gradle/
+gradlew
+gradlew.bat
+build/
