@@ -26,15 +26,7 @@ import com.sun.jna.Pointer;
 import calling.call_package.SMBCall;
 import calling.call_package.ServiceCallInfo;
 import calling.interfaces.Call;
-import calling.return_package.DMBReturn;
-import calling.return_package.EMBReturn;
-import calling.return_package.GBReturn;
-import calling.return_package.HGBReturn;
-import calling.return_package.HMBReturn;
-import calling.return_package.MBReturn;
-import calling.return_package.QMBReturn;
-import calling.return_package.SMBReturn;
-import calling.return_package.ServiceReturnInfo;
+import calling.return_package.*;
 import connect.ServiceConnectInfo;
 
 import consts.Constants;
@@ -44,7 +36,7 @@ interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
 
     void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version,
-            int p_CallQType);
+                    int p_CallQType);
 
     void receiveCall(Pointer p_CallData, ServiceCallInfo p_CallInfo);
 
@@ -52,8 +44,8 @@ interface LibDSP extends Library {
 }
 
 class ConnectThread extends Thread {
-    private ServiceConnectInfo m_ConnectInfo;
-    private ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
+    private final ServiceConnectInfo m_ConnectInfo;
+    private final ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
 
     ConnectThread(ServiceConnectInfo p_ConnectInfo, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_ConnectInfo = p_ConnectInfo;
@@ -78,7 +70,7 @@ class ConnectThread extends Thread {
 }
 
 class DisconnectThread extends Thread {
-    private ServiceConnectInfo m_ConnectInfo;
+    private final ServiceConnectInfo m_ConnectInfo;
 
     DisconnectThread(ServiceConnectInfo p_ConnectInfo) {
         m_ConnectInfo = p_ConnectInfo;
@@ -92,8 +84,8 @@ class DisconnectThread extends Thread {
 }
 
 class ProcessCallThread extends Thread {
-    private Call m_CallData;
-    private ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
+    private final Call m_CallData;
+    private final ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
 
     ProcessCallThread(Call p_CallData, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_CallData = p_CallData;
@@ -114,37 +106,24 @@ class ProcessCallThread extends Thread {
 
             ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.getMetadata().m_ConnId);
 
-            Call returnData;
-
-            switch (serviceReturnInfo.m_Q.m_Type) {
-                case Constants.SMBQ:
-                    returnData = new SMBReturn();
-                    break;
-                case Constants.EMBQ:
-                    returnData = new EMBReturn();
-                    break;
-                case Constants.QMBQ:
-                    returnData = new QMBReturn();
-                    break;
-                case Constants.HMBQ:
-                    returnData = new HMBReturn();
-                    break;
-                case Constants.MBQ:
-                    returnData = new MBReturn();
-                    break;
-                case Constants.DMBQ:
-                    returnData = new DMBReturn();
-                    break;
-                case Constants.HGBQ:
-                    returnData = new HGBReturn();
-                    break;
-                case Constants.GBQ:
-                    returnData = new GBReturn();
-                    break;
-                default:
+            Call returnData = switch (serviceReturnInfo.m_Q.m_Type) {
+                case Constants.SMBQ -> new SMBReturn();
+                case Constants.EMBQ -> new EMBReturn();
+                case Constants.QMBQ -> new QMBReturn();
+                case Constants.HMBQ -> new HMBReturn();
+                case Constants.MBQ -> new MBReturn();
+                case Constants.DMBQ -> new DMBReturn();
+                case Constants.HGBQ -> new HGBReturn();
+                case Constants.GBQ -> new GBReturn();
+                default -> {
                     System.err.println("Return queue type not recognized!");
-                    returnData = null;
-                    break;
+                    yield null;
+                }
+            };
+
+            if (returnData == null) {
+                System.err.println("Return data type not recognized!");
+                return;
             }
 
             System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0, resByteArr.length);
