@@ -10,10 +10,8 @@ repositories {
 }
 
 sourceSets {
-    main {
-        java {
-            srcDirs = ["src"]
-        }
+    named("main") {
+        java.srcDirs("src")
     }
 }
 
@@ -25,5 +23,5 @@ dependencies {
 
 // Configure the main class for running your application.
 application {
-    mainClassName = 'bin.main.MainClass'
+    mainClassName = 'main.MainClass'
 }
