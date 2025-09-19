@@ -4,4 +4,6 @@
 .vscode/
 .cache/
 .fleet/
+.zed/
+.idea/
 build/

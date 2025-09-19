@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'eclipse'
 }
 
 layout.buildDirectory.set(file("bin"))
@@ -23,5 +24,25 @@ dependencies {
 
 // Configure the main class for running your application.
 application {
-    mainClassName = 'main.MainClass'
+    mainClass = 'main.Main'
+}
+
+eclipse {
+    classpath {
+        file {
+            whenMerged { classpath ->
+                // This adds your lib/*.jar as entries in the classpath file
+                def libDir = file('lib')
+                if (libDir.exists()) {
+                    libDir.listFiles(new FilenameFilter() {
+                        boolean accept(File dir, String name) {
+                            name.endsWith('.jar')
+                        }
+                    }).each { jarFile ->
+                        classpath.entries.add(new org.gradle.plugins.ide.eclipse.model.Library(fileReference(jarFile)))
+                    }
+                }
+            }
+        }
+    }
 }
