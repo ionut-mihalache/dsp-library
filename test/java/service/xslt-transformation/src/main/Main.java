@@ -16,7 +16,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
-
 import org.w3c.dom.Document;
 
 import com.sun.jna.Library;
@@ -35,8 +34,7 @@ import queues.commons.ConnectResponseInformation;
 interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
 
-    void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version,
-                    int p_CallQType);
+    void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version, int p_CallQType);
 
     void receiveCall(Pointer p_CallData, ServiceCallInfo p_CallInfo);
 
@@ -94,8 +92,7 @@ class ProcessCallThread extends Thread {
 
     public void run() {
         try {
-            byte[] iiaData = Arrays.copyOfRange(m_CallData.getCallInfo(), 0,
-                    m_CallData.getMetadata().m_Size);
+            byte[] iiaData = Arrays.copyOfRange(m_CallData.getCallInfo(), 0, m_CallData.getMetadata().m_Size);
 
             Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
@@ -132,7 +129,6 @@ class ProcessCallThread extends Thread {
 
             returnData.write();
             LibDSP.INSTANCE.sendReturn(m_Connections.get(m_CallData.getMetadata().m_ConnId), returnData.getPointer());
-
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -154,8 +150,7 @@ class ProcessCallThread extends Thread {
 
         System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer(
-                new StreamSource(new ByteArrayInputStream(xsltBytes)));
+        Transformer transformer = transformerFactory.newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         transformer.transform(new DOMSource(document), new StreamResult(output));
@@ -192,8 +187,7 @@ public class Main {
 
                 callData.read();
 
-                ProcessCallThread processCallThread = new ProcessCallThread(callData,
-                        connections);
+                ProcessCallThread processCallThread = new ProcessCallThread(callData, connections);
                 processCallThread.setName("CallThread-" + callData.m_Metadata.m_ConnId);
                 processCallThread.start();
             } catch (Exception e) {
@@ -201,4 +195,4 @@ public class Main {
             }
         }
     }
-};
+}
