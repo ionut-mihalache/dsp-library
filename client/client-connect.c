@@ -1,8 +1,8 @@
 #include <string.h>
+#include <sys/mman.h>
 
 #include "client-connect.h"
 #include "commons.h"
-#include "log.h"
 #include "macros.h"
 
 static int32_t s_ReturnFnSMBHelper(void *p_ReturnData,

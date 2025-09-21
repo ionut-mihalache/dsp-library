@@ -1,8 +1,8 @@
 #include <string.h>
+#include <sys/mman.h>
 
 #include "call.h"
 #include "commons.h"
-#include "log.h"
 #include "macros.h"
 
 static int32_t s_SMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {

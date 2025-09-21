@@ -5,7 +5,6 @@
 #ifndef DSP_LOG_H
 #define DSP_LOG_H
 
-#include <stdio.h>
 #include <time.h>
 
 #ifdef __COMPILE_MODE_DEBUG__

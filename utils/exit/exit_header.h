@@ -5,8 +5,6 @@
 #ifndef DSP_EXIT_HEADER_H
 #define DSP_EXIT_HEADER_H
 
-#include <stdlib.h>
-#include <string.h>
 #include <errno.h>
 
 #define CHECK_AND_EXIT(should_exit) do { \

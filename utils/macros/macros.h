@@ -5,7 +5,7 @@
 #ifndef DSP_MACROS_H
 #define DSP_MACROS_H
 
-#include <stdio.h>
+#include <errno.h>
 #include <stdlib.h>
 
 #define CHOOSE_MACRO(p_Macro, ...) p_Macro

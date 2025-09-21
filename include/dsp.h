@@ -1,13 +1,11 @@
 #ifndef __DSP_H_
 #define __DSP_H_
 
-#include <errno.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
 #include <sys/user.h>
 #include <unistd.h>

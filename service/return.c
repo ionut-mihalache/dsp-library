@@ -1,4 +1,5 @@
 #include <string.h>
+#include <sys/mman.h>
 
 #include "commons.h"
 #include "log.h"

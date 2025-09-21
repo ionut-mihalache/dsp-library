@@ -15,7 +15,8 @@
 #define PARAMETERS_NUMBER 6
 #define FUNCTION_NAME_LENGTH 32
 #define ARG_LENGTH 840
-#define ARGUMENTS_NUMBER 8 // 840 * 8 -> up to eight arguments with 840 being the LCM(1, 2, 3, 4, 5, 6, 7, 8)
+// 840 * 8 -> up to eight arguments with 840 the LCM(1, 2, 3, 4, 5, 6, 7, 8)
+#define ARGUMENTS_NUMBER 8
 #define CALL_TOKEN_LEN 32
 
 #define DSP_PACKED __attribute__((packed))
@@ -44,7 +45,7 @@ struct InstallRequestHeader {
  */
 struct ConnectionRequestHeader {
     uint32_t m_RpnLen; /* The maximum length of the respone pipe name */
-    uint32_t m_ApLen; /* The maximum length of the access path */
+    uint32_t m_ApLen;  /* The maximum length of the access path */
 } DSP_PACKED;
 
 struct ParameterInfo {
@@ -65,7 +66,8 @@ struct ResponseInfo {
  *
  * Header
  * \t Version length (1 byte)
- * \t Number of parameters (1 byte) - Not used in current version of the protocol (not sure if needed at this point)
+ * \t Number of parameters (1 byte) - Not used in current version of the
+ * protocol (not sure if needed at this point)
  * \t Call pipe name length (2 bytes)
  * \t Return pipe name length (2 bytes)
  * \t Access path length (2 bytes)
@@ -75,14 +77,16 @@ struct ResponseInfo {
  * \t Call pipe name (max 65_535 bytes)
  * \t Return pipe name (max 65_535 bytes)
  * \t Access path (max 65_535 bytes)
- * \t Parameters definition (max 255 * sizeof(ParameterInfo) bytes) - Not used in current version of the protocol (not sure if needed at this point)
+ * \t Parameters definition (max 255 * sizeof(ParameterInfo) bytes) - Not used
+ * in current version of the protocol (not sure if needed at this point)
  */
 struct InstallHeader {
     uint8_t m_VersionLen; /* The maximum length of the version */
-    // uint8_t m_ParamDefLen; /* The maximum number of parameters definitions. */
+    // uint8_t m_ParamDefLen; /* The maximum number of parameters definitions.
+    // */
     uint16_t m_CpnLen; /* The maximum length of the call pipe name */
     uint16_t m_RpnLen; /* The maximum length of the return pipe name */
-    uint16_t m_ApLen; /* The maximum length of the access path */
+    uint16_t m_ApLen;  /* The maximum length of the access path */
 } DSP_PACKED;
 
 /**
@@ -100,12 +104,13 @@ struct InstallHeader {
  */
 struct ConnectHeader {
     uint8_t m_VersionLen; /* The maximum length of the version */
-    uint32_t m_CpnLen; /* The maximum length of the call pipe name */
-    uint32_t m_RpnLen; /* The maximum length of the return pipe name */
+    uint32_t m_CpnLen;    /* The maximum length of the call pipe name */
+    uint32_t m_RpnLen;    /* The maximum length of the return pipe name */
 } DSP_PACKED;
 
 /**
- * Calling / Returning packet - used for both calling a function and returning a result
+ * Calling / Returning packet - used for both calling a function and returning a
+ * result
  *
  * Header
  * \t Function name length (1 byte)
@@ -118,10 +123,13 @@ struct ConnectHeader {
  * \t Arguments information (255 * sizeof(ArgumentInfo))
  */
 struct CallingHeader {
-    uint8_t m_FnLen; /* The maximum length of the function name */
-    uint8_t m_ArgsCnt; /* The maximum number of arguments / returned variables for the function */
-    uint32_t m_ArgumentsLen; /* The maximum length of all the arguments in bytes */
-    char m_Token[CALL_TOKEN_LEN]; /* Token used for matching caller and response */
+    uint8_t m_FnLen;   /* The maximum length of the function name */
+    uint8_t m_ArgsCnt; /* The maximum number of arguments / returned variables
+                          for the function */
+    uint32_t
+        m_ArgumentsLen; /* The maximum length of all the arguments in bytes */
+    char m_Token[CALL_TOKEN_LEN]; /* Token used for matching caller and response
+                                   */
 } DSP_PACKED;
 
 #endif // __DSP_COMPONENTS_H

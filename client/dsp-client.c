@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include <sys/shm.h>
+#include <sys/mman.h>
 
 #include "dsp.h"
 
@@ -10,7 +11,6 @@
 #include "dsp-client.h"
 #include "log.h"
 #include "macros.h"
-#include "protocol.h"
 
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,

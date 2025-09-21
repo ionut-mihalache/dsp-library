@@ -1,7 +1,6 @@
 #include "dsp-service.h"
 
 #include <stdbool.h>
-#include <stdlib.h>
 #include <string.h>
 #include <sys/ipc.h>
 #include <sys/mman.h>
@@ -13,7 +12,6 @@
 #include "install.h"
 #include "log.h"
 #include "macros.h"
-#include "protocol.h"
 
 static struct InstallSharedData *installShdata = NULL;
 
