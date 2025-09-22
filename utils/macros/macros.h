@@ -55,4 +55,42 @@
         _a <= _b ? _a : _b;                                                    \
     })
 
+#define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
+    do {                                                                       \
+        pthread_mutex_lock((p_Queue)->m_Metadata.m_Lock);                      \
+        while (*(p_Queue)->m_Metadata.m_Size == (p_QMaxSize)) {                \
+            pthread_cond_wait((p_Queue)->m_Metadata.m_EmptyCond,               \
+                              (p_Queue)->m_Metadata.m_Lock);                   \
+        }                                                                      \
+                                                                               \
+        p_Code;                                                                \
+                                                                               \
+        (*(p_Queue)->m_Metadata.m_PushIdxPtr) =                                \
+            ((*(p_Queue)->m_Metadata.m_PushIdxPtr) + 1) % (p_QMaxSize);        \
+        (*(p_Queue)->m_Metadata.m_Size)++;                                     \
+                                                                               \
+        pthread_mutex_unlock((p_Queue)->m_Metadata.m_Lock);                    \
+                                                                               \
+        pthread_cond_broadcast((p_Queue)->m_Metadata.m_FullCond);              \
+    } while (0)
+
+#define QPOP(p_Queue, p_QMaxSize, p_Code)                                      \
+    do {                                                                       \
+        pthread_mutex_lock((p_Queue)->m_Metadata.m_Lock);                      \
+        while (*(p_Queue)->m_Metadata.m_Size == 0) {                           \
+            pthread_cond_wait((p_Queue)->m_Metadata.m_FullCond,                \
+                              (p_Queue)->m_Metadata.m_Lock);                   \
+        }                                                                      \
+                                                                               \
+        p_Code;                                                                \
+                                                                               \
+        (*(p_Queue)->m_Metadata.m_PopIdxPtr) =                                 \
+            ((*(p_Queue)->m_Metadata.m_PopIdxPtr) + 1) % (p_QMaxSize);         \
+        (*(p_Queue)->m_Metadata.m_Size)--;                                     \
+                                                                               \
+        pthread_mutex_unlock((p_Queue)->m_Metadata.m_Lock);                    \
+                                                                               \
+        pthread_cond_broadcast((p_Queue)->m_Metadata.m_EmptyCond);             \
+    } while (0)
+
 #endif // DSP_MACROS_H

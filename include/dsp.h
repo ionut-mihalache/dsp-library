@@ -65,45 +65,20 @@ struct CallMetadata {
     bool m_DataReady;
 };
 
-struct SMBCall {
-    uint8_t m_CallInfo[SMB];
-    struct CallMetadata m_Metadata;
-};
+#define CREATE_CALL_STRUCT(p_Name, p_Size)                                     \
+    struct p_Name {                                                            \
+        uint8_t m_CallInfo[(p_Size)];                                          \
+        struct CallMetadata m_Metadata;                                        \
+    }
 
-struct EMBCall {
-    uint8_t m_CallInfo[EMB];
-    struct CallMetadata m_Metadata;
-};
-
-struct QMBCall {
-    uint8_t m_CallInfo[QMB];
-    struct CallMetadata m_Metadata;
-};
-
-struct HMBCall {
-    uint8_t m_CallInfo[HMB];
-    struct CallMetadata m_Metadata;
-};
-
-struct MBCall {
-    uint8_t m_CallInfo[MB];
-    struct CallMetadata m_Metadata;
-};
-
-struct DMBCall {
-    uint8_t m_CallInfo[DMB];
-    struct CallMetadata m_Metadata;
-};
-
-struct HGBCall {
-    uint8_t m_CallInfo[HGB];
-    struct CallMetadata m_Metadata;
-};
-
-struct GBCall {
-    uint8_t m_CallInfo[GB];
-    struct CallMetadata m_Metadata;
-};
+CREATE_CALL_STRUCT(SMBCall, SMB);
+CREATE_CALL_STRUCT(EMBCall, EMB);
+CREATE_CALL_STRUCT(QMBCall, QMB);
+CREATE_CALL_STRUCT(HMBCall, HMB);
+CREATE_CALL_STRUCT(MBCall, MB);
+CREATE_CALL_STRUCT(DMBCall, DMB);
+CREATE_CALL_STRUCT(HGBCall, HGB);
+CREATE_CALL_STRUCT(GBCall, GB);
 
 struct CommunicationInfo {
     struct DSPQueue *m_Q;
@@ -215,15 +190,14 @@ struct ConnectRequest {
     enum QType m_ReturnQType;
 };
 
-struct ConnectQueue {
-    struct DSPQueueMetadata m_Metadata;
-    struct ConnectRequest *m_Data;
-};
+#define CREATE_CONNECTION_QUEUE(p_Name)                                        \
+    struct p_Name {                                                            \
+        struct DSPQueueMetadata m_Metadata;                                    \
+        struct ConnectRequest *m_Data;                                         \
+    }
 
-struct DisconnectQueue {
-    struct DSPQueueMetadata m_Metadata;
-    struct ConnectRequest *m_Data;
-};
+CREATE_CONNECTION_QUEUE(ConnectQueue);
+CREATE_CONNECTION_QUEUE(DisconnectQueue);
 
 struct DSPQueue {
     struct DSPQueueMetadata m_Metadata;
@@ -231,43 +205,5 @@ struct DSPQueue {
     uint32_t m_MaxSize;
     enum QType m_Type;
 };
-
-#define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
-    do {                                                                       \
-        pthread_mutex_lock((p_Queue)->m_Metadata.m_Lock);                      \
-        while (*(p_Queue)->m_Metadata.m_Size == (p_QMaxSize)) {                \
-            pthread_cond_wait((p_Queue)->m_Metadata.m_EmptyCond,               \
-                              (p_Queue)->m_Metadata.m_Lock);                   \
-        }                                                                      \
-                                                                               \
-        p_Code;                                                                \
-                                                                               \
-        (*(p_Queue)->m_Metadata.m_PushIdxPtr) =                                \
-            ((*(p_Queue)->m_Metadata.m_PushIdxPtr) + 1) % (p_QMaxSize);        \
-        (*(p_Queue)->m_Metadata.m_Size)++;                                     \
-                                                                               \
-        pthread_mutex_unlock((p_Queue)->m_Metadata.m_Lock);                    \
-                                                                               \
-        pthread_cond_broadcast((p_Queue)->m_Metadata.m_FullCond);              \
-    } while (0)
-
-#define QPOP(p_Queue, p_QMaxSize, p_Code)                                      \
-    do {                                                                       \
-        pthread_mutex_lock((p_Queue)->m_Metadata.m_Lock);                      \
-        while (*(p_Queue)->m_Metadata.m_Size == 0) {                           \
-            pthread_cond_wait((p_Queue)->m_Metadata.m_FullCond,                \
-                              (p_Queue)->m_Metadata.m_Lock);                   \
-        }                                                                      \
-                                                                               \
-        p_Code;                                                                \
-                                                                               \
-        (*(p_Queue)->m_Metadata.m_PopIdxPtr) =                                 \
-            ((*(p_Queue)->m_Metadata.m_PopIdxPtr) + 1) % (p_QMaxSize);         \
-        (*(p_Queue)->m_Metadata.m_Size)--;                                     \
-                                                                               \
-        pthread_mutex_unlock((p_Queue)->m_Metadata.m_Lock);                    \
-                                                                               \
-        pthread_cond_broadcast((p_Queue)->m_Metadata.m_EmptyCond);             \
-    } while (0)
 
 #endif // __DSP_H_
