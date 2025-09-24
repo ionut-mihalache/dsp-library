@@ -1,6 +1,5 @@
 {
     "java.project.referencedLibraries": [
-        "lib/**/*.jar",
-        "test/java/jar/jna-5.15.0.jar"
+        "lib/*.jar"
     ]
 }
