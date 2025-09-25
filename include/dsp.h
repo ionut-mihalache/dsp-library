@@ -65,20 +65,20 @@ struct CallMetadata {
     bool m_DataReady;
 };
 
-#define CREATE_CALL_STRUCT(p_Name, p_Size)                                     \
-    struct p_Name {                                                            \
+#define CALL_STRUCT(p_Name, p_Size)                                            \
+    p_Name {                                                                   \
         uint8_t m_CallInfo[(p_Size)];                                          \
         struct CallMetadata m_Metadata;                                        \
     }
 
-CREATE_CALL_STRUCT(SMBCall, SMB);
-CREATE_CALL_STRUCT(EMBCall, EMB);
-CREATE_CALL_STRUCT(QMBCall, QMB);
-CREATE_CALL_STRUCT(HMBCall, HMB);
-CREATE_CALL_STRUCT(MBCall, MB);
-CREATE_CALL_STRUCT(DMBCall, DMB);
-CREATE_CALL_STRUCT(HGBCall, HGB);
-CREATE_CALL_STRUCT(GBCall, GB);
+struct CALL_STRUCT(SMBCall, SMB);
+struct CALL_STRUCT(EMBCall, EMB);
+struct CALL_STRUCT(QMBCall, QMB);
+struct CALL_STRUCT(HMBCall, HMB);
+struct CALL_STRUCT(MBCall, MB);
+struct CALL_STRUCT(DMBCall, DMB);
+struct CALL_STRUCT(HGBCall, HGB);
+struct CALL_STRUCT(GBCall, GB);
 
 struct CommunicationInfo {
     struct DSPQueue *m_Q;
@@ -190,14 +190,14 @@ struct ConnectRequest {
     enum QType m_ReturnQType;
 };
 
-#define CREATE_CONNECTION_QUEUE(p_Name)                                        \
-    struct p_Name {                                                            \
+#define CONNECTION_QUEUE(p_Name)                                               \
+    p_Name {                                                                   \
         struct DSPQueueMetadata m_Metadata;                                    \
         struct ConnectRequest *m_Data;                                         \
     }
 
-CREATE_CONNECTION_QUEUE(ConnectQueue);
-CREATE_CONNECTION_QUEUE(DisconnectQueue);
+struct CONNECTION_QUEUE(ConnectQueue);
+struct CONNECTION_QUEUE(DisconnectQueue);
 
 struct DSPQueue {
     struct DSPQueueMetadata m_Metadata;
