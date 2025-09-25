@@ -1,3 +1,5 @@
+#include <chrono>
+#include <ratio>
 #include <stdio.h>
 #include <stdlib.h>
 #include <cstdint>
@@ -99,7 +101,13 @@ int main() {
 
     setCallData(SMBQ, callData, (uint8_t *)iiaData, strlen(iiaData));
 
+    auto start = std::chrono::high_resolution_clock::now();
     callFn(callInfo, callData);
+    auto end = std::chrono::high_resolution_clock::now();
+
+    std::chrono::duration<double, std::milli> duration = end - start;
+
+    fprintf(stdout, "Call duration: %lf\n", duration.count());
 
     auto returnData = (SMBCall *)malloc(sizeof(SMBCall));
     if (returnData == NULL) {
@@ -108,12 +116,18 @@ int main() {
         return 0;
     }
 
+    start = std::chrono::high_resolution_clock::now();
     returnFn(returnData, returnInfo);
+    end = std::chrono::high_resolution_clock::now();
+
+    duration = end - start;
+
+    fprintf(stdout, "Return duration: %lf\n", duration.count());
 
     sendDisconnectRequest(connectInfo,
                           &(returnInfo->m_ConnectResponseInformation));
 
-    fprintf(stdout, "%s\n", returnData->m_CallInfo);
+    // fprintf(stdout, "%s\n", returnData->m_CallInfo);
 
     free(returnData);
     free(callData);
