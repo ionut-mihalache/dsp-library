@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <cstdint>
 #include <cstring>
+#include <memory>
 
 extern "C" {
 #include "dsp.h"
@@ -11,33 +12,33 @@ extern "C" {
 }
 
 int main() {
-    auto connectInfo = (ClientConnectInfo *)malloc(sizeof(ClientConnectInfo));
-    if (connectInfo == NULL) {
+    std::unique_ptr<ClientConnectInfo> connectInfo(new ClientConnectInfo);
+    if (connectInfo == nullptr) {
         fprintf(stderr, "There was an error with allocating memory for client "
                         "information.\n");
         return 0;
     }
 
-    auto callInfo = (ClientCallInfo *)malloc(sizeof(ClientCallInfo));
-    if (callInfo == NULL) {
+    std::unique_ptr<ClientCallInfo> callInfo(new ClientCallInfo);
+    if (callInfo == nullptr) {
         fprintf(stderr, "There was an error with allocating memory for client "
                         "call information.\n");
         return 0;
     }
 
-    dspConnect(connectInfo, callInfo, "xslt-transformation");
+    dspConnect(connectInfo.get(), callInfo.get(), "xslt-transformation");
 
-    auto returnInfo = (ClientReturnInfo *)malloc(sizeof(ClientReturnInfo));
-    if (returnInfo == NULL) {
-        fprintf(stderr, "There was an error with allocating memory for client "
+    std::unique_ptr<ClientReturnInfo> returnInfo(new ClientReturnInfo);
+    if (returnInfo == nullptr) {
+        fprintf(stderr, "There was an error with allocating memory for client"
                         "return information.\n");
         return 0;
     }
 
-    auto requestInfo = (ClientConnectRequestInformation *)malloc(
-        sizeof(ClientConnectRequestInformation));
-    if (requestInfo == NULL) {
-        fprintf(stderr, "There was an error with allocating memory for client "
+    std::unique_ptr<ClientConnectRequestInformation> requestInfo(
+        new ClientConnectRequestInformation);
+    if (requestInfo == nullptr) {
+        fprintf(stderr, "There was an error with allocating memory for client"
                         "call information.\n");
         return 0;
     }
@@ -49,11 +50,11 @@ int main() {
     requestInfo->m_ResponseQSize = 1;
     requestInfo->m_QType = SMBQ;
 
-    sendConnectRequest(returnInfo, connectInfo, requestInfo);
+    sendConnectRequest(returnInfo.get(), connectInfo.get(), requestInfo.get());
 
-    auto callData = (SMBCall *)malloc(sizeof(SMBCall));
-    if (callData == NULL) {
-        fprintf(stderr, "There was an error with allocating memory for client "
+    std::unique_ptr<SMBCall> callData(new SMBCall);
+    if (callData == nullptr) {
+        fprintf(stderr, "There was an error with allocating memory for client"
                         "call data.\n");
         return 0;
     }
@@ -99,41 +100,34 @@ int main() {
         "blended></student-studies-mobility-spec></cooperation-conditions></"
         "iia></iias-get-response>";
 
-    setCallData(SMBQ, callData, (uint8_t *)iiaData, strlen(iiaData));
+    setCallData(SMBQ, callData.get(), (uint8_t *)iiaData, strlen(iiaData));
 
     auto start = std::chrono::high_resolution_clock::now();
-    callFn(callInfo, callData);
+    callFn(callInfo.get(), callData.get());
     auto end = std::chrono::high_resolution_clock::now();
 
     std::chrono::duration<double, std::milli> duration = end - start;
 
     fprintf(stdout, "Call duration: %lf\n", duration.count());
 
-    auto returnData = (SMBCall *)malloc(sizeof(SMBCall));
-    if (returnData == NULL) {
-        fprintf(stderr, "There was an error with allocating memory for client "
+    std::unique_ptr<SMBCall> returnData(new SMBCall);
+    if (returnData == nullptr) {
+        fprintf(stderr, "There was an error with allocating memory for client"
                         "call data.\n");
         return 0;
     }
 
     start = std::chrono::high_resolution_clock::now();
-    returnFn(returnData, returnInfo);
+    returnFn(returnData.get(), returnInfo.get());
     end = std::chrono::high_resolution_clock::now();
 
     duration = end - start;
 
     fprintf(stdout, "Return duration: %lf\n", duration.count());
 
-    sendDisconnectRequest(connectInfo,
+    sendDisconnectRequest(connectInfo.get(),
                           &(returnInfo->m_ConnectResponseInformation));
 
     // fprintf(stdout, "%s\n", returnData->m_CallInfo);
-
-    free(returnData);
-    free(callData);
-    free(requestInfo);
-    free(returnInfo);
-    free(callInfo);
-    free(connectInfo);
     return 0;
 }
