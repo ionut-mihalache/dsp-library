@@ -10,7 +10,7 @@ build: client
 client: main.o
 	$(CC) $(LINTER_DEFINES) $(OPTIONS) $(INCLUDES) -L/home/ubuntu/dsp-library -ldsp main.o -o client
 
-main.o:
+main.o: main.cpp
 	$(CC) $(LINTER_DEFINES) $(OPTIONS) $(INCLUDES) -c main.cpp -o main.o
 
 run:
