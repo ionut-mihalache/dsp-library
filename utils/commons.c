@@ -7,6 +7,7 @@
 #include <string.h>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <sys/user.h>
 
 #include "log/log.h"
 #include "macros/macros.h"
@@ -59,24 +60,24 @@ end:
 }
 
 void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
-    *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED, p_Fd, 0);
+    *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED | MAP_POPULATE, p_Fd, 0);
     DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
 }
 
 void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot) {
-    volatile char *accessPtr;
+    volatile char *accessPtr = (volatile char *)p_MemoryAddr;
+    size_t pageIdx;
     switch (p_Prot) {
     case PROT_READ:
-        accessPtr = (volatile char *)p_MemoryAddr;
         for (size_t i = 0; i < p_Size; i++) {
             (void)accessPtr[i];
         }
         break;
     case PROT_WRITE:
-        memset(p_MemoryAddr, 0, p_Size);
-        break;
     case PROT_READ | PROT_WRITE:
-        memset(p_MemoryAddr, 0, p_Size);
+        for (pageIdx = 0; pageIdx < p_Size; pageIdx += PAGE_SIZE) {
+            accessPtr[pageIdx] = 0;
+        }
         break;
     default:
         // In case of any other permission nothing happens for now
