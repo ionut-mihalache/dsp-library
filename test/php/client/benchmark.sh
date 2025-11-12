@@ -110,36 +110,23 @@ generateLatexTableFromSVGsCPU() {
     echo -e "\t\tclients & connect & disconnect & receive & send \\\\\\\\" >> ${outFile}
     echo -e "\t\t\\\\midrule" >> ${outFile}
     for dir in $(ls ${rootDir} | sort -n); do
-        connect=$(grep "ConnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        disconnect=$(grep "DisconnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        receive=$(grep "receiveCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        send=$(grep "sendReturn" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        svg_path="${rootDir}/${dir}/${sampleDir}/${svgFile}.svg"
+        connect=$(grep -m1 "ConnectThread" "$svg_path" | awk -F'[()]' '{split($2,a,"samples, "); print a[2]}' | tr -d '\n' | xargs)
+        disconnect=$(grep -m1 "DisconnectThread" "$svg_path" | awk -F'[()]' '{split($2,a,"samples, "); print a[2]}' | tr -d '\n' | xargs)
+        receive=$(grep -m1 "receiveCall" "$svg_path" | awk -F'[()]' '{split($2,a,"samples, "); print a[2]}' | tr -d '\n' | xargs)
+        send=$(grep -m1 "sendReturn" "$svg_path" | awk -F'[()]' '{split($2,a,"samples, "); print a[2]}' | tr -d '\n' | xargs)
 
         echo ${dir} ${connect} ${disconnect} ${receive} ${send}
 
-        if [[ -n "$connect" ]]; then
-            connect="${connect%\%}"
-        else
-            connect="< 1"
-        fi
+        connect=${connect//%/}
+        disconnect=${disconnect//%/}
+        receive=${receive//%/}
+        send=${send//%/}
 
-        if [[ -n "$disconnect" ]]; then
-            disconnect="${disconnect%\%}"
-        else
-            disconnect="< 1"
-        fi
-
-        if [[ -n "$receive" ]]; then
-            receive="${receive%\%}"
-        else
-            receive="< 1"
-        fi
-
-        if [[ -n "$send" ]]; then
-            send="${send%\%}"
-        else
-            send="< 1"
-        fi
+        [ -z "$connect" ] && connect="< 1"
+        [ -z "$disconnect" ] && disconnect="< 1"
+        [ -z "$receive" ] && receive="< 1"
+        [ -z "$send" ] && send="< 1"
 
         echo -e "\t\t${dir} & ${connect} & ${disconnect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
     done
@@ -181,29 +168,20 @@ generateLatexTableFromSVGsALLOC() {
     echo -e "\t\tclients & connect & receive & send \\\\\\\\" >> ${outFile}
     echo -e "\t\t\\\\midrule" >> ${outFile}
     for dir in $(ls ${rootDir} | sort -n); do
-        connect=$(grep "ConnectThread" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        receive=$(grep "call_package/SMBCall" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
-        send=$(grep "return_package/SMBReturn" ${rootDir}/${dir}/${sampleDir}/${svgFile}.svg | awk -F'[()]' '{split($2, a, "samples, "); print a[2]}')
+        svg_path="${rootDir}/${dir}/${sampleDir}/${svgFile}.svg"
+        connect=$(grep -m1 "ConnectThread" "$svg_path" | awk -F'[()]' '{split($2,a,"samples, "); print a[2]}' | tr -d '\n' | xargs)
+        receive=$(grep -m1 "call_package/SMBCall" "$svg_path" | awk -F'[()]' '{split($2,a,"samples, "); print a[2]}' | tr -d '\n' | xargs)
+        send=$(grep -m1 "return_package/SMBReturn" "$svg_path" | awk -F'[()]' '{split($2,a,"samples, "); print a[2]}' | tr -d '\n' | xargs)
 
         echo ${dir} ${connect} ${receive} ${send}
 
-        if [[ -n "$connect" ]]; then
-            connect="${connect%\%}"
-        else
-            connect="< 1"
-        fi
+        connect=${connect//%/}
+        receive=${receive//%/}
+        send=${send//%/}
 
-        if [[ -n "$receive" ]]; then
-            receive="${receive%\%}"
-        else
-            receive="< 1"
-        fi
-
-        if [[ -n "$send" ]]; then
-            send="${send%\%}"
-        else
-            send="< 1"
-        fi
+        [ -z "$connect" ] && connect="< 1"
+        [ -z "$receive" ] && receive="< 1"
+        [ -z "$send" ] && send="< 1"
 
         # echo -e "\t\t${dir} & ${connect} & ${disconnect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
         echo -e "\t\t${dir} & ${connect} & ${receive} & ${send} \\\\\\\\" >> ${outFile}
