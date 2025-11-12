@@ -62,3 +62,21 @@ void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
     *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED, p_Fd, 0);
     DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
 }
+
+void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot) {
+    volatile char *accessPtr;
+    switch (p_Prot) {
+    case PROT_READ:
+        accessPtr = (volatile char *)p_MemoryAddr;
+        for (size_t i = 0; i < p_Size; i++) {
+            (void)accessPtr[i];
+        }
+        break;
+    case PROT_WRITE:
+        memset(p_MemoryAddr, 0, p_Size);
+        break;
+    default:
+        // In case of any other permission nothing happens for now
+        break;
+    }
+}

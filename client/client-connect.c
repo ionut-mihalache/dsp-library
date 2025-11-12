@@ -187,6 +187,10 @@ static int32_t s_ProcessConnectionRequest(
     int requestResponseQFd;
     int returnQFd;
     int32_t rc = 0;
+    int qFlag;
+    int qProt;
+    mode_t qMode;
+    size_t qSize;
     void *returnQ;
 
     /**
@@ -242,91 +246,59 @@ static int32_t s_ProcessConnectionRequest(
 
     switch (p_ConnectInformation->m_QType) {
     case SMBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct SMBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct SMBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct SMBCall);
+        qProt = PROT_READ;
 
         break;
     case EMBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct EMBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct EMBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct EMBCall);
+        qProt = PROT_READ;
 
         break;
     case QMBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall);
+        qProt = PROT_READ;
 
         break;
     case HMBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall);
+        qProt = PROT_READ;
 
         break;
     case MBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct MBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct MBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct MBCall);
+        qProt = PROT_READ;
 
         break;
     case DMBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct DMBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct DMBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct DMBCall);
+        qProt = PROT_READ;
 
         break;
     case HGBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct HGBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct HGBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct HGBCall);
+        qProt = PROT_READ;
 
         break;
     case GBQ:
-        returnQFd = createShmObject(
-            p_ConnectInformation->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_ConnectInformation->m_ReturnQSize * sizeof(struct GBCall), true);
-
-        createQ(&returnQ,
-                p_ConnectInformation->m_ReturnQSize * sizeof(struct GBCall),
-                PROT_READ, returnQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct GBCall);
+        qProt = PROT_READ;
 
         break;
     default:
@@ -335,6 +307,13 @@ static int32_t s_ProcessConnectionRequest(
          */
         DIE(true, "QType is not recognized");
     }
+
+    returnQFd = createShmObject(p_ConnectInformation->m_ReturnQName, qFlag,
+                                qMode, qSize, true);
+
+    createQ(&returnQ, qSize, qProt, returnQFd);
+
+    triggerKernelPageInit(returnQ, qSize, qProt);
 
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");

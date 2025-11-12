@@ -20,4 +20,6 @@ int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
 
 void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd);
 
+void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot);
+
 #endif // DSP_COMMONS_H

@@ -175,10 +175,10 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
-    struct ConnectRequest *connectQ =
-        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-             PROT_READ | PROT_WRITE, MAP_SHARED, connectQFd, 0);
-    DIE(connectQ == MAP_FAILED, "Could not map connect queue memory");
+    struct ConnectRequest *connectQ;
+    createQ((void **)&connectQ,
+            CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+            PROT_READ | PROT_WRITE, connectQFd);
 
     rc = close(connectQFd);
     DIE(rc != 0, "Could not close connectQFd");
@@ -188,10 +188,10 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
-    struct ConnectRequest *disconnectQ =
-        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-             PROT_READ | PROT_WRITE, MAP_SHARED, disconnectQFd, 0);
-    DIE(disconnectQ == MAP_FAILED, "Could not map disconnect queue memory");
+    struct ConnectRequest *disconnectQ;
+    createQ((void **)&disconnectQ,
+            CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+            PROT_READ | PROT_WRITE, connectQFd);
 
     rc = close(disconnectQFd);
     DIE(rc != 0, "Could not close disconnectQFd");
