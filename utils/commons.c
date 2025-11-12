@@ -75,6 +75,9 @@ void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot) {
     case PROT_WRITE:
         memset(p_MemoryAddr, 0, p_Size);
         break;
+    case PROT_READ | PROT_WRITE:
+        memset(p_MemoryAddr, 0, p_Size);
+        break;
     default:
         // In case of any other permission nothing happens for now
         break;

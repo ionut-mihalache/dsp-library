@@ -241,8 +241,6 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
 
     createQ(&callQ, qSize, qProt, callQFd);
 
-    triggerKernelPageInit(callQ, qSize, qProt);
-
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");
 

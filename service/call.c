@@ -161,87 +161,67 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
                                 struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     int callQFd;
+    int qFlag;
+    int qProt;
+    mode_t qMode;
+    size_t qSize;
     void *callQ;
 
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
-        callQFd = createShmObject(
-            p_InstallInfo->m_CallQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            SMB_Q_MAX_SIZE * sizeof(struct SMBCall), true);
-
-        createQ(&callQ, SMB_Q_MAX_SIZE * sizeof(struct SMBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = SMB_Q_MAX_SIZE * sizeof(struct SMBCall);
+        qProt = PROT_READ;
 
         break;
     case EMBQ:
-        callQFd = createShmObject(
-            p_InstallInfo->m_CallQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            EMB_Q_MAX_SIZE * sizeof(struct EMBCall), true);
-
-        createQ(&callQ, EMB_Q_MAX_SIZE * sizeof(struct EMBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = EMB_Q_MAX_SIZE * sizeof(struct EMBCall);
+        qProt = PROT_READ;
 
         break;
     case QMBQ:
-        callQFd = createShmObject(
-            p_InstallInfo->m_CallQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            QMB_Q_MAX_SIZE * sizeof(struct QMBCall), true);
-
-        createQ(&callQ, QMB_Q_MAX_SIZE * sizeof(struct QMBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = QMB_Q_MAX_SIZE * sizeof(struct QMBCall);
+        qProt = PROT_READ;
 
         break;
     case HMBQ:
-        callQFd = createShmObject(
-            p_InstallInfo->m_CallQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            HMB_Q_MAX_SIZE * sizeof(struct HMBCall), true);
-
-        createQ(&callQ, HMB_Q_MAX_SIZE * sizeof(struct HMBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = HMB_Q_MAX_SIZE * sizeof(struct HMBCall);
+        qProt = PROT_READ;
 
         break;
     case MBQ:
-        callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
-                                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                                      S_IROTH | S_IWOTH,
-                                  MB_Q_MAX_SIZE * sizeof(struct MBCall), true);
-
-        createQ(&callQ, MB_Q_MAX_SIZE * sizeof(struct MBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = MB_Q_MAX_SIZE * sizeof(struct MBCall);
+        qProt = PROT_READ;
 
         break;
     case DMBQ:
-        callQFd = createShmObject(
-            p_InstallInfo->m_CallQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            DMB_Q_MAX_SIZE * sizeof(struct DMBCall), true);
-
-        createQ(&callQ, DMB_Q_MAX_SIZE * sizeof(struct DMBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = DMB_Q_MAX_SIZE * sizeof(struct DMBCall);
+        qProt = PROT_READ;
 
         break;
     case HGBQ:
-        callQFd = createShmObject(
-            p_InstallInfo->m_CallQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            HGB_Q_MAX_SIZE * sizeof(struct HGBCall), true);
-
-        createQ(&callQ, HGB_Q_MAX_SIZE * sizeof(struct HGBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = HGB_Q_MAX_SIZE * sizeof(struct HGBCall);
+        qProt = PROT_READ;
 
         break;
     case GBQ:
-        callQFd = createShmObject(p_InstallInfo->m_CallQName, O_RDWR,
-                                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                                      S_IROTH | S_IWOTH,
-                                  GB_Q_MAX_SIZE * sizeof(struct GBCall), true);
-
-        createQ(&callQ, GB_Q_MAX_SIZE * sizeof(struct GBCall), PROT_READ,
-                callQFd);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = GB_Q_MAX_SIZE * sizeof(struct GBCall);
+        qProt = PROT_READ;
 
         break;
     default:
@@ -250,6 +230,13 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
          */
         DIE(true, "QType is not recognized");
     }
+
+    callQFd =
+        createShmObject(p_InstallInfo->m_CallQName, qFlag, qMode, qSize, true);
+
+    createQ(&callQ, qSize, qProt, callQFd);
+
+    triggerKernelPageInit(callQ, qSize, qProt);
 
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");

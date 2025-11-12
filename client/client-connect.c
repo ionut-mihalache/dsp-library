@@ -241,6 +241,11 @@ static int32_t s_ProcessConnectionRequest(
     DIE(requestResponseQ == MAP_FAILED,
         "Could not map request response queue memory");
 
+    triggerKernelPageInit(requestResponseQ,
+                          p_ConnectInformation->m_ResponseQSize *
+                              sizeof(struct ConnectResponseInformation),
+                          PROT_READ);
+
     rc = close(requestResponseQFd);
     DIE(rc != 0, "Could not close requestResponseQFd");
 

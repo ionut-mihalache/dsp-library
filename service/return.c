@@ -204,6 +204,10 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     int returnQFd;
     int requestResponseQFd;
     uint32_t connectionIdx;
+    int qFlag;
+    int qProt;
+    mode_t qMode;
+    size_t qSize;
     void *returnQ;
 
     connectionIdx = p_Request->m_ConnectionIdx;
@@ -216,107 +220,59 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 
     switch (p_Request->m_ReturnQType) {
     case SMBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct SMBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct SMBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct SMBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct SMBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     case EMBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct EMBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct EMBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct EMBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct EMBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     case QMBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct QMBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct QMBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct QMBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct QMBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     case HMBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct HMBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct HMBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct HMBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct HMBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     case MBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct MBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct MBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct MBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct MBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     case DMBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct DMBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct DMBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct DMBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct DMBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     case HGBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct HGBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct HGBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct HGBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct HGBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     case GBQ:
-        returnQFd = createShmObject(
-            p_Request->m_ReturnQName, O_RDWR,
-            S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-            p_Request->m_ReturnQSize * sizeof(struct GBCall), false);
-
-        createQ(&returnQ, p_Request->m_ReturnQSize * sizeof(struct GBCall),
-                PROT_WRITE | PROT_READ, returnQFd);
-
-        p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize =
-            p_Request->m_ReturnQSize * sizeof(struct GBCall);
+        qFlag = O_RDWR;
+        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qSize = p_Request->m_ReturnQSize * sizeof(struct GBCall);
+        qProt = PROT_WRITE | PROT_READ;
 
         break;
     default:
@@ -325,6 +281,13 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
          */
         DIE(true, "QType is not recognized");
     }
+
+    returnQFd =
+        createShmObject(p_Request->m_ReturnQName, qFlag, qMode, qSize, false);
+
+    createQ(&returnQ, qSize, qProt, returnQFd);
+
+    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMapSize = qSize;
 
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");

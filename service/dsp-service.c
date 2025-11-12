@@ -29,7 +29,9 @@ void initService() {
                          PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd, 0);
     DIE(installShdata == MAP_FAILED || installShdata == NULL,
         "Could not mmap install shared data object");
-    memset(installShdata, 0, sizeof(struct InstallSharedData));
+
+    triggerKernelPageInit(installShdata, sizeof(struct InstallSharedData),
+                          PROT_READ | PROT_WRITE);
 
     rc = close(installShdFd);
     DIE(rc != 0, "Could not close installShdFd");
