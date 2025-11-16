@@ -20,6 +20,7 @@ dependencies {
     implementation files("lib/jna-5.15.0.jar")
     implementation files("lib/saxon-he-12.5.jar")
     implementation files("lib/xmlresoler-6.0.11.jar")
+    implementation files("lib/jeromq-0.6.0.jar")
 }
 
 // Configure the main class for running your application.
