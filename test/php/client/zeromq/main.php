@@ -18,7 +18,7 @@ $socket = $context->getSocket(ZMQ::SOCKET_REQ);
 
 // Connect to the server
 $benchmark["connect"] = measureFnExec(function () use ($socket) {
-    $socket->connect('tcp://localhost:5555');
+    $socket->connect('tcp://localhost:5557');
 });
 
 
@@ -48,7 +48,18 @@ $benchmark["return"] = measureFnExec(function () use ($socket) {
 // echo "Received reply: $responseMessage\n";
 // Disconnect the client (this is optional, as ZeroMQ will disconnect automatically when the socket is closed)
 $benchmark["disconnect"] = measureFnExec(function () use ($socket) {
-    $socket->disconnect('tcp://localhost:5555');
+    $socket->disconnect('tcp://localhost:5557');
 });
 
-print_r($benchmark);
+$uniqueId = uniqid("", true);
+
+$file = fopen("benchmark_results/clients/" . $argv[1] . "/client_benchmark_" . $uniqueId . ".csv", 'a');
+fputcsv($file, [
+    $argv[1],
+    $benchmark["connect"],
+    $benchmark["call"],
+    $benchmark["return"],
+    $benchmark["disconnect"]
+]);
+fclose($file);
+// print_r($benchmark);

@@ -167,10 +167,6 @@ def create_client_exec_time_plot():
     time_columns = ["connect", "call", "return", "disconnect"]
     df[time_columns] = df[time_columns] / 1000.0
 
-    # exclude_clients = [500, 750]  # put any numbers you want to exclude here
-
-    # Filter out those clients
-    # df = df[~df["clients_nr"].isin(exclude_clients)]
     # Remove the outlier (clients_nr == 500)
     # df = df[df["clients_nr"] != 500]
 
@@ -211,6 +207,6 @@ def create_client_exec_time_plot():
     plt.savefig(sys.argv[1] + "/client_metrics_time_per_clients_bw.pdf", format="pdf")
 
 
-create_exec_time_plot()
-create_alloc_procentage_plot()
+# create_exec_time_plot()
+# create_alloc_procentage_plot()
 create_client_exec_time_plot()

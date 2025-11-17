@@ -212,17 +212,19 @@ runBenchmark() {
     echo "clients_nr,connect,call,return,disconnect" > ./benchmark_results/clients/${timestamp}/client_benchmark.csv
 
     for clientsNr in "$@"; do
-        cpuFlamegraphTitle="service_cpu_sampling"
-        allocFlamegraphTitle="service_alloc_sampling"
-        cacheMissFlamegraphTitle="service_cache_miss_sampling"
-        cpuAllocFlamegraphTitle="service_cpu_alloc_sampling"
-        nativeMemFlamegraphTitle="service_nativemem_sampling"
-        lockFlamegraphTitle="service_lock_sampling"
-        cpuAllocNativeMemLockFlamegraphTitle="service_cpu_alloc_nativemem_lock_sampling"
+        # cpuFlamegraphTitle="service_cpu_sampling"
+        # allocFlamegraphTitle="service_alloc_sampling"
+        # cacheMissFlamegraphTitle="service_cache_miss_sampling"
+        # cpuAllocFlamegraphTitle="service_cpu_alloc_sampling"
+        # nativeMemFlamegraphTitle="service_nativemem_sampling"
+        # lockFlamegraphTitle="service_lock_sampling"
+        # cpuAllocNativeMemLockFlamegraphTitle="service_cpu_alloc_nativemem_lock_sampling"
 
         # servicePID=$(pgrep -f 'java -cp')
+        # servicePID=$(pgrep -f 'java -cp ".:../../lib/jeromq-0.6.0.jar:../../lib/saxon-he-12.5.jar:../../lib/xmlresolver-6.0.11.jar" zeromq.Main')
 
-        # ${profilerPath}/build/bin/asprof start -e cpu,alloc,nativemem,lock -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
+        # ${profilerPath}/build/bin/asprof start -e cpu,alloc,nativemem,lock --safemode 2 -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
+        # ${profilerPath}/build/bin/asprof start -e cpu,itimer --safemode 2 -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
 
         if [ ! -d "benchmark_results/clients/${clientsNr}" ]; then
             mkdir -p benchmark_results/clients/${clientsNr}
@@ -240,7 +242,6 @@ runBenchmark() {
 
         # parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --cpu ${cpuFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/cpu
         # parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --alloc ${allocFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/alloc
-
         # parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --nativemem ${nativeMemFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/native_alloc
         # parseProfilingResult $profilerPath $flamegraphPath ${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle} --lock ${lockFlamegraphTitle} ./benchmark_results/${timestamp}/${clientsNr}/lock
 
@@ -262,7 +263,7 @@ runBenchmark() {
     # generateLatexTableFromSVGsCPU benchmark_results/${timestamp} service_cpu_sampling benchmark_results/${timestamp}_cpu_sampling_table cpu
     # generateLatexTableFromSVGsALLOC benchmark_results/${timestamp} service_alloc_sampling benchmark_results/${timestamp}_alloc_sampling_table alloc
 
-    source venv/bin/activate
+    source ../venv/bin/activate
     python3 create_plots.py ./benchmark_results/clients/${timestamp} benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}_alloc_sampling_table ./benchmark_results/clients/${timestamp}/client_benchmark.csv
     deactivate
 
@@ -279,4 +280,3 @@ runBenchmark $@
 # git clone https://github.com/brendangregg/FlameGraph.git
 # git clone https://github.com/async-profiler/async-profiler.git
 # ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 500 750 1000 1500 2000 2500 3250 4000 5000 6000
-# ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32
