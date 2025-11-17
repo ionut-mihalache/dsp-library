@@ -187,6 +187,44 @@ public class Main {
 
                 callData.read();
 
+                // byte[] iiaData = Arrays.copyOfRange(callData.getCallInfo(), 0, callData.getMetadata().m_Size);
+
+                // Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
+                // byte[] xsltData = Files.readAllBytes(xsltPath);
+
+                // String result = Main.s_GetXmlTransformed(iiaData, xsltData);
+
+                // byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
+
+                // ServiceReturnInfo serviceReturnInfo = connections.get(callData.getMetadata().m_ConnId);
+
+                // Call returnData = switch (serviceReturnInfo.m_Q.m_Type) {
+                //     case Constants.SMBQ -> new SMBReturn();
+                //     case Constants.EMBQ -> new EMBReturn();
+                //     case Constants.QMBQ -> new QMBReturn();
+                //     case Constants.HMBQ -> new HMBReturn();
+                //     case Constants.MBQ -> new MBReturn();
+                //     case Constants.DMBQ -> new DMBReturn();
+                //     case Constants.HGBQ -> new HGBReturn();
+                //     case Constants.GBQ -> new GBReturn();
+                //     default -> {
+                //         System.err.println("Return queue type not recognized!");
+                //         yield null;
+                //     }
+                // };
+
+                // if (returnData == null) {
+                //     System.err.println("Return data type not recognized!");
+                //     return;
+                // }
+
+                // System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0, resByteArr.length);
+                // returnData.getMetadata().m_Size = resByteArr.length;
+                // returnData.getMetadata().m_ConnId = callData.getMetadata().m_ConnId;
+
+                // returnData.write();
+                // LibDSP.INSTANCE.sendReturn(connections.get(callData.getMetadata().m_ConnId), returnData.getPointer());
+
                 ProcessCallThread processCallThread = new ProcessCallThread(callData, connections);
                 processCallThread.setName("CallThread-" + callData.m_Metadata.m_ConnId);
                 processCallThread.start();
@@ -194,5 +232,29 @@ public class Main {
                 e.printStackTrace();
             }
         }
+    }
+
+    /**
+     * Transform a xml file by means of a xslt file
+     *
+     * @param xmlBytes  The content of the xml file
+     * @param xsltBytes The content of the xslt file
+     * @return A xml useful to compute the hash code
+     */
+    public static String s_GetXmlTransformed(byte[] xmlBytes, byte[] xsltBytes) throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new ByteArrayInputStream(xmlBytes));
+
+        System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        transformer.transform(new DOMSource(document), new StreamResult(output));
+
+        return output.toString();
     }
 }

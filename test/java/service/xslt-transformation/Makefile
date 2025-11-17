@@ -1,7 +1,8 @@
 SOURCE_DIR=src
 MAIN_PACKAGE=main
 OBJECTS_DIR=bin
-OPTIONS=-XX:+PreserveFramePointer
+# OPTIONS=-XX:+PreserveFramePointer
+OPTIONS=
 
 CLASSPATH=./$(SOURCE_DIR):./$(OBJECTS_DIR):lib/jna-5.15.0.jar:lib/saxon-he-12.5.jar:lib/xmlresolver-6.0.11.jar
 
