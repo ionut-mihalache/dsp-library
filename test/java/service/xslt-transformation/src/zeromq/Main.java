@@ -2,6 +2,9 @@ package zeromq;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -80,6 +83,20 @@ public class Main {
                 // Block until a message is received
                 byte[] reply = socket.recv(0);
 
+                if (reply.length != 65548) {
+                    throw new RuntimeException("Unexpected size: " + reply.length);
+                }
+
+                // Read the first four bytes as a 32-bit big-endian integer
+                ByteBuffer buf = ByteBuffer.wrap(reply).order(ByteOrder.BIG_ENDIAN);
+                int xmlLength = buf.getInt();
+
+                // Extract the XML portion
+                byte[] xmlBytes = new byte[xmlLength];
+                buf.get(xmlBytes);
+
+                // String xml = new String(xmlBytes, StandardCharsets.UTF_8);
+
                 // Print the message
                 // System.out.println(
                 // "Received: [" + new String(reply, ZMQ.CHARSET) + "]");
@@ -94,7 +111,7 @@ public class Main {
                 Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
 
-                String result = Main.mf_GetXmlTransformed(reply, xsltData);
+                String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
 
                 socket.send(result.getBytes(ZMQ.CHARSET), 0);
             }
