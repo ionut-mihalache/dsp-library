@@ -85,50 +85,21 @@ static int32_t s_GBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     return rc;
 }
 
+static int32_t s_QPopSMB(struct SMBCall *callInfo, struct DSPQueue *queue);
+static int32_t s_QPopEMB(struct EMBCall *callInfo, struct DSPQueue *queue);
+static int32_t s_QPopQMB(struct QMBCall *callInfo, struct DSPQueue *queue);
+static int32_t s_QPopHMB(struct HMBCall *callInfo, struct DSPQueue *queue);
+static int32_t s_QPopMB(struct MBCall *callInfo, struct DSPQueue *queue);
+static int32_t s_QPopDMB(struct DMBCall *callInfo, struct DSPQueue *queue);
+static int32_t s_QPopHGB(struct HGBCall *callInfo, struct DSPQueue *queue);
+static int32_t s_QPopGB(struct GBCall *callInfo, struct DSPQueue *queue);
+
 /**
  * TODO: Return correct error code. This function 'never fails' at the moment.
  */
-static int32_t s_QPopA(struct DSPQueue *p_Queue, void *p_CallInfo,
-                       uint32_t p_QMaxSize,
-                       int32_t (*p_Fn)(void *, struct DSPQueue *)) {
-    int32_t rc = 0;
-
-    QPOP(p_Queue, p_QMaxSize, do { rc = p_Fn(p_CallInfo, p_Queue); } while (0));
-
-    return rc;
-}
-
-static int32_t s_QPopSMB(struct SMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, SMB_Q_MAX_SIZE, s_SMBPopHelper);
-}
-
-static int32_t s_QPopEMB(struct EMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, EMB_Q_MAX_SIZE, s_EMBPopHelper);
-}
-
-static int32_t s_QPopQMB(struct QMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, QMB_Q_MAX_SIZE, s_QMBPopHelper);
-}
-
-static int32_t s_QPopHMB(struct HMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, HMB_Q_MAX_SIZE, s_HMBPopHelper);
-}
-
-static int32_t s_QPopMB(struct MBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, MB_Q_MAX_SIZE, s_MBPopHelper);
-}
-
-static int32_t s_QPopDMB(struct DMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, DMB_Q_MAX_SIZE, s_DMBPopHelper);
-}
-
-static int32_t s_QPopHGB(struct HGBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, HGB_Q_MAX_SIZE, s_HGBPopHelper);
-}
-
-static int32_t s_QPopGB(struct GBCall *p_CallInfo, struct DSPQueue *p_Queue) {
-    return s_QPopA(p_Queue, p_CallInfo, GB_Q_MAX_SIZE, s_GBPopHelper);
-}
+static int32_t s_QPopA(struct DSPQueue *queue, void *callInfo,
+                       uint32_t qMaxSize,
+                       int32_t (*fn)(void *, struct DSPQueue *));
 
 static int32_t s_QPop(struct CommunicationInfo *p_CInfo) {
     switch (p_CInfo->m_Q->m_Type) {
@@ -274,6 +245,51 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
     p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
+
+    return rc;
+}
+
+static int32_t s_QPopSMB(struct SMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, SMB_Q_MAX_SIZE, s_SMBPopHelper);
+}
+
+static int32_t s_QPopEMB(struct EMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, EMB_Q_MAX_SIZE, s_EMBPopHelper);
+}
+
+static int32_t s_QPopQMB(struct QMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, QMB_Q_MAX_SIZE, s_QMBPopHelper);
+}
+
+static int32_t s_QPopHMB(struct HMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, HMB_Q_MAX_SIZE, s_HMBPopHelper);
+}
+
+static int32_t s_QPopMB(struct MBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, MB_Q_MAX_SIZE, s_MBPopHelper);
+}
+
+static int32_t s_QPopDMB(struct DMBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, DMB_Q_MAX_SIZE, s_DMBPopHelper);
+}
+
+static int32_t s_QPopHGB(struct HGBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, HGB_Q_MAX_SIZE, s_HGBPopHelper);
+}
+
+static int32_t s_QPopGB(struct GBCall *p_CallInfo, struct DSPQueue *p_Queue) {
+    return s_QPopA(p_Queue, p_CallInfo, GB_Q_MAX_SIZE, s_GBPopHelper);
+}
+
+/**
+ * TODO: Return correct error code. This function 'never fails' at the moment.
+ */
+static int32_t s_QPopA(struct DSPQueue *p_Queue, void *p_CallInfo,
+                       uint32_t p_QMaxSize,
+                       int32_t (*p_Fn)(void *, struct DSPQueue *)) {
+    int32_t rc = 0;
+
+    QPOP(p_Queue, p_QMaxSize, do { rc = p_Fn(p_CallInfo, p_Queue); } while (0));
 
     return rc;
 }

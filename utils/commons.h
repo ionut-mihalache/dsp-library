@@ -15,10 +15,10 @@
 
 #define DSP_UNUSED __attribute__((unused))
 
-int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
-                    loff_t p_Size, uint8_t p_Unlink);
+int createShmObject(const char *name, int oflag, mode_t mode, loff_t size,
+                    uint8_t unlink);
 
-void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd);
+void createQ(void **ptrRes, size_t size, int prot, int fd);
 
 void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot);
 
