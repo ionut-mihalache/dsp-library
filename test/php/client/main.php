@@ -319,6 +319,8 @@ $benchmark["disconnect"] = measureFnExec(function () use ($ffi, $connectInfoPtr,
     sendDisconnectRequest($ffi, $connectInfoPtr, $requestInfoPtr);
 });
 
+print_r($benchmark);
+
 $file = fopen("benchmark_results/clients/" . $argv[1] . "/client_benchmark_" . $uniqueId . ".csv", 'a');
 fputcsv($file, [
     $argv[1],

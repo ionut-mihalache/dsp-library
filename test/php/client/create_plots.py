@@ -211,6 +211,6 @@ def create_client_exec_time_plot():
     plt.savefig(sys.argv[1] + "/client_metrics_time_per_clients_bw.pdf", format="pdf")
 
 
-create_exec_time_plot()
-create_alloc_procentage_plot()
+# create_exec_time_plot()
+# create_alloc_procentage_plot()
 create_client_exec_time_plot()
