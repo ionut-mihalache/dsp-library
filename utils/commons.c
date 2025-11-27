@@ -5,15 +5,24 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
-#include <sys/mman.h>
 #include <sys/stat.h>
+
+#ifdef linux
+#include <sys/mman.h>
 #include <sys/user.h>
+#endif
+
+#ifdef _WIN32
+#include <Windows.h>
+#include <tchar.h>
+#endif
 
 #include "log/log.h"
 #include "macros/macros.h"
 
 int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
                     loff_t p_Size, uint8_t p_Unlink) {
+#ifdef linux
     int rc;
     int shmFd;
     uint8_t shouldTruncate = true;
@@ -57,11 +66,31 @@ int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
 
 end:
     return shmFd;
+#endif
+
+#ifdef _WIN32
+    HANDLE hMapFile;
+
+    hMapFile =
+        CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
+                          NULL,                 // default security
+                          PAGE_READWRITE,       // read/write access
+                          0,       // maximum object size (high-order DWORD)
+                          p_Size,  // maximum object size (low-order DWORD)
+                          p_Name); // name of mapping object
+    DIE(hMapFile == NULL, "Could not create shared memory object");
+#endif
 }
 
 void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
+#ifdef linux
     *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED | MAP_POPULATE, p_Fd, 0);
     DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
+#endif
+
+#ifdef _WIN32
+    // TODO: Map the file for windows
+#endif
 }
 
 void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot) {
