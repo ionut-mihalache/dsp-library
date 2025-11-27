@@ -11,11 +11,13 @@
 #include <sys/uio.h>
 #include <unistd.h>
 
+#include "system-types.h"
+
 #define PIPES_DIR ".pipes/"
 
 #define DSP_UNUSED __attribute__((unused))
 
-int createShmObject(const char *name, int oflag, mode_t mode, loff_t size,
+FILE_HANDLE createShmObject(const char *name, int oflag, mode_t mode, loff_t size,
                     uint8_t unlink);
 
 void createQ(void **ptrRes, size_t size, int prot, int fd);

@@ -19,9 +19,12 @@
 
 #include "log/log.h"
 #include "macros/macros.h"
+#include "system-types.h"
 
-int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
-                    loff_t p_Size, uint8_t p_Unlink) {
+FILE_HANDLE createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
+                            loff_t p_Size, uint8_t p_Unlink) {
+    FILE_HANDLE handle;
+
 #ifdef linux
     int rc;
     int shmFd;
@@ -63,23 +66,20 @@ int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
     DIE(rc != 0, "Could not truncate shared memory object");
 
     umask(oldMask);
-
-end:
-    return shmFd;
 #endif
 
 #ifdef _WIN32
-    HANDLE hMapFile;
-
-    hMapFile =
-        CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
-                          NULL,                 // default security
-                          PAGE_READWRITE,       // read/write access
-                          0,       // maximum object size (high-order DWORD)
-                          p_Size,  // maximum object size (low-order DWORD)
-                          p_Name); // name of mapping object
-    DIE(hMapFile == NULL, "Could not create shared memory object");
+    handle = CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
+                               NULL,                 // default security
+                               PAGE_READWRITE,       // read/write access
+                               0,      // maximum object size (high-order DWORD)
+                               p_Size, // maximum object size (low-order DWORD)
+                               p_Name); // name of mapping object
+    DIE(handle == NULL, "Could not create shared memory object");
 #endif
+
+end:
+    return handle;
 }
 
 void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
@@ -90,6 +90,7 @@ void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
 
 #ifdef _WIN32
     // TODO: Map the file for windows
+    // TODO: Use CreateFileMapping and VirtualLock to pin pages in memory (to avoid swap out)
 #endif
 }
 

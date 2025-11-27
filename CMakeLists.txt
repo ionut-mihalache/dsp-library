@@ -47,7 +47,7 @@ set(HEADER_FILES
 add_library(dsp SHARED
     ${SRC_FILES}
     ${HEADER_FILES}
-)
+ "utils/system-types.h")
 
 set_target_properties(dsp PROPERTIES
     VERSION ${LIB_VERSION}
