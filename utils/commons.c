@@ -1,29 +1,29 @@
 #include "commons.h"
 
-#include <errno.h>
 #include <fcntl.h>
+#include <memoryapi.h>
+#include <minwindef.h>
 #include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
 #include <sys/stat.h>
 
 #ifdef linux
+#include <errno.h>
 #include <sys/mman.h>
 #include <sys/user.h>
 #endif
 
 #ifdef _WIN32
-#include <Windows.h>
-#include <tchar.h>
+#include <windows.h>
 #endif
 
-#include "log/log.h"
 #include "macros/macros.h"
 #include "system-types.h"
+#include "system-values.h"
 
-FILE_HANDLE createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
-                            loff_t p_Size, uint8_t p_Unlink) {
-    FILE_HANDLE handle;
+aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
+                                 aqua_mode_t p_Mode, aqua_object_size p_Size,
+                                 uint8_t p_Unlink) {
+    aqua_file_handle handle;
 
 #ifdef linux
     int rc;
@@ -59,10 +59,6 @@ FILE_HANDLE createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
     // The information that we need is an array of pointers to the information
     // that we need
     rc = ftruncate(shmFd, p_Size);
-    if (rc < 0) {
-        ELOGF("There was an error with ftruncate: %s(%d).\n", strerror(errno),
-              errno);
-    }
     DIE(rc != 0, "Could not truncate shared memory object");
 
     umask(oldMask);
@@ -82,29 +78,39 @@ end:
     return handle;
 }
 
-void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
+void createQ(void **p_QPtrRes, aqua_size_t p_Size, aqua_prot_t p_Prot,
+             aqua_file_handle p_FileHandle) {
 #ifdef linux
-    *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED | MAP_POPULATE, p_Fd, 0);
+    *p_QPtrRes =
+        mmap(NULL, p_Size, p_Prot, MAP_SHARED | MAP_POPULATE, p_FileHandle, 0);
     DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
 #endif
 
 #ifdef _WIN32
     // TODO: Map the file for windows
-    // TODO: Use CreateFileMapping and VirtualLock to pin pages in memory (to avoid swap out)
+    // TODO: Use CreateFileMapping and VirtualLock to pin pages in memory (to
+    // avoid swap out)
+    *p_QPtrRes = MapViewOfFile(p_FileHandle, // handle to map object
+                               p_Prot, 0, 0, p_Size);
+    DIE(*p_QPtrRes == NULL, "Could not map return queue memory");
+
+    BOOL bRet = VirtualLock(*p_QPtrRes, p_Size);
+    DIE(bRet == FALSE, "Could not lock memory in RAM");
 #endif
 }
 
-void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot) {
+void triggerKernelPageInit(void *p_MemoryAddr, aqua_size_t p_Size, int p_Prot) {
     volatile char *accessPtr = (volatile char *)p_MemoryAddr;
-    size_t pageIdx;
+    aqua_size_t pageIdx;
+
     switch (p_Prot) {
-    case PROT_READ:
-        for (size_t i = 0; i < p_Size; i++) {
+    case AQUA_PROT_READ:
+        for (aqua_size_t i = 0; i < p_Size; i++) {
             (void)accessPtr[i];
         }
         break;
-    case PROT_WRITE:
-    case PROT_READ | PROT_WRITE:
+    case AQUA_PROT_WRITE:
+    case AQUA_PROT_READ | AQUA_PROT_WRITE:
         for (pageIdx = 0; pageIdx < p_Size; pageIdx += PAGE_SIZE) {
             accessPtr[pageIdx] = 0;
         }

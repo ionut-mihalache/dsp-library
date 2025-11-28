@@ -8,8 +8,6 @@
 #define _FILE_OFFSET_BITS 64
 
 #include <stdint.h>
-#include <sys/uio.h>
-#include <unistd.h>
 
 #include "system-types.h"
 
@@ -17,11 +15,16 @@
 
 #define DSP_UNUSED __attribute__((unused))
 
-FILE_HANDLE createShmObject(const char *name, int oflag, mode_t mode, loff_t size,
-                    uint8_t unlink);
+#ifdef _WIN32
+#define PAGE_SIZE 4096
+#endif
 
-void createQ(void **ptrRes, size_t size, int prot, int fd);
+aqua_file_handle createShmObject(const char *name, int oflag, aqua_mode_t mode,
+                                 aqua_object_size size, uint8_t unlink);
 
-void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot);
+void createQ(void **ptrRes, aqua_size_t size, aqua_prot_t prot,
+             aqua_file_handle fileHandle);
+
+void triggerKernelPageInit(void *memoryAddr, aqua_size_t size, int prot);
 
 #endif // DSP_COMMONS_H

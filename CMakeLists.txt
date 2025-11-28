@@ -42,12 +42,14 @@ set(HEADER_FILES
     utils/log/log.h
     include/dsp.h
     include/protocol.h
+    utils/system-types.h
+    utils/system-values.h
+    utils/locking/locking.h
 )
 
 add_library(dsp SHARED
     ${SRC_FILES}
-    ${HEADER_FILES}
- "utils/system-types.h")
+    ${HEADER_FILES})
 
 set_target_properties(dsp PROPERTIES
     VERSION ${LIB_VERSION}

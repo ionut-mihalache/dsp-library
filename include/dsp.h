@@ -2,13 +2,22 @@
 #define __DSP_H_
 
 #include <fcntl.h>
-#include <pthread.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/stat.h>
-#include <sys/user.h>
-#include <unistd.h>
+
+#include "../utils/system-types.h"
+#include "../utils/locking/locking.h"
+
+#ifdef linux
+#define ALIGN_STRUCT __attribute__((aligned(PAGE_SIZE)))
+#endif
+
+#ifdef _WIN32
+#define PAGE_SIZE 4096
+#define ALIGN_STRUCT(x) __declspec(align(x))
+#endif
 
 #define SHMEM_PATH "/shared_memory"
 #define CONNECT_REQS "/conn-reqs"
@@ -95,13 +104,13 @@ struct ConnectionInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 
-    pthread_cond_t m_ReturnQFullCond;
-    pthread_cond_t m_ReturnQEmptyCond;
-    pthread_cond_t m_RequestResponseQFullCond;
-    pthread_cond_t m_RequestResponseQEmptyCond;
+    aqua_cond_t m_ReturnQFullCond;
+    aqua_cond_t m_ReturnQEmptyCond;
+    aqua_cond_t m_RequestResponseQFullCond;
+    aqua_cond_t m_RequestResponseQEmptyCond;
 
-    pthread_mutex_t m_ReturnQMutex;
-    pthread_mutex_t m_RequestResponseQMutex;
+    aqua_mutex_t m_ReturnQMutex;
+    aqua_mutex_t m_RequestResponseQMutex;
 
     void *m_RequestResponseQ, *m_ReturnQ;
     size_t m_RequestResponseQMapSize, m_ReturnQMapSize;
@@ -114,7 +123,7 @@ struct ConnectionInformation {
     bool m_Connected;
 };
 
-struct InstallInformation {
+struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     struct ConnectionInformation m_Connections[OPENED_CONNECTIONS];
 
     char m_CallQName[CALLQ_NAME_MAX_SIZE];
@@ -123,17 +132,17 @@ struct InstallInformation {
     char m_StrId[STRING_ID_MAX_LENGTH];
     char m_Version[VERSION_MAX_LENGTH];
 
-    pthread_cond_t m_CallQFullCond;
-    pthread_cond_t m_CallQEmptyCond;
-    pthread_cond_t m_ConnectQFullCond;
-    pthread_cond_t m_ConnectQEmptyCond;
-    pthread_cond_t m_DisconnectQFullCond;
-    pthread_cond_t m_DisconnectQEmptyCond;
+    aqua_cond_t m_CallQFullCond;
+    aqua_cond_t m_CallQEmptyCond;
+    aqua_cond_t m_ConnectQFullCond;
+    aqua_cond_t m_ConnectQEmptyCond;
+    aqua_cond_t m_DisconnectQFullCond;
+    aqua_cond_t m_DisconnectQEmptyCond;
 
-    pthread_mutex_t m_CallQMutex;
-    pthread_mutex_t m_ConnectQMutex;
-    pthread_mutex_t m_DisconnectQMutex;
-    pthread_spinlock_t m_ConnectListLock;
+    aqua_mutex_t m_CallQMutex;
+    aqua_mutex_t m_ConnectQMutex;
+    aqua_mutex_t m_DisconnectQMutex;
+    aqua_spinlock_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
@@ -141,20 +150,20 @@ struct InstallInformation {
 
     enum QType m_CallQType;
 
-    pid_t m_ProcId;
+    aqua_pid_t m_ProcId;
     uint8_t m_Available;
-} __attribute__((aligned(PAGE_SIZE)));
+};
 
-struct InstallInfo {
+struct ALIGN_STRUCT(PAGE_SIZE) InstallInfo {
     struct InstallInformation m_Info[SERVICES_NUMBER];
     uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
     uint8_t m_BytesNr;
-} __attribute__((aligned(PAGE_SIZE)));
+};
 
 struct DSPQueueMetadata {
-    pthread_cond_t *m_FullCond;
-    pthread_cond_t *m_EmptyCond;
-    pthread_mutex_t *m_Lock;
+    aqua_cond_t *m_FullCond;
+    aqua_cond_t *m_EmptyCond;
+    aqua_mutex_t *m_Lock;
     uint32_t *m_PushIdxPtr;
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;

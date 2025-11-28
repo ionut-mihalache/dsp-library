@@ -1,6 +1,9 @@
 *.o
 *.so
 *.so.*
+*.obj
+*.dll
+*.dll.*
 .vscode/
 .cache/
 .fleet/
@@ -8,3 +11,4 @@
 .idea/
 build/
 .vs/
+*.pdb
