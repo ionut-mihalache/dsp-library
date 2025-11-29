@@ -2,7 +2,6 @@
 #define __SYSTEM_TYPES_H
 
 #ifdef linux
-#include <sys/user.h>
 #include <unistd.h>
 #include <sys/uio.h>
 

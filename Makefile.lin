@@ -2,7 +2,7 @@
 CC=clang
 LINTER_DEFINES=-D_GNU_SOURCE
 DEBUG_DEFINES=-D__COMPILE_MODE_DEBUG__
-INCLUDES=-Iutils -Iutils/macros -Iutils/hashmap -Iutils/exit -Iutils/log -Iinclude -Iservice/include -Iclient/include
+INCLUDES=-Iutils -Iutils/macros -Iutils/hashmap -Iutils/exit -Iutils/log -Iinclude -Iservice/include -Iclient/include -Iutils/locking
 OPTIONS=-Wall -Wextra -Werror
 OPTIMIZATIONS=-O3
 VERSION=0.0.2

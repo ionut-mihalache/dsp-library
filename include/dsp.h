@@ -10,12 +10,14 @@
 #include "../utils/system-types.h"
 #include "../utils/locking/locking.h"
 
+#define PAGE_SIZE 4096
+
 #ifdef linux
-#define ALIGN_STRUCT __attribute__((aligned(PAGE_SIZE)))
+#include <unistd.h>
+#define ALIGN_STRUCT(x) __attribute__((aligned(x)))
 #endif
 
 #ifdef _WIN32
-#define PAGE_SIZE 4096
 #define ALIGN_STRUCT(x) __declspec(align(x))
 #endif
 

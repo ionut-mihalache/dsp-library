@@ -1,15 +1,12 @@
 #include "commons.h"
 
 #include <fcntl.h>
-#include <memoryapi.h>
-#include <minwindef.h>
 #include <stdbool.h>
 #include <sys/stat.h>
 
 #ifdef linux
 #include <errno.h>
 #include <sys/mman.h>
-#include <sys/user.h>
 #endif
 
 #ifdef _WIN32
@@ -27,7 +24,6 @@ aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
 
 #ifdef linux
     int rc;
-    int shmFd;
     uint8_t shouldTruncate = true;
 
     int oldMask = umask(0);
@@ -36,15 +32,15 @@ aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
         shm_unlink(p_Name); // TODO: This should not happen all the time.
     }
 
-    shmFd = shm_open(p_Name, O_CREAT | O_EXCL | p_Oflag, p_Mode);
-    if (shmFd < 0) {
+    handle = shm_open(p_Name, O_CREAT | O_EXCL | p_Oflag, p_Mode);
+    if (handle < 0) {
         if (errno == EEXIST) {
             shouldTruncate = false;
-            shmFd = shm_open(p_Name, p_Oflag, p_Mode);
+            handle = shm_open(p_Name, p_Oflag, p_Mode);
             goto end;
-            // DIE(shmFd < 0, "Could not open shared memory object");
+            // DIE(handle < 0, "Could not open shared memory object");
         } else {
-            // DIE(shmFd < 0, "Could not open shared memory object");
+            // DIE(handle < 0, "Could not open shared memory object");
             goto end;
         }
     }
@@ -58,7 +54,7 @@ aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
     // Get the number of bytes for the bit map
     // The information that we need is an array of pointers to the information
     // that we need
-    rc = ftruncate(shmFd, p_Size);
+    rc = ftruncate(handle, p_Size);
     DIE(rc != 0, "Could not truncate shared memory object");
 
     umask(oldMask);
