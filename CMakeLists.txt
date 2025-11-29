@@ -5,8 +5,9 @@ project(dsp-library C)
 set(CMAKE_C_STANDARD 23)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_C_COMPILER clang)
+# set(CMAKE_C_COMPILER clang)
 # set(CMAKE_C_COMPILER gcc)
+set(CMAKE_C_COMPLIER clang-cl)
 
 set(LIB_VERSION "0.0.2")
 
@@ -49,7 +50,12 @@ set(HEADER_FILES
 
 add_library(dsp SHARED
     ${SRC_FILES}
-    ${HEADER_FILES})
+    ${HEADER_FILES}
+)
+
+target_sources(dsp PRIVATE
+    ${HEADER_FILES}
+)
 
 set_target_properties(dsp PROPERTIES
     VERSION ${LIB_VERSION}
@@ -64,6 +70,7 @@ target_include_directories(dsp PUBLIC
     include
     service/include
     client/include
+    utils/locking
 )
 
 target_compile_options(dsp PRIVATE
@@ -71,6 +78,7 @@ target_compile_options(dsp PRIVATE
     -Wextra
     -Werror
     -O3
+    -Wno-padded
 )
 
 target_compile_definitions(dsp PRIVATE

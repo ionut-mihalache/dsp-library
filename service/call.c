@@ -1,13 +1,13 @@
 #include <string.h>
-#include <sys/mman.h>
 
 #include "call.h"
 #include "commons.h"
 #include "macros.h"
+#include "system-values.h"
 
 static int32_t s_SMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct SMBCall *qData = p_Queue->m_Data;
+    struct SMBCall *qData = (struct SMBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct SMBCall));
@@ -17,7 +17,7 @@ static int32_t s_SMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_EMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct EMBCall *qData = p_Queue->m_Data;
+    struct EMBCall *qData = (struct EMBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct EMBCall));
@@ -27,7 +27,7 @@ static int32_t s_EMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_QMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct QMBCall *qData = p_Queue->m_Data;
+    struct QMBCall *qData = (struct QMBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct QMBCall));
@@ -37,7 +37,7 @@ static int32_t s_QMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_HMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct HMBCall *qData = p_Queue->m_Data;
+    struct HMBCall *qData = (struct HMBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct HMBCall));
@@ -47,7 +47,7 @@ static int32_t s_HMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_MBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct MBCall *qData = p_Queue->m_Data;
+    struct MBCall *qData = (struct MBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct MBCall));
@@ -57,7 +57,7 @@ static int32_t s_MBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_DMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct DMBCall *qData = p_Queue->m_Data;
+    struct DMBCall *qData = (struct DMBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct DMBCall));
@@ -67,7 +67,7 @@ static int32_t s_DMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_HGBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct HGBCall *qData = p_Queue->m_Data;
+    struct HGBCall *qData = (struct HGBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct HGBCall));
@@ -77,7 +77,7 @@ static int32_t s_HGBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
 
 static int32_t s_GBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct GBCall *qData = p_Queue->m_Data;
+    struct GBCall *qData = (struct GBCall *)p_Queue->m_Data;
 
     memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct GBCall));
@@ -134,8 +134,8 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     int callQFd;
     int qFlag;
     int qProt;
-    mode_t qMode;
-    size_t qSize;
+    aqua_mode_t qMode;
+    aqua_size_t qSize;
     void *callQ;
 
     switch (p_InstallInfo->m_CallQType) {
@@ -143,56 +143,56 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = SMB_Q_MAX_SIZE * sizeof(struct SMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = EMB_Q_MAX_SIZE * sizeof(struct EMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = QMB_Q_MAX_SIZE * sizeof(struct QMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = HMB_Q_MAX_SIZE * sizeof(struct HMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = MB_Q_MAX_SIZE * sizeof(struct MBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = DMB_Q_MAX_SIZE * sizeof(struct DMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = HGB_Q_MAX_SIZE * sizeof(struct HGBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = GB_Q_MAX_SIZE * sizeof(struct GBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     default:

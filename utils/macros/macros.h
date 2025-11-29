@@ -7,10 +7,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include <string.h>
 
 #ifdef linux
 #include <errno.h>
+#include <string.h>
 #endif
 
 #ifdef _WIN32
@@ -88,6 +88,7 @@
     })
 #endif
 
+#ifdef linux
 #define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
     do {                                                                       \
         pthread_mutex_lock((p_Queue)->m_Metadata.m_Lock);                      \
@@ -125,5 +126,48 @@
                                                                                \
         pthread_cond_broadcast((p_Queue)->m_Metadata.m_EmptyCond);             \
     } while (0)
+#endif
+
+#ifdef _WIN32
+#define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
+    do {                                                                       \
+        WaitForSingleObject(*(p_Queue->m_Metadata.m_Lock), INFINITE);          \
+        while (*(p_Queue)->m_Metadata.m_Size == (p_QMaxSize)) {                \
+            ReleaseMutex(*(p_Queue->m_Metadata.m_Lock));                       \
+            WaitForSingleObject(*(p_Queue->m_Metadata.m_EmptyCond), INFINITE); \
+            WaitForSingleObject(*(p_Queue->m_Metadata.m_Lock), INFINITE);      \
+        }                                                                      \
+                                                                               \
+        p_Code;                                                                \
+                                                                               \
+        (*(p_Queue)->m_Metadata.m_PushIdxPtr) =                                \
+            ((*(p_Queue)->m_Metadata.m_PushIdxPtr) + 1) % (p_QMaxSize);        \
+        (*(p_Queue)->m_Metadata.m_Size)++;                                     \
+                                                                               \
+        ReleaseMutex(*(p_Queue->m_Metadata.m_Lock));                           \
+                                                                               \
+        SetEvent(*(p_Queue->m_Metadata.m_FullCond));                           \
+    } while (0)
+
+#define QPOP(p_Queue, p_QMaxSize, p_Code)                                      \
+    do {                                                                       \
+        WaitForSingleObject(*(p_Queue->m_Metadata.m_Lock), INFINITE);          \
+        while (*(p_Queue)->m_Metadata.m_Size == 0) {                           \
+            ReleaseMutex(*(p_Queue->m_Metadata.m_Lock));                       \
+            WaitForSingleObject(*(p_Queue->m_Metadata.m_FullCond), INFINITE);  \
+            WaitForSingleObject(*(p_Queue->m_Metadata.m_Lock), INFINITE);      \
+        }                                                                      \
+                                                                               \
+        p_Code;                                                                \
+                                                                               \
+        (*(p_Queue)->m_Metadata.m_PopIdxPtr) =                                 \
+            ((*(p_Queue)->m_Metadata.m_PopIdxPtr) + 1) % (p_QMaxSize);         \
+        (*(p_Queue)->m_Metadata.m_Size)--;                                     \
+                                                                               \
+        ReleaseMutex(*(p_Queue->m_Metadata.m_Lock));                           \
+                                                                               \
+        SetEvent(*(p_Queue->m_Metadata.m_EmptyCond));                          \
+    } while (0)
+#endif
 
 #endif // DSP_MACROS_H

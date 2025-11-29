@@ -58,11 +58,12 @@ aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
     DIE(rc != 0, "Could not truncate shared memory object");
 
     umask(oldMask);
+end:
 #endif
 
 #ifdef _WIN32
     handle = CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
-                               NULL,                 // default security
+                               p_Mode,               // default security
                                PAGE_READWRITE,       // read/write access
                                0,      // maximum object size (high-order DWORD)
                                p_Size, // maximum object size (low-order DWORD)
@@ -70,7 +71,6 @@ aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
     DIE(handle == NULL, "Could not create shared memory object");
 #endif
 
-end:
     return handle;
 }
 
@@ -83,14 +83,13 @@ void createQ(void **p_QPtrRes, aqua_size_t p_Size, aqua_prot_t p_Prot,
 #endif
 
 #ifdef _WIN32
-    // TODO: Map the file for windows
-    // TODO: Use CreateFileMapping and VirtualLock to pin pages in memory (to
-    // avoid swap out)
+    BOOL bRet;
+
     *p_QPtrRes = MapViewOfFile(p_FileHandle, // handle to map object
                                p_Prot, 0, 0, p_Size);
     DIE(*p_QPtrRes == NULL, "Could not map return queue memory");
 
-    BOOL bRet = VirtualLock(*p_QPtrRes, p_Size);
+    bRet = VirtualLock(*p_QPtrRes, p_Size);
     DIE(bRet == FALSE, "Could not lock memory in RAM");
 #endif
 }

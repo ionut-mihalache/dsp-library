@@ -4,6 +4,7 @@
 #include "commons.h"
 #include "log.h"
 #include "macros.h"
+#include "system-types.h"
 #include "return.h"
 
 static int32_t s_SendReturnFnSMBHelper(struct DSPQueue *p_Queue,
@@ -32,7 +33,7 @@ end:
 static int32_t s_SendReturnFnEMBHelper(struct DSPQueue *p_Queue,
                                        void *p_ReturnData) {
     int32_t rc = 0;
-    struct EMBCall *qData = p_Queue->m_Data;
+    struct EMBCall *qData = (struct EMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
            sizeof(struct EMBCall));
@@ -43,7 +44,7 @@ static int32_t s_SendReturnFnEMBHelper(struct DSPQueue *p_Queue,
 static int32_t s_SendReturnFnQMBHelper(struct DSPQueue *p_Queue,
                                        void *p_ReturnData) {
     int32_t rc = 0;
-    struct QMBCall *qData = p_Queue->m_Data;
+    struct QMBCall *qData = (struct QMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
            sizeof(struct QMBCall));
@@ -54,7 +55,7 @@ static int32_t s_SendReturnFnQMBHelper(struct DSPQueue *p_Queue,
 static int32_t s_SendReturnFnHMBHelper(struct DSPQueue *p_Queue,
                                        void *p_ReturnData) {
     int32_t rc = 0;
-    struct HMBCall *qData = p_Queue->m_Data;
+    struct HMBCall *qData = (struct HMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
            sizeof(struct HMBCall));
@@ -65,7 +66,7 @@ static int32_t s_SendReturnFnHMBHelper(struct DSPQueue *p_Queue,
 static int32_t s_SendReturnFnMBHelper(struct DSPQueue *p_Queue,
                                       void *p_ReturnData) {
     int32_t rc = 0;
-    struct MBCall *qData = p_Queue->m_Data;
+    struct MBCall *qData = (struct MBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
            sizeof(struct MBCall));
@@ -76,7 +77,7 @@ static int32_t s_SendReturnFnMBHelper(struct DSPQueue *p_Queue,
 static int32_t s_SendReturnFnDMBHelper(struct DSPQueue *p_Queue,
                                        void *p_ReturnData) {
     int32_t rc = 0;
-    struct DMBCall *qData = p_Queue->m_Data;
+    struct DMBCall *qData = (struct DMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
            sizeof(struct DMBCall));
@@ -87,7 +88,7 @@ static int32_t s_SendReturnFnDMBHelper(struct DSPQueue *p_Queue,
 static int32_t s_SendReturnFnHGBHelper(struct DSPQueue *p_Queue,
                                        void *p_ReturnData) {
     int32_t rc = 0;
-    struct HGBCall *qData = p_Queue->m_Data;
+    struct HGBCall *qData = (struct HGBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
            sizeof(struct HGBCall));
@@ -98,7 +99,7 @@ static int32_t s_SendReturnFnHGBHelper(struct DSPQueue *p_Queue,
 static int32_t s_SendReturnFnGBHelper(struct DSPQueue *p_Queue,
                                       void *p_ReturnData) {
     int32_t rc = 0;
-    struct GBCall *qData = p_Queue->m_Data;
+    struct GBCall *qData = (struct GBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
            sizeof(struct GBCall));
@@ -206,8 +207,8 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     uint32_t connectionIdx;
     int qFlag;
     int qProt;
-    mode_t qMode;
-    size_t qSize;
+    aqua_mode_t qMode;
+    aqua_size_t qSize;
     void *returnQ;
 
     connectionIdx = p_Request->m_ConnectionIdx;

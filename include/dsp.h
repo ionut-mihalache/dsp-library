@@ -1,5 +1,5 @@
-#ifndef __DSP_H_
-#define __DSP_H_
+#ifndef AQUA_DSP_H_
+#define AQUA_DSP_H_
 
 #include <fcntl.h>
 #include <stdbool.h>
@@ -7,8 +7,8 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "../utils/system-types.h"
-#include "../utils/locking/locking.h"
+#include "system-types.h"
+#include "locking.h"
 
 #define PAGE_SIZE 4096
 
@@ -217,4 +217,4 @@ struct DSPQueue {
     enum QType m_Type;
 };
 
-#endif // __DSP_H_
+#endif // AQUA_DSP_H_
