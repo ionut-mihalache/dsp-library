@@ -21,7 +21,10 @@ aqua_file_handle createShmObject(const char *name, int oflag, aqua_mode_t mode,
 aqua_void_t createQ(aqua_void_t **ptrRes, aqua_size_t size, aqua_prot_t prot,
                     aqua_file_handle fileHandle);
 
+aqua_void_t createQSimple(aqua_void_t **ptrRes, aqua_size_t size,
+                          aqua_prot_t prot, aqua_file_handle fileHandle);
+
 aqua_void_t triggerKernelPageInit(aqua_void_t *memoryAddr, aqua_size_t size,
-                                  int prot);
+                                  aqua_prot_t prot);
 
 #endif // AQUA_DSP_COMMONS_H

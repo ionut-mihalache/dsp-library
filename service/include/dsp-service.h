@@ -1,5 +1,5 @@
-#ifndef __DSP_SERVICE_H
-#define __DSP_SERVICE_H
+#ifndef AQUA_DSP_SERVICE_H
+#define AQUA_DSP_SERVICE_H
 
 #include "dsp.h"
 
@@ -38,7 +38,7 @@ struct ServiceConnectInfo {
     int32_t (*m_ReceiveDisconnectRequest)(struct ServiceConnectInfo *);
 };
 
-void initService();
+void initService(void);
 
 void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                 struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
@@ -47,4 +47,4 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
 void receiveCall(void *, struct ServiceCallInfo *);
 void sendReturn(struct ServiceReturnInfo *, void *);
 
-#endif // __DSP_SERVICE_H
+#endif // AQUA_DSP_SERVICE_H

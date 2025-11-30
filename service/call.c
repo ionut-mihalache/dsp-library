@@ -2,6 +2,7 @@
 
 #include "call.h"
 #include "commons.h"
+#include "dsp.h"
 #include "macros.h"
 #include "system-values.h"
 
@@ -131,66 +132,77 @@ int32_t
 configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
                                 struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
-    int callQFd;
+    aqua_file_handle callQHandle;
     int qFlag;
-    int qProt;
+    aqua_prot_t qProt;
     aqua_mode_t qMode;
-    aqua_size_t qSize;
-    void *callQ;
+    aqua_object_size_t qSize;
+    aqua_void_t *callQ;
+#if defined(_WIN32)
+    char qSyncName[RETURNQ_NAME_MAX_SIZE];
+#endif
 
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = SMB_Q_MAX_SIZE * sizeof(struct SMBCall);
         qProt = AQUA_PROT_READ;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = EMB_Q_MAX_SIZE * sizeof(struct EMBCall);
         qProt = AQUA_PROT_READ;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = QMB_Q_MAX_SIZE * sizeof(struct QMBCall);
         qProt = AQUA_PROT_READ;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = HMB_Q_MAX_SIZE * sizeof(struct HMBCall);
         qProt = AQUA_PROT_READ;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = MB_Q_MAX_SIZE * sizeof(struct MBCall);
         qProt = AQUA_PROT_READ;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = DMB_Q_MAX_SIZE * sizeof(struct DMBCall);
         qProt = AQUA_PROT_READ;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = HGB_Q_MAX_SIZE * sizeof(struct HGBCall);
         qProt = AQUA_PROT_READ;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = GB_Q_MAX_SIZE * sizeof(struct GBCall);
         qProt = AQUA_PROT_READ;
 
@@ -202,15 +214,20 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
         DIE(true, "QType is not recognized");
     }
 
-    callQFd =
+    callQHandle =
         createShmObject(p_InstallInfo->m_CallQName, qFlag, qMode, qSize, true);
 
-    createQ(&callQ, qSize, qProt, callQFd);
+    createQ(&callQ, qSize, qProt, callQHandle);
 
     triggerKernelPageInit(callQ, qSize, qProt);
 
-    rc = close(callQFd);
-    DIE(rc != 0, "Could not close callQFd");
+#if defined(__linux__)
+    rc = close(callQHandle);
+    DIE(rc != 0, "Could not close callQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(callQHandle), "Could not close callQHandle");
+#else
+#endif
 
     p_CallInfo->m_ReceiveCallFn = s_QPop;
     p_CallInfo->m_Q.m_Data = callQ;
@@ -219,6 +236,7 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
     p_CallInfo->m_Q.m_Type = p_InstallInfo->m_CallQType;
 
+#if defined(__linux__)
     pthread_mutexattr_t attr;
     rc = pthread_mutexattr_init(&attr);
     DIE(rc != 0, "Could not init mutex attribute");
@@ -241,6 +259,21 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     pthread_cond_init(&p_InstallInfo->m_CallQEmptyCond, &condAttr);
 
     pthread_condattr_destroy(&condAttr);
+#elif defined(_WIN32)
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "callQ-event-full");
+    p_InstallInfo->m_CallQFullCond = CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_CallQFullCond == NULL,
+        "Could not create call queue full event");
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "callQ-event-empty");
+    p_InstallInfo->m_CallQEmptyCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_CallQEmptyCond == NULL,
+        "Could not create call queue empty event");
+#else
+#endif
 
     p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;

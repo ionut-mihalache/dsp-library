@@ -1,7 +1,8 @@
-#ifndef __DSP_CLIENT_H_
-#define __DSP_CLIENT_H_
+#ifndef AQUA_DSP_CLIENT_H_
+#define AQUA_DSP_CLIENT_H_
 
 #include "dsp.h"
+#include "locking.h"
 
 struct ClientCallInfo {
     struct DSPQueue m_Q;
@@ -32,7 +33,7 @@ struct ClientConnectInfo {
     struct ConnectQueue m_ConnectQ;
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
-    pthread_spinlock_t *m_ConnectLock;
+    aqua_spinlock_t *m_ConnectLock;
     int32_t (*m_SendConnectRequest)(struct ClientReturnInfo *,
                                     struct ClientConnectInfo *,
                                     struct ClientConnectRequestInformation *);
@@ -64,4 +65,4 @@ void retriveInitInformation(struct ClientConnectInfo *p_ConnectInfo,
 struct ConnectResponseInformation *
 getConnectResponse(struct ClientReturnInfo *p_ReturnInfo);
 
-#endif // __DSP_CLIENT_H
+#endif // AQUA_DSP_CLIENT_H_

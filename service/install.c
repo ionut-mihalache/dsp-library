@@ -1,19 +1,25 @@
+#include <stdio.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include "commons.h"
 #include "install.h"
+#include "dsp.h"
 #include "macros.h"
 #include "return.h"
+#include "system-values.h"
 
 int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
     uint32_t i;
     struct ConnectionInformation *connInfo;
+#if defined(_WIN32)
+    char qSyncName[RETURNQ_NAME_MAX_SIZE];
+#endif
 
     for (i = 0; i < OPENED_CONNECTIONS; ++i) {
         connInfo = &p_InstallInfo->m_Connections[i];
 
+#if defined(__linux__)
         pthread_mutexattr_t attr;
         rc = pthread_mutexattr_init(&attr);
         DIE(rc != 0, "Could not init mutex attribute");
@@ -58,6 +64,49 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
 
         rc = pthread_condattr_destroy(&condAttr);
         DIE(rc != 0, "Could not destroy condition attribute object");
+#elif defined(_WIN32)
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+                 p_InstallInfo->m_StrId, "returnQ-lock", i);
+        connInfo->m_ReturnQMutex = CreateMutex(NULL, FALSE, qSyncName);
+        DIE(connInfo->m_ReturnQMutex == NULL,
+            "Could not create return queue mutex");
+
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+                 p_InstallInfo->m_StrId, "requestResponseQ-lock", i);
+        connInfo->m_RequestResponseQMutex = CreateMutex(NULL, FALSE, NULL);
+        DIE(connInfo->m_RequestResponseQMutex == NULL,
+            "Could not create request-response queue mutex");
+
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+                 p_InstallInfo->m_StrId, "returnQ-event-full", i);
+        connInfo->m_ReturnQFullCond =
+            CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        DIE(connInfo->m_ReturnQFullCond == NULL,
+            "Could not create return queue full event");
+
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+                 p_InstallInfo->m_StrId, "returnQ-event-empty", i);
+        connInfo->m_ReturnQEmptyCond =
+            CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        DIE(connInfo->m_ReturnQEmptyCond == NULL,
+            "Could not create return queue empty event");
+
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+                 p_InstallInfo->m_StrId, "requestResponseQ-event-full", i);
+        connInfo->m_RequestResponseQFullCond =
+            CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        DIE(connInfo->m_RequestResponseQFullCond == NULL,
+            "Could not create request-response full event");
+
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+                 p_InstallInfo->m_StrId, "requestResponseQ-event-empty", i);
+        connInfo->m_RequestResponseQEmptyCond =
+            CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        DIE(connInfo->m_RequestResponseQEmptyCond == NULL,
+            "Could not create request-response empty event");
+
+#else
+#endif
     }
 
     return rc;
@@ -129,6 +178,7 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
             connId = queue->m_Data[idx].m_ConnectionIdx;
         } while (0));
 
+#if defined(__linux__)
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
 
     rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
@@ -152,7 +202,23 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     p_ConnectInfo->m_Connections[connId].m_Connected = false;
 
     pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+#elif defined(_WIN32)
+    WaitForSingleObject(*p_ConnectInfo->m_ConnectLock, INFINITE);
 
+    DIE(!UnmapViewOfFile(
+            p_ConnectInfo->m_Connections[connId].m_RequestResponseQ),
+        "Could not unmap request response queue");
+    p_ConnectInfo->m_Connections[connId].m_RequestResponseQ = NULL;
+
+    DIE(!UnmapViewOfFile(p_ConnectInfo->m_Connections[connId].m_ReturnQ),
+        "Could not unmap request response queue");
+    p_ConnectInfo->m_Connections[connId].m_ReturnQ = NULL;
+
+    // TODO: Check how to handle unlinking for windows
+
+    ReleaseMutex(*p_ConnectInfo->m_ConnectLock);
+#else
+#endif
     return rc;
 }
 
@@ -160,7 +226,12 @@ int32_t
 configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
                                    struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
-    int connectQFd, disconnectQFd;
+    aqua_file_handle connectQHandle, disconnectQHandle;
+    struct ConnectRequest *connectQ;
+    struct ConnectRequest *disconnectQ;
+#if defined(_WIN32)
+    char qSyncName[RETURNQ_NAME_MAX_SIZE];
+#endif
 
     p_InstallInfo->m_ConnectQPushIdx = 0;
     p_InstallInfo->m_ConnectQPopIdx = 0;
@@ -170,39 +241,49 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_InstallInfo->m_DisconnectQPopIdx = 0;
     p_InstallInfo->m_DisconnectQSize = 0;
 
-    connectQFd = createShmObject(
+    connectQHandle = createShmObject(
         p_InstallInfo->m_ConnectQName, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+        AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+            AQUA_S_IROTH | AQUA_S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
-    struct ConnectRequest *connectQ;
-    createQ((void **)&connectQ,
+    createQ((aqua_void_t **)&connectQ,
             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-            PROT_READ | PROT_WRITE, connectQFd);
+            AQUA_PROT_READ | AQUA_PROT_WRITE, connectQHandle);
 
     triggerKernelPageInit(connectQ,
                           CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-                          PROT_READ | PROT_WRITE);
+                          AQUA_PROT_READ | AQUA_PROT_WRITE);
 
-    rc = close(connectQFd);
-    DIE(rc != 0, "Could not close connectQFd");
+#if defined(__linux__)
+    rc = close(connectQHandle);
+    DIE(rc != 0, "Could not close connectQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(connectQHandle), "Could not close connectQHandle");
+#else
+#endif
 
-    disconnectQFd = createShmObject(
+    disconnectQHandle = createShmObject(
         p_InstallInfo->m_DisconnectQName, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+        AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+            AQUA_S_IROTH | AQUA_S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
-    struct ConnectRequest *disconnectQ;
-    createQ((void **)&disconnectQ,
+    createQ((aqua_void_t **)&disconnectQ,
             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-            PROT_READ | PROT_WRITE, connectQFd);
+            AQUA_PROT_READ | AQUA_PROT_WRITE, connectQHandle);
 
     triggerKernelPageInit(disconnectQ,
                           CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-                          PROT_READ | PROT_WRITE);
+                          AQUA_PROT_READ | AQUA_PROT_WRITE);
 
-    rc = close(disconnectQFd);
-    DIE(rc != 0, "Could not close disconnectQFd");
+#if defined(__linux__)
+    rc = close(disconnectQHandle);
+    DIE(rc != 0, "Could not close disconnectQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(disconnectQHandle), "Could not close disconnectQHandle");
+#else
+#endif
 
     p_ConnectInfo->m_ReceiveConnectRequest = s_ReceiveConnectRequest;
     p_ConnectInfo->m_ConnectQ.m_Data = connectQ;
@@ -223,6 +304,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Size =
         &p_InstallInfo->m_DisconnectQSize;
 
+#if defined(__linux__)
     pthread_mutexattr_t attr;
     rc = pthread_mutexattr_init(&attr);
     DIE(rc != 0, "Could not init mutex attribute");
@@ -260,6 +342,54 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     pthread_cond_init(&p_InstallInfo->m_DisconnectQEmptyCond, &condAttr);
 
     pthread_condattr_destroy(&condAttr);
+#elif defined(_WIN32)
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "connectlist-lock");
+    p_InstallInfo->m_ConnectListLock = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_ConnectListLock == NULL,
+        "Could not create connect list mutex");
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "connectQ-lock");
+    p_InstallInfo->m_ConnectQMutex = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_ConnectQMutex == NULL,
+        "Could not create connect queue mutex");
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "disconnectQ-lock");
+    p_InstallInfo->m_DisconnectQMutex = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_DisconnectQMutex == NULL,
+        "Could not create disconnect queue mutex");
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "connectQ-event-full");
+    p_InstallInfo->m_ConnectQFullCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_ConnectQFullCond == NULL,
+        "Could not create connect queue full event");
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "connectQ-event-empty");
+    p_InstallInfo->m_ConnectQEmptyCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_ConnectQEmptyCond == NULL,
+        "Could not create connect queue empty event");
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "disconnectQ-event-full");
+    p_InstallInfo->m_DisconnectQFullCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_DisconnectQFullCond == NULL,
+        "Could not create disconnect queue full event");
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "disconnectQ-event-empty");
+    p_InstallInfo->m_DisconnectQEmptyCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_DisconnectQEmptyCond == NULL,
+        "Could not create disconnect queue empty event");
+#else
+#endif
 
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
         &p_InstallInfo->m_ConnectQMutex;

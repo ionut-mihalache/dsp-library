@@ -17,19 +17,15 @@ LIB_NAME=dsp.lib
 OBJDIR=object_win
 LIBDIR=lib_win
 
-# OBJS= \
-# 	$(OBJDIR)\dsp-service-install.obj \
-# 	$(OBJDIR)\dsp-service-call.obj \
-# 	$(OBJDIR)\dsp-service-return.obj \
-# 	$(OBJDIR)\dsp-service.obj \
-# 	$(OBJDIR)\dsp-client-connect.obj \
-# 	$(OBJDIR)\dsp-client-call.obj \
-# 	$(OBJDIR)\dsp-client.obj \
-# 	$(OBJDIR)\commons.obj
-
 OBJS= \
-	$(OBJDIR)\commons.obj
-
+	$(OBJDIR)\dsp-service-install.obj \
+ 	$(OBJDIR)\dsp-service-call.obj \
+ 	$(OBJDIR)\dsp-service-return.obj \
+ 	$(OBJDIR)\dsp-service.obj \
+ 	$(OBJDIR)\dsp-client-connect.obj \
+ 	$(OBJDIR)\dsp-client-call.obj \
+ 	$(OBJDIR)\dsp-client.obj \
+ 	$(OBJDIR)\commons.obj
 
 # -------------------------
 # Main targets

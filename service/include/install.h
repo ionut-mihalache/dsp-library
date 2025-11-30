@@ -1,5 +1,5 @@
-#ifndef __DSP_SERVICE_INSTALL_H
-#define __DSP_SERVICE_INSTALL_H
+#ifndef AQUA_DSP_SERVICE_INSTALL_H
+#define AQUA_DSP_SERVICE_INSTALL_H
 
 #include "dsp-service.h"
 
@@ -9,4 +9,4 @@ int32_t
 configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
                                    struct InstallInformation *p_InstallInfo);
 
-#endif // __DSP_SERVICE_INSTALL_H
+#endif // AQUA_DSP_SERVICE_INSTALL_H

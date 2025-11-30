@@ -233,7 +233,7 @@ struct CONNECTION_QUEUE(DisconnectQueue);
 
 struct DSPQueue {
     struct DSPQueueMetadata m_Metadata;
-    void *m_Data;
+    aqua_void_t *m_Data;
     uint32_t m_MaxSize;
     enum QType m_Type;
 };

@@ -1,7 +1,5 @@
 #include <stdbool.h>
 #include <string.h>
-#include <sys/shm.h>
-#include <sys/mman.h>
 
 #include "dsp.h"
 
@@ -11,6 +9,7 @@
 #include "dsp-client.h"
 #include "log.h"
 #include "macros.h"
+#include "system-values.h"
 
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,
@@ -50,56 +49,56 @@ int32_t setCallData(int p_Type, void *p_CallInfo, uint8_t *p_Data,
 
     switch (p_Type) {
     case SMBQ: {
-        struct SMBCall *callInfo = p_CallInfo;
+        struct SMBCall *callInfo = (struct SMBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
         break;
     }
     case EMBQ: {
-        struct EMBCall *callInfo = p_CallInfo;
+        struct EMBCall *callInfo = (struct EMBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
         break;
     }
     case QMBQ: {
-        struct QMBCall *callInfo = p_CallInfo;
+        struct QMBCall *callInfo = (struct QMBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
         break;
     }
     case HMBQ: {
-        struct HMBCall *callInfo = p_CallInfo;
+        struct HMBCall *callInfo = (struct HMBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
         break;
     }
     case MBQ: {
-        struct MBCall *callInfo = p_CallInfo;
+        struct MBCall *callInfo = (struct MBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
         break;
     }
     case DMBQ: {
-        struct DMBCall *callInfo = p_CallInfo;
+        struct DMBCall *callInfo = (struct DMBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
         break;
     }
     case HGBQ: {
-        struct HGBCall *callInfo = p_CallInfo;
+        struct HGBCall *callInfo = (struct HGBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
         break;
     }
     case GBQ: {
-        struct GBCall *callInfo = p_CallInfo;
+        struct GBCall *callInfo = (struct GBCall *)p_CallInfo;
         memcpy(callInfo->m_CallInfo, p_Data, p_Size);
         callInfo->m_Metadata.m_Size = p_Size;
 
@@ -115,22 +114,20 @@ int32_t setCallData(int p_Type, void *p_CallInfo, uint8_t *p_Data,
 void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
                 struct ClientCallInfo *p_CallInfo, const char *p_ServiceStrId) {
     int rc;
-    int installShmFd;
+    aqua_file_handle installShmHandle;
     struct InstallInformation *installInfo;
     uint8_t connected = false;
     uint16_t i;
+    struct InstallInfo *installMemZone;
 
-    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR,
-                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                                       S_IROTH | S_IWOTH,
-                                   sizeof(struct InstallInfo), false);
-    DIE(installShmFd < 0,
-        "Could not open install memory zone shared memory object");
+    installShmHandle =
+        createShmObject(INSTALL_MZONE, O_RDWR,
+                        AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP |
+                            AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH,
+                        sizeof(struct InstallInfo), false);
 
-    struct InstallInfo *installMemZone =
-        mmap(NULL, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
-             MAP_SHARED, installShmFd, 0);
-    DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
+    createQSimple((aqua_void_t **)&installMemZone, sizeof(struct InstallInfo),
+                  AQUA_PROT_READ | AQUA_PROT_WRITE, installShmHandle);
 
     for (i = 0; i < SERVICES_NUMBER; ++i) {
         if (!installMemZone->m_Info[i].m_Available) {
@@ -152,16 +149,32 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
         return;
     }
 
+#if defined(__linux__)
     rc = munmap(installMemZone, sizeof(struct InstallInfo));
     DIE(rc != 0, "Could not unmap install memory zone");
+#elif defined(_WIN32)
+    DIE(!UnmapViewOfFile(installMemZone),
+        "Could not unmap install memory zone");
+#else
+#endif
 
     /**
      * Map only the information of the service
      */
+#if defined(__linux__)
     installInfo = (struct InstallInformation *)mmap(
         NULL, sizeof(struct InstallInformation), PROT_READ | PROT_WRITE,
-        MAP_SHARED, installShmFd, i * sizeof(struct InstallInformation));
+        MAP_SHARED, installShmHandle, i * sizeof(struct InstallInformation));
     DIE(installInfo == MAP_FAILED, "Could not map service information");
+#elif defined(_WIN32)
+    installInfo = (struct InstallInformation *)MapViewOfFile(
+        installShmHandle, // handle to map object
+        AQUA_PROT_READ | AQUA_PROT_WRITE, 0,
+        i * sizeof(struct InstallInformation),
+        sizeof(struct InstallInformation));
+    DIE(installInfo == NULL, "Could not map service information");
+#else
+#endif
 
     configureClientConnectInformation(p_ConnectInfo, installInfo);
     configureClientCallInformation(p_CallInfo, installInfo);

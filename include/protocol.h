@@ -2,8 +2,8 @@
 // Created by ionut on 02.06.2024.
 //
 
-#ifndef __DSP_COMPONENTS_H
-#define __DSP_COMPONENTS_H
+#ifndef AQUA_DSP_COMPONENTS_H
+#define AQUA_DSP_COMPONENTS_H
 
 #include <stdint.h>
 
@@ -132,4 +132,4 @@ struct CallingHeader {
                                    */
 } DSP_PACKED;
 
-#endif // __DSP_COMPONENTS_H
+#endif // AQUA_DSP_COMPONENTS_H

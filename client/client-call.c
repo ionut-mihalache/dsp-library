@@ -166,7 +166,7 @@ int32_t
 configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
                                struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
-    aqua_file_handle callQFd;
+    aqua_file_handle callQHandle;
     int qFlag;
     aqua_prot_t qProt;
     aqua_mode_t qMode;
@@ -176,56 +176,64 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = SMB_Q_MAX_SIZE * sizeof(struct SMBCall);
         qProt = AQUA_PROT_WRITE;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = EMB_Q_MAX_SIZE * sizeof(struct EMBCall);
         qProt = AQUA_PROT_WRITE;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = QMB_Q_MAX_SIZE * sizeof(struct QMBCall);
         qProt = AQUA_PROT_WRITE;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = HMB_Q_MAX_SIZE * sizeof(struct HMBCall);
         qProt = AQUA_PROT_WRITE;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = MB_Q_MAX_SIZE * sizeof(struct MBCall);
         qProt = AQUA_PROT_WRITE;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = DMB_Q_MAX_SIZE * sizeof(struct DMBCall);
         qProt = AQUA_PROT_WRITE;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = HGB_Q_MAX_SIZE * sizeof(struct HGBCall);
         qProt = AQUA_PROT_WRITE;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
-        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = GB_Q_MAX_SIZE * sizeof(struct GBCall);
         qProt = AQUA_PROT_WRITE;
 
@@ -237,13 +245,18 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
         DIE(true, "QType is not recognized");
     }
 
-    callQFd =
+    callQHandle =
         createShmObject(p_InstallInfo->m_CallQName, qFlag, qMode, qSize, false);
 
-    createQ(&callQ, qSize, qProt, callQFd);
+    createQ(&callQ, qSize, qProt, callQHandle);
 
-    rc = close(callQFd);
-    DIE(rc != 0, "Could not close callQFd");
+#if defined(__linux__)
+    rc = close(callQHandle);
+    DIE(rc != 0, "Could not close callQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(callQHandle), "Could not close callQHandle");
+#else
+#endif
 
     p_CallInfo->m_CallFn = s_QPush;
 

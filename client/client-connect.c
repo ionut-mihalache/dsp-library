@@ -1,14 +1,15 @@
 #include <string.h>
-#include <sys/mman.h>
 
 #include "client-connect.h"
 #include "commons.h"
+#include "dsp.h"
 #include "macros.h"
+#include "system-values.h"
 
 static int32_t s_ReturnFnSMBHelper(void *p_ReturnData,
                                    struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct SMBCall *qData = p_Queue->m_Data;
+    struct SMBCall *qData = (struct SMBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct SMBCall));
@@ -19,7 +20,7 @@ static int32_t s_ReturnFnSMBHelper(void *p_ReturnData,
 static int32_t s_ReturnFnEMBHelper(void *p_ReturnData,
                                    struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct EMBCall *qData = p_Queue->m_Data;
+    struct EMBCall *qData = (struct EMBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct EMBCall));
@@ -30,7 +31,7 @@ static int32_t s_ReturnFnEMBHelper(void *p_ReturnData,
 static int32_t s_ReturnFnQMBHelper(void *p_ReturnData,
                                    struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct QMBCall *qData = p_Queue->m_Data;
+    struct QMBCall *qData = (struct QMBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct QMBCall));
@@ -41,7 +42,7 @@ static int32_t s_ReturnFnQMBHelper(void *p_ReturnData,
 static int32_t s_ReturnFnHMBHelper(void *p_ReturnData,
                                    struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct HMBCall *qData = p_Queue->m_Data;
+    struct HMBCall *qData = (struct HMBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct HMBCall));
@@ -52,7 +53,7 @@ static int32_t s_ReturnFnHMBHelper(void *p_ReturnData,
 static int32_t s_ReturnFnMBHelper(void *p_ReturnData,
                                   struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct MBCall *qData = p_Queue->m_Data;
+    struct MBCall *qData = (struct MBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct MBCall));
@@ -63,7 +64,7 @@ static int32_t s_ReturnFnMBHelper(void *p_ReturnData,
 static int32_t s_ReturnFnDMBHelper(void *p_ReturnData,
                                    struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct DMBCall *qData = p_Queue->m_Data;
+    struct DMBCall *qData = (struct DMBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct DMBCall));
@@ -74,7 +75,7 @@ static int32_t s_ReturnFnDMBHelper(void *p_ReturnData,
 static int32_t s_ReturnFnHGBHelper(void *p_ReturnData,
                                    struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct HGBCall *qData = p_Queue->m_Data;
+    struct HGBCall *qData = (struct HGBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct HGBCall));
@@ -85,7 +86,7 @@ static int32_t s_ReturnFnHGBHelper(void *p_ReturnData,
 static int32_t s_ReturnFnGBHelper(void *p_ReturnData,
                                   struct DSPQueue *p_Queue) {
     int32_t rc = 0;
-    struct GBCall *qData = p_Queue->m_Data;
+    struct GBCall *qData = (struct GBCall *)p_Queue->m_Data;
 
     memcpy(p_ReturnData, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
            sizeof(struct GBCall));
@@ -93,65 +94,31 @@ static int32_t s_ReturnFnGBHelper(void *p_ReturnData,
     return rc;
 }
 
-static int32_t s_ReturnFnA(struct DSPQueue *p_Queue, void *p_ReturnData,
-                           uint32_t p_QMaxSize,
-                           int32_t (*p_Fn)(void *, struct DSPQueue *)) {
-    int32_t rc = 0;
+static int32_t s_ReturnFnSMB(struct SMBCall *returnData,
+                             struct DSPQueue *queue);
 
-    QPOP(
-        p_Queue, p_QMaxSize,
-        do { rc = p_Fn(p_ReturnData, p_Queue); } while (0));
+static int32_t s_ReturnFnEMB(struct EMBCall *returnData,
+                             struct DSPQueue *queue);
 
-    return rc;
-}
+static int32_t s_ReturnFnQMB(struct QMBCall *returnData,
+                             struct DSPQueue *queue);
 
-static int32_t s_ReturnFnSMB(struct SMBCall *p_ReturnData,
-                             struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnSMBHelper);
-}
+static int32_t s_ReturnFnHMB(struct HMBCall *returnData,
+                             struct DSPQueue *queue);
 
-static int32_t s_ReturnFnEMB(struct EMBCall *p_ReturnData,
-                             struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnEMBHelper);
-}
+static int32_t s_ReturnFnMB(struct MBCall *returnData, struct DSPQueue *queue);
 
-static int32_t s_ReturnFnQMB(struct QMBCall *p_ReturnData,
-                             struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnQMBHelper);
-}
+static int32_t s_ReturnFnDMB(struct DMBCall *returnData,
+                             struct DSPQueue *queue);
 
-static int32_t s_ReturnFnHMB(struct HMBCall *p_ReturnData,
-                             struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnHMBHelper);
-}
+static int32_t s_ReturnFnHGB(struct HGBCall *returnData,
+                             struct DSPQueue *queue);
 
-static int32_t s_ReturnFnMB(struct MBCall *p_ReturnData,
-                            struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnMBHelper);
-}
+static int32_t s_ReturnFnGB(struct GBCall *returnData, struct DSPQueue *queue);
 
-static int32_t s_ReturnFnDMB(struct DMBCall *p_ReturnData,
-                             struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnDMBHelper);
-}
-
-static int32_t s_ReturnFnHGB(struct HGBCall *p_ReturnData,
-                             struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnHGBHelper);
-}
-
-static int32_t s_ReturnFnGB(struct GBCall *p_ReturnData,
-                            struct DSPQueue *p_Queue) {
-    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
-                       s_ReturnFnGBHelper);
-}
+static int32_t s_ReturnFnA(struct DSPQueue *queue, void *returnData,
+                           uint32_t qMaxSize,
+                           int32_t (*fn)(void *, struct DSPQueue *));
 
 static int32_t s_QPop(struct CommunicationInfo *p_CInfo) {
     switch (p_CInfo->m_Q->m_Type) {
@@ -184,14 +151,15 @@ static int32_t s_ProcessConnectionRequest(
     struct ConnectRequest *p_ConnectRequest,
     struct ClientConnectInfo *p_ConnectInfo,
     struct ClientConnectRequestInformation *p_ConnectInformation) {
-    int requestResponseQFd;
-    int returnQFd;
+    aqua_file_handle requestResponseQHandle;
+    aqua_file_handle returnQHandle;
     int32_t rc = 0;
     int qFlag;
-    int qProt;
-    mode_t qMode;
-    size_t qSize;
+    aqua_prot_t qProt;
+    aqua_mode_t qMode;
+    aqua_object_size_t qSize;
     void *returnQ;
+    struct ConnectResponseInformation *requestResponseQ;
 
     /**
      * With the connection index found we need to construct the request for the
@@ -225,85 +193,96 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectRequest->m_ResponseQSize =
         RETURN_RESPONSEQ_MAX_SIZE; // CHECK: possibly user specified
 
-    requestResponseQFd = createShmObject(
-        p_ConnectInformation->m_RequestResponseQName, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
-        p_ConnectInformation->m_ResponseQSize *
-            sizeof(struct ConnectResponseInformation),
-        true);
-    DIE(requestResponseQFd < 0, "Could not create shared memory object");
+    requestResponseQHandle =
+        createShmObject(p_ConnectInformation->m_RequestResponseQName, O_RDWR,
+                        AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP |
+                            AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH,
+                        p_ConnectInformation->m_ResponseQSize *
+                            sizeof(struct ConnectResponseInformation),
+                        true);
 
-    struct ConnectResponseInformation *requestResponseQ =
-        mmap(NULL,
-             p_ConnectInformation->m_ResponseQSize *
-                 sizeof(struct ConnectResponseInformation),
-             PROT_READ, MAP_SHARED, requestResponseQFd, 0);
-    DIE(requestResponseQ == MAP_FAILED,
-        "Could not map request response queue memory");
+    createQSimple((aqua_void_t **)&requestResponseQ,
+                  p_ConnectInformation->m_ResponseQSize *
+                      sizeof(struct ConnectResponseInformation),
+                  AQUA_PROT_READ, requestResponseQHandle);
 
     triggerKernelPageInit(requestResponseQ,
                           p_ConnectInformation->m_ResponseQSize *
                               sizeof(struct ConnectResponseInformation),
-                          PROT_READ);
+                          AQUA_PROT_READ);
 
-    rc = close(requestResponseQFd);
-    DIE(rc != 0, "Could not close requestResponseQFd");
+#if defined(__linux__)
+    rc = close(requestResponseQHandle);
+    DIE(rc != 0, "Could not close requestResponseQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(requestResponseQHandle),
+        "Could not close requestResponseQHandle");
+#else
+#endif
 
     switch (p_ConnectInformation->m_QType) {
     case SMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct SMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct EMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct MBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct DMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct HGBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+                AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct GBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_PROT_READ;
 
         break;
     default:
@@ -313,15 +292,20 @@ static int32_t s_ProcessConnectionRequest(
         DIE(true, "QType is not recognized");
     }
 
-    returnQFd = createShmObject(p_ConnectInformation->m_ReturnQName, qFlag,
-                                qMode, qSize, true);
+    returnQHandle = createShmObject(p_ConnectInformation->m_ReturnQName, qFlag,
+                                    qMode, qSize, true);
 
-    createQ(&returnQ, qSize, qProt, returnQFd);
+    createQ(&returnQ, qSize, qProt, returnQHandle);
 
     triggerKernelPageInit(returnQ, qSize, qProt);
 
-    rc = close(returnQFd);
-    DIE(rc != 0, "Could not close returnQFd");
+#if defined(__linux__)
+    rc = close(returnQHandle);
+    DIE(rc != 0, "Could not close returnQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(returnQHandle), "Could not close returnQHandle");
+#else
+#endif
 
     p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx = 0;
     p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx = 0;
@@ -375,6 +359,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
      *  send the request to the service with the connection index
      *  WIP: wait for the service to establish the connection on its side
      */
+#if defined(__linux__)
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
     for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
         if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
@@ -383,6 +368,17 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
         }
     }
     pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+#elif defined(_WIN32)
+    WaitForSingleObject(*p_ConnectInfo->m_ConnectLock, INFINITE);
+    for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
+        if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
+            p_ConnectInfo->m_Connections[connId].m_Connected = true;
+            break;
+        }
+    }
+    ReleaseMutex(*p_ConnectInfo->m_ConnectLock);
+#else
+#endif
 
     QPUSH(
         queue, CONNECTQ_MAX_SIZE, do {
@@ -400,7 +396,8 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
         &p_ReturnInfo->m_ResponseQueue, p_ReturnInfo->m_ResponseQueue.m_MaxSize,
         do {
             /**
-             * WIP: Add the information to the response queue. Now the signal is
+             * WIP: Add the information to the response queue. Now the signal
+             is
              * enough
              */
             idx = *p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr;
@@ -438,37 +435,48 @@ int32_t
 configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
                                   struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
-    int connectQFd, disconnectQFd;
+    aqua_file_handle connectQHandle, disconnectQHandle;
+    struct ConnectRequest *connectQ;
+    struct ConnectRequest *disconnectQ;
 
     /**
      * TODO: Implement successfull connection functionality
      */
-
-    connectQFd = createShmObject(
+    connectQHandle = createShmObject(
         p_InstallInfo->m_ConnectQName, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+        AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+            AQUA_S_IROTH | AQUA_S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), false);
 
-    struct ConnectRequest *connectQ =
-        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-             PROT_READ | PROT_WRITE, MAP_SHARED, connectQFd, 0);
-    DIE(connectQ == MAP_FAILED, "Could not map connectQ");
+    createQSimple((aqua_void_t **)&connectQ,
+                  CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+                  AQUA_PROT_READ | AQUA_PROT_WRITE, connectQHandle);
 
-    rc = close(connectQFd);
-    DIE(rc != 0, "Could not close connectQFd");
+#if defined(__linux__)
+    rc = close(connectQHandle);
+    DIE(rc != 0, "Could not close connectQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(connectQHandle), "Could not close connectQHandle");
+#else
+#endif
 
-    disconnectQFd = createShmObject(
+    disconnectQHandle = createShmObject(
         p_InstallInfo->m_DisconnectQName, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+        AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP |
+            AQUA_S_IROTH | AQUA_S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), false);
 
-    struct ConnectRequest *disconnectQ =
-        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-             PROT_READ | PROT_WRITE, MAP_SHARED, disconnectQFd, 0);
-    DIE(disconnectQ == MAP_FAILED, "Could not map disconnect queue memory");
+    createQSimple((aqua_void_t **)&disconnectQ,
+                  CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+                  AQUA_PROT_READ | AQUA_PROT_WRITE, disconnectQHandle);
 
-    rc = close(disconnectQFd);
-    DIE(rc != 0, "Could not close disconnectQFd");
+#if defined(__linux__)
+    rc = close(disconnectQHandle);
+    DIE(rc != 0, "Could not close disconnectQHandle");
+#elif defined(_WIN32)
+    DIE(!CloseHandle(disconnectQHandle), "Could not close disconnectQHandle");
+#else
+#endif
 
     p_ConnectInfo->m_SendConnectRequest = s_SendConnectRequest;
     p_ConnectInfo->m_Connections = p_InstallInfo->m_Connections;
@@ -501,6 +509,66 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_DisconnectQFullCond;
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
         &p_InstallInfo->m_DisconnectQEmptyCond;
+
+    return rc;
+}
+
+static int32_t s_ReturnFnSMB(struct SMBCall *p_ReturnData,
+                             struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnSMBHelper);
+}
+
+static int32_t s_ReturnFnEMB(struct EMBCall *p_ReturnData,
+                             struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnEMBHelper);
+}
+
+static int32_t s_ReturnFnQMB(struct QMBCall *p_ReturnData,
+                             struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnQMBHelper);
+}
+
+static int32_t s_ReturnFnHMB(struct HMBCall *p_ReturnData,
+                             struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnHMBHelper);
+}
+
+static int32_t s_ReturnFnMB(struct MBCall *p_ReturnData,
+                            struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnMBHelper);
+}
+
+static int32_t s_ReturnFnDMB(struct DMBCall *p_ReturnData,
+                             struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnDMBHelper);
+}
+
+static int32_t s_ReturnFnHGB(struct HGBCall *p_ReturnData,
+                             struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnHGBHelper);
+}
+
+static int32_t s_ReturnFnGB(struct GBCall *p_ReturnData,
+                            struct DSPQueue *p_Queue) {
+    return s_ReturnFnA(p_Queue, p_ReturnData, RETURNQ_MAX_SIZE,
+                       s_ReturnFnGBHelper);
+}
+
+static int32_t s_ReturnFnA(struct DSPQueue *p_Queue, void *p_ReturnData,
+                           uint32_t p_QMaxSize,
+                           int32_t (*p_Fn)(void *, struct DSPQueue *)) {
+    int32_t rc = 0;
+
+    QPOP(
+        p_Queue, p_QMaxSize,
+        do { rc = p_Fn(p_ReturnData, p_Queue); } while (0));
 
     return rc;
 }
