@@ -16,6 +16,8 @@ typedef void aqua_void_t;
 #include <unistd.h>
 #include <sys/uio.h>
 
+#define AQUA_API_EXPORT
+
 #define ALIGN_STRUCT(x) __attribute__((aligned(x)))
 
 typedef int aqua_file_handle;
@@ -27,6 +29,8 @@ typedef size_t aqua_size_t;
 
 #elif defined(_WIN32)
 #include <Windows.h>
+
+#define AQUA_API_EXPORT __declspec(dllexport)
 
 #define PAGE_SIZE 4096
 #define ALIGN_STRUCT(x) __declspec(align(x))

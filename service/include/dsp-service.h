@@ -40,11 +40,12 @@ struct ServiceConnectInfo {
 
 void initService(void);
 
-void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
-                struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
-                const char *p_Version, int p_CallQType);
+AQUA_API_EXPORT void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
+                                struct ServiceCallInfo *p_CallInfo,
+                                const char *p_StrId, const char *p_Version,
+                                int p_CallQType);
 
-void receiveCall(void *, struct ServiceCallInfo *);
-void sendReturn(struct ServiceReturnInfo *, void *);
+AQUA_API_EXPORT void receiveCall(void *, struct ServiceCallInfo *);
+AQUA_API_EXPORT void sendReturn(struct ServiceReturnInfo *, void *);
 
 #endif // AQUA_DSP_SERVICE_H

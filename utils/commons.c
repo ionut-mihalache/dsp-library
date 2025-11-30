@@ -73,45 +73,46 @@ end:
 
 #if defined(_WIN32)
     // TODO: This is just to remove unused. Should be removed for good
-    EXPLICIT_ACCESS ea[3]; // for owner, group and others
-    aqua_mode_t ownerAccess, groupAccess, otherAccess;
-    PACL acl;
-    SECURITY_DESCRIPTOR *sd;
-    SECURITY_ATTRIBUTES sa;
+    // EXPLICIT_ACCESS ea[3]; // for owner, group and others
+    // aqua_mode_t ownerAccess, groupAccess, otherAccess;
+    // PACL acl;
+    // SECURITY_DESCRIPTOR *sd;
+    // SECURITY_ATTRIBUTES sa;
 
-    s_ModeToPerms(&ownerAccess, &groupAccess, &otherAccess, p_Mode);
+    // s_ModeToPerms(&ownerAccess, &groupAccess, &otherAccess, p_Mode);
 
-    ZeroMemory(ea, sizeof(ea));
+    // ZeroMemory(ea, sizeof(ea));
 
-    ea[0].grfAccessPermissions = ownerAccess;
-    ea[0].grfAccessMode = GRANT_ACCESS;
-    ea[0].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
-    ea[0].Trustee.ptstrName = "OWNER RIGHTS";
+    // ea[0].grfAccessPermissions = ownerAccess;
+    // ea[0].grfAccessMode = GRANT_ACCESS;
+    // ea[0].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    // ea[0].Trustee.ptstrName = "OWNER RIGHTS";
 
-    ea[1].grfAccessPermissions = groupAccess;
-    ea[1].grfAccessMode = GRANT_ACCESS;
-    ea[1].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
-    ea[1].Trustee.ptstrName = "Authenticated Users";
+    // ea[1].grfAccessPermissions = groupAccess;
+    // ea[1].grfAccessMode = GRANT_ACCESS;
+    // ea[1].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    // ea[1].Trustee.ptstrName = "Authenticated Users";
 
-    ea[2].grfAccessPermissions = otherAccess;
-    ea[2].grfAccessMode = GRANT_ACCESS;
-    ea[2].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
-    ea[2].Trustee.ptstrName = (LPSTR)WinWorldSid;
+    // ea[2].grfAccessPermissions = otherAccess;
+    // ea[2].grfAccessMode = GRANT_ACCESS;
+    // ea[2].Trustee.TrusteeForm = TRUSTEE_IS_NAME;
+    // ea[2].Trustee.ptstrName = (LPSTR)WinWorldSid;
 
-    acl = NULL;
-    SetEntriesInAcl(3, ea, NULL, &acl);
+    // acl = NULL;
+    // SetEntriesInAcl(3, ea, NULL, &acl);
 
-    sd =
-        (SECURITY_DESCRIPTOR *)LocalAlloc(LPTR, SECURITY_DESCRIPTOR_MIN_LENGTH);
-    InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION);
-    SetSecurityDescriptorDacl(sd, TRUE, acl, FALSE);
+    // sd =
+    //     (SECURITY_DESCRIPTOR *)LocalAlloc(LPTR,
+    //     SECURITY_DESCRIPTOR_MIN_LENGTH);
+    // InitializeSecurityDescriptor(sd, SECURITY_DESCRIPTOR_REVISION);
+    // SetSecurityDescriptorDacl(sd, TRUE, acl, FALSE);
 
-    sa.nLength = sizeof(sa);
-    sa.lpSecurityDescriptor = sd;
-    sa.bInheritHandle = FALSE;
+    // sa.nLength = sizeof(sa);
+    // sa.lpSecurityDescriptor = sd;
+    // sa.bInheritHandle = FALSE;
 
     handle = CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
-                               &sa,                  // default security
+                               NULL,                 // default security
                                PAGE_READWRITE,       // read/write access
                                0,      // maximum object size (high-order DWORD)
                                p_Size, // maximum object size (low-order DWORD)
@@ -121,6 +122,7 @@ end:
     // Just hide unused warnings when using WIN32 API
     (void)p_Unlink;
     (void)p_Oflag;
+    (void)p_Mode;
 #endif
 
     return handle;

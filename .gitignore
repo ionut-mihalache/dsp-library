@@ -4,6 +4,10 @@
 *.obj
 *.dll
 *.dll.*
+*.lib
+*.lib.*
+*.exp
+*.exp.*
 .vscode/
 .cache/
 .fleet/

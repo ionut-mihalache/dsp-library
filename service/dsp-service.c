@@ -26,7 +26,7 @@ void initService(void) {
                             AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH,
                         sizeof(struct InstallSharedData), true);
 
-    createQSimple((aqua_void_t **)installShdata,
+    createQSimple((aqua_void_t **)&installShdata,
                   sizeof(struct InstallSharedData),
                   AQUA_PROT_READ | AQUA_PROT_WRITE, installShdHandle);
 
@@ -71,7 +71,7 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                             AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH,
                         sizeof(struct InstallInfo), true);
 
-    createQSimple((aqua_void_t **)installMemZone, sizeof(struct InstallInfo),
+    createQSimple((aqua_void_t **)&installMemZone, sizeof(struct InstallInfo),
                   AQUA_PROT_READ | AQUA_PROT_WRITE, installShmHandle);
 
 #if defined(__linux__)
