@@ -15,8 +15,6 @@
 
 #define DSP_UNUSED __attribute__((unused))
 
-#define PAGE_SIZE 4096
-
 aqua_file_handle createShmObject(const char *name, int oflag, aqua_mode_t mode,
                                  aqua_object_size size, uint8_t unlink);
 
