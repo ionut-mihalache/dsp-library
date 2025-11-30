@@ -4,11 +4,10 @@
 #include "commons.h"
 #include "log.h"
 #include "macros.h"
-#include "system-types.h"
 #include "return.h"
 
 static int32_t s_SendReturnFnSMBHelper(struct DSPQueue *p_Queue,
-                                       void *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     uint32_t idx;
     struct SMBCall *qData;
@@ -31,7 +30,7 @@ end:
 }
 
 static int32_t s_SendReturnFnEMBHelper(struct DSPQueue *p_Queue,
-                                       void *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     struct EMBCall *qData = (struct EMBCall *)p_Queue->m_Data;
 
@@ -42,7 +41,7 @@ static int32_t s_SendReturnFnEMBHelper(struct DSPQueue *p_Queue,
 }
 
 static int32_t s_SendReturnFnQMBHelper(struct DSPQueue *p_Queue,
-                                       void *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     struct QMBCall *qData = (struct QMBCall *)p_Queue->m_Data;
 
@@ -53,7 +52,7 @@ static int32_t s_SendReturnFnQMBHelper(struct DSPQueue *p_Queue,
 }
 
 static int32_t s_SendReturnFnHMBHelper(struct DSPQueue *p_Queue,
-                                       void *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     struct HMBCall *qData = (struct HMBCall *)p_Queue->m_Data;
 
@@ -64,7 +63,7 @@ static int32_t s_SendReturnFnHMBHelper(struct DSPQueue *p_Queue,
 }
 
 static int32_t s_SendReturnFnMBHelper(struct DSPQueue *p_Queue,
-                                      void *p_ReturnData) {
+                                      aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     struct MBCall *qData = (struct MBCall *)p_Queue->m_Data;
 
@@ -75,7 +74,7 @@ static int32_t s_SendReturnFnMBHelper(struct DSPQueue *p_Queue,
 }
 
 static int32_t s_SendReturnFnDMBHelper(struct DSPQueue *p_Queue,
-                                       void *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     struct DMBCall *qData = (struct DMBCall *)p_Queue->m_Data;
 
@@ -86,7 +85,7 @@ static int32_t s_SendReturnFnDMBHelper(struct DSPQueue *p_Queue,
 }
 
 static int32_t s_SendReturnFnHGBHelper(struct DSPQueue *p_Queue,
-                                       void *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     struct HGBCall *qData = (struct HGBCall *)p_Queue->m_Data;
 
@@ -97,7 +96,7 @@ static int32_t s_SendReturnFnHGBHelper(struct DSPQueue *p_Queue,
 }
 
 static int32_t s_SendReturnFnGBHelper(struct DSPQueue *p_Queue,
-                                      void *p_ReturnData) {
+                                      aqua_void_t *p_ReturnData) {
     int32_t rc = 0;
     struct GBCall *qData = (struct GBCall *)p_Queue->m_Data;
 
@@ -107,9 +106,10 @@ static int32_t s_SendReturnFnGBHelper(struct DSPQueue *p_Queue,
     return rc;
 }
 
-static int32_t s_SendReturnFnA(struct DSPQueue *p_Queue, void *p_RetData,
+static int32_t s_SendReturnFnA(struct DSPQueue *p_Queue, aqua_void_t *p_RetData,
                                uint32_t p_QMaxSize,
-                               int32_t (*p_Fn)(struct DSPQueue *, void *)) {
+                               int32_t (*p_Fn)(struct DSPQueue *,
+                                               aqua_void_t *)) {
     int32_t rc = 0;
 
     QPUSH(p_Queue, p_QMaxSize, do { rc = p_Fn(p_Queue, p_RetData); } while (0));
@@ -209,7 +209,7 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     int qProt;
     aqua_mode_t qMode;
     aqua_size_t qSize;
-    void *returnQ;
+    aqua_void_t *returnQ;
 
     connectionIdx = p_Request->m_ConnectionIdx;
 

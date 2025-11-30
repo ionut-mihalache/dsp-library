@@ -4,25 +4,25 @@
 #include <stdbool.h>
 #include <sys/stat.h>
 
-#ifdef linux
+#if defined(__linux__)
 #include <errno.h>
 #include <sys/mman.h>
 #endif
 
-#ifdef _WIN32
-#include <windows.h>
+#if defined(_WIN32)
+#include <Windows.h>
 #endif
 
-#include "macros/macros.h"
-#include "system-types.h"
+#include "dsp.h"
+#include "macros.h"
 #include "system-values.h"
 
 aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
-                                 aqua_mode_t p_Mode, aqua_object_size p_Size,
+                                 aqua_mode_t p_Mode, aqua_object_size_t p_Size,
                                  uint8_t p_Unlink) {
     aqua_file_handle handle;
 
-#ifdef linux
+#if defined(__linux__)
     int rc;
     uint8_t shouldTruncate = true;
 
@@ -61,7 +61,7 @@ aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
 end:
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32)
     handle = CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
                                p_Mode,               // default security
                                PAGE_READWRITE,       // read/write access
@@ -74,15 +74,15 @@ end:
     return handle;
 }
 
-void createQ(void **p_QPtrRes, aqua_size_t p_Size, aqua_prot_t p_Prot,
-             aqua_file_handle p_FileHandle) {
-#ifdef linux
+aqua_void_t createQ(aqua_void_t **p_QPtrRes, aqua_size_t p_Size,
+                    aqua_prot_t p_Prot, aqua_file_handle p_FileHandle) {
+#if defined(__linux__)
     *p_QPtrRes =
         mmap(NULL, p_Size, p_Prot, MAP_SHARED | MAP_POPULATE, p_FileHandle, 0);
     DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32)
     BOOL bRet;
 
     *p_QPtrRes = MapViewOfFile(p_FileHandle, // handle to map object
@@ -94,14 +94,15 @@ void createQ(void **p_QPtrRes, aqua_size_t p_Size, aqua_prot_t p_Prot,
 #endif
 }
 
-void triggerKernelPageInit(void *p_MemoryAddr, aqua_size_t p_Size, int p_Prot) {
+aqua_void_t triggerKernelPageInit(aqua_void_t *p_MemoryAddr, aqua_size_t p_Size,
+                                  int p_Prot) {
     volatile char *accessPtr = (volatile char *)p_MemoryAddr;
     aqua_size_t pageIdx;
 
     switch (p_Prot) {
     case AQUA_PROT_READ:
         for (aqua_size_t i = 0; i < p_Size; i++) {
-            (void)accessPtr[i];
+            (aqua_void_t) accessPtr[i];
         }
         break;
     case AQUA_PROT_WRITE:

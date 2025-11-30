@@ -1,13 +1,14 @@
 cmake_minimum_required(VERSION 3.25.1)
 
+# set(CMAKE_C_COMPILER clang)
+# set(CMAKE_C_COMPILER gcc)
+set(CMAKE_C_COMPILER clang-cl)
+
 project(dsp-library C)
 
 set(CMAKE_C_STANDARD 23)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-# set(CMAKE_C_COMPILER clang)
-# set(CMAKE_C_COMPILER gcc)
-set(CMAKE_C_COMPLIER clang-cl)
 
 set(LIB_VERSION "0.0.2")
 
@@ -43,7 +44,6 @@ set(HEADER_FILES
     utils/log/log.h
     include/dsp.h
     include/protocol.h
-    utils/system-types.h
     utils/system-values.h
     utils/locking/locking.h
 )

@@ -7,18 +7,39 @@
 #include <stdio.h>
 #include <sys/stat.h>
 
-#include "system-types.h"
 #include "locking.h"
 
-#ifdef linux
+typedef void aqua_void_t;
+
+#if defined(__linux__)
+#include <sys/user.h>
 #include <unistd.h>
+#include <sys/uio.h>
+
 #define ALIGN_STRUCT(x) __attribute__((aligned(x)))
-#endif
 
-#ifdef _WIN32
+typedef int aqua_file_handle;
+typedef loff_t aqua_object_size_t;
+typedef mode_t aqua_mode_t;
+typedef pid_t aqua_pid_t;
+typedef int aqua_prot_t;
+typedef size_t aqua_size_t;
+
+#elif defined(_WIN32)
+#include <Windows.h>
+
 #define PAGE_SIZE 4096
-
 #define ALIGN_STRUCT(x) __declspec(align(x))
+
+typedef HANDLE aqua_file_handle;
+typedef DWORD aqua_object_size_t;
+typedef unsigned int aqua_mode_t;
+typedef DWORD aqua_pid_t;
+typedef DWORD aqua_prot_t;
+typedef SIZE_T aqua_size_t;
+
+#else
+#error "Platform not supported by AQUA"
 #endif
 
 #define SHMEM_PATH "/shared_memory"

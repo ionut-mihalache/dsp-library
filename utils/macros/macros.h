@@ -2,8 +2,8 @@
 // Created by ionut on 29.06.2024.
 //
 
-#ifndef DSP_MACROS_H
-#define DSP_MACROS_H
+#ifndef AQUA_DSP_MACROS_H
+#define AQUA_DSP_MACROS_H
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,7 +14,7 @@
 #endif
 
 #ifdef _WIN32
-#include <windows.h>
+#include <Windows.h>
 #endif
 
 #define CHOOSE_MACRO(p_Macro, ...) p_Macro
@@ -170,4 +170,4 @@
     } while (0)
 #endif
 
-#endif // DSP_MACROS_H
+#endif // AQUA_DSP_MACROS_H

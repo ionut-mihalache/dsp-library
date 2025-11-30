@@ -1,14 +1,15 @@
 #include <fcntl.h>
 #include <string.h>
-#include <sys/mman.h>
 
 #include "client-call.h"
 #include "commons.h"
+#include "dsp.h"
 #include "macros.h"
+#include "system-values.h"
 
 static int32_t s_SMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct SMBCall *qData = p_Queue->m_Data;
+    struct SMBCall *qData = (struct SMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct SMBCall));
@@ -18,7 +19,7 @@ static int32_t s_SMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
 
 static int32_t s_EMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct EMBCall *qData = p_Queue->m_Data;
+    struct EMBCall *qData = (struct EMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct EMBCall));
@@ -28,7 +29,7 @@ static int32_t s_EMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
 
 static int32_t s_QMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct QMBCall *qData = p_Queue->m_Data;
+    struct QMBCall *qData = (struct QMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct QMBCall));
@@ -38,7 +39,7 @@ static int32_t s_QMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
 
 static int32_t s_HMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct HMBCall *qData = p_Queue->m_Data;
+    struct HMBCall *qData = (struct HMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct HMBCall));
@@ -48,7 +49,7 @@ static int32_t s_HMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
 
 static int32_t s_MBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct MBCall *qData = p_Queue->m_Data;
+    struct MBCall *qData = (struct MBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct MBCall));
@@ -58,7 +59,7 @@ static int32_t s_MBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
 
 static int32_t s_DMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct DMBCall *qData = p_Queue->m_Data;
+    struct DMBCall *qData = (struct DMBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct DMBCall));
@@ -68,7 +69,7 @@ static int32_t s_DMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
 
 static int32_t s_HGBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct HGBCall *qData = p_Queue->m_Data;
+    struct HGBCall *qData = (struct HGBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct HGBCall));
@@ -78,7 +79,7 @@ static int32_t s_HGBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
 
 static int32_t s_GBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
-    struct GBCall *qData = p_Queue->m_Data;
+    struct GBCall *qData = (struct GBCall *)p_Queue->m_Data;
 
     memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_CallData,
            sizeof(struct GBCall));
@@ -165,68 +166,68 @@ int32_t
 configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
                                struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
-    int callQFd;
+    aqua_file_handle callQFd;
     int qFlag;
-    int qProt;
-    mode_t qMode;
-    size_t qSize;
-    void *callQ;
+    aqua_prot_t qProt;
+    aqua_mode_t qMode;
+    aqua_object_size_t qSize;
+    aqua_void_t *callQ;
 
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = SMB_Q_MAX_SIZE * sizeof(struct SMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = EMB_Q_MAX_SIZE * sizeof(struct EMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = QMB_Q_MAX_SIZE * sizeof(struct QMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = HMB_Q_MAX_SIZE * sizeof(struct HMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = MB_Q_MAX_SIZE * sizeof(struct MBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = DMB_Q_MAX_SIZE * sizeof(struct DMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = HGB_Q_MAX_SIZE * sizeof(struct HGBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qMode = AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP | AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH;
         qSize = GB_Q_MAX_SIZE * sizeof(struct GBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_PROT_WRITE;
 
         break;
     default:
