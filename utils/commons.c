@@ -20,10 +20,12 @@
 #include "macros.h"
 #include "system-values.h"
 
+#if defined(_WIN32)
 static inline aqua_void_t s_ModeToPerms(aqua_mode_t *ownerAccess,
                                         aqua_mode_t *groupAccess,
                                         aqua_mode_t *otherAccess,
                                         aqua_mode_t mode);
+#endif
 
 aqua_file_handle createShmObject(const char *p_Name, int p_Oflag,
                                  aqua_mode_t p_Mode, aqua_object_size_t p_Size,
@@ -189,7 +191,7 @@ aqua_void_t triggerKernelPageInit(aqua_void_t *p_MemoryAddr, aqua_size_t p_Size,
         break;
     }
 }
-
+#if defined(_WIN32)
 static inline aqua_void_t s_ModeToPerms(aqua_mode_t *p_OwnerAccess,
                                         aqua_mode_t *p_GroupAccess,
                                         aqua_mode_t *p_OtherAccess,
@@ -215,3 +217,4 @@ static inline aqua_void_t s_ModeToPerms(aqua_mode_t *p_OwnerAccess,
         (*p_OtherAccess) |= AQUA_PROT_WRITE;
     }
 }
+#endif
