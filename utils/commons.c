@@ -20,6 +20,7 @@
 #include "macros.h"
 #include "system-values.h"
 
+#if defined(_WIN32)
 static inline aqua_void_t s_ModeToPerms(aqua_mode_t *ownerAccess,
                                         aqua_mode_t *groupAccess,
                                         aqua_mode_t *otherAccess,
