@@ -2,7 +2,7 @@ CC=cl
 
 SERVICE_NAME=xslt-tranformation.exe
 
-CFLAGS=/nologo /W3 /Zi /EHsc /D_GNU_SOURCE /D__COMPILE_MODE_DEBUG__ \
+CFLAGS=/nologo /MD /W3 /Zi /EHsc /D_GNU_SOURCE /D__COMPILE_MODE_DEBUG__ \
 	/I ../../../../utils /I ../../../../utils/macros /I ../../../../utils/hashmap /I ../../../../utils/exit /I ../../../../utils/log /I ../../../../utils/locking \
 	/I ../../../../include /I ../../../../service/include /I ../../../../client/include /O2
 
@@ -13,6 +13,9 @@ $(SERVICE_NAME): main.obj
 
 main.obj: main.cpp
 	$(CC) $(CFLAGS) /Fomain.obj /c main.cpp
+
+run:
+	.\$(SERVICE_NAME)
 
 clean:
 	del *.obj *.exe *.ilk *.pdb

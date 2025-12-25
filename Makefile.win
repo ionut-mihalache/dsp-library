@@ -3,7 +3,7 @@ CC=cl
 LD=link
 
 # Flags
-CFLAGS=/nologo /W3 /Zi /EHsc /D_GNU_SOURCE /D__COMPILE_MODE_DEBUG__ \
+CFLAGS=/nologo /MD /W3 /Zi /EHsc /D_GNU_SOURCE /D__COMPILE_MODE_DEBUG__ \
 	/I utils /I utils/macros /I utils/hashmap /I utils/exit /I utils/log /I utils/locking \
 	/I include /I service/include /I client/include /O2
 
@@ -44,28 +44,61 @@ $(LIBDIR)\$(DLL_NAME): $(OBJS)
 # Compile rules (explicit)
 # -------------------------
 
-$(OBJDIR)\dsp-service.obj: service\dsp-service.c
+$(OBJDIR)\dsp-service.obj: service\dsp-service.c \
+		service\include\dsp-service.h \
+		include\dsp.h \
+		utils\commons.h \
+		utils\hashmap\hashmap.h \
+		utils\macros\macros.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\dsp-service.obj /c service\dsp-service.c
 
-$(OBJDIR)\dsp-service-install.obj: service\install.c
+$(OBJDIR)\dsp-service-install.obj: service\install.c \
+		service\include\install.h \
+		service\include\dsp-service.h \
+		include\dsp.h \
+		utils\commons.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\dsp-service-install.obj /c service\install.c
 
-$(OBJDIR)\dsp-service-call.obj: service\call.c
+$(OBJDIR)\dsp-service-call.obj: service\call.c \
+		service\include\call.h \
+		service\include\dsp-service.h \
+		include\dsp.h \
+		utils\commons.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\dsp-service-call.obj /c service\call.c
 
-$(OBJDIR)\dsp-service-return.obj: service\return.c
+$(OBJDIR)\dsp-service-return.obj: service\return.c \
+		service\include\return.h \
+		service\include\dsp-service.h \
+		include\dsp.h \
+		utils\commons.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\dsp-service-return.obj /c service\return.c
 
-$(OBJDIR)\dsp-client.obj: client\dsp-client.c
+$(OBJDIR)\dsp-client.obj: client\dsp-client.c \
+		client\include\dsp-client.h \
+		include\dsp.h \
+		utils\commons.h \
+		utils\hashmap\hashmap.h \
+		utils\macros/macros.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\dsp-client.obj /c client\dsp-client.c
 
-$(OBJDIR)\dsp-client-connect.obj: client\client-connect.c
+$(OBJDIR)\dsp-client-connect.obj: client\client-connect.c \
+		client\include\client-connect.h \
+		client\include\dsp-client.h \
+		include\dsp.h \
+		utils\commons.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\dsp-client-connect.obj /c client\client-connect.c
 
-$(OBJDIR)\dsp-client-call.obj: client\client-call.c
+$(OBJDIR)\dsp-client-call.obj: client\client-call.c \
+		client\include\client-call.h \
+		client\include\dsp-client.h \
+		include\dsp.h \
+		utils\commons.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\dsp-client-call.obj /c client\client-call.c
 
-$(OBJDIR)\commons.obj: utils\commons.c
+$(OBJDIR)\commons.obj: utils\commons.c \
+		utils\commons.h \
+		include\dsp.h \
+		utils\macros\macros.h
 	$(CC) $(CFLAGS) /Fo$(OBJDIR)\commons.obj /c utils\commons.c
 
 # -------------------------
