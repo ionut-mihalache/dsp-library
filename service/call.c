@@ -225,7 +225,7 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     rc = close(callQHandle);
     DIE(rc != 0, "Could not close callQHandle");
 #elif defined(_WIN32)
-    DIE(!CloseHandle(callQHandle), "Could not close callQHandle");
+    // DIE(!CloseHandle(callQHandle), "Could not close callQHandle");
 #else
 #endif
 

@@ -66,7 +66,7 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
     initService();
 
     installShmHandle =
-        createShmObject(INSTALL_MZONE, O_RDWR,
+        createShmObject(INSTALL_MZONE "123", O_RDWR,
                         AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP |
                             AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH,
                         sizeof(struct InstallInfo), true);
@@ -79,9 +79,7 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
     for (uint8_t i = 0; i < bytesnr; ++i) {
         freeBytePtr = &installMemZone->m_InstallMap[i];
 
-        for (uint8_t j = 7; j > 0; --j) {
-            freeByteIdx++;
-
+        for (int8_t j = 7; j > 0; --j) {
             if (((*freeBytePtr) & (1 << j)) == 0) {
                 /**
                  * We set the bit index for the current byte
@@ -89,6 +87,8 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                 freeIdx = j;
                 goto check_free_index;
             }
+
+            freeByteIdx++;
         }
     }
 
@@ -110,9 +110,7 @@ spin_lock_unlock:
     for (uint8_t i = 0; i < bytesnr; ++i) {
         freeBytePtr = &installMemZone->m_InstallMap[i];
 
-        for (uint8_t j = 7; j > 0; --j) {
-            freeByteIdx++;
-
+        for (int8_t j = 7; j > 0; --j) {
             if (((*freeBytePtr) & (1 << j)) == 0) {
                 /**
                  * We set the bit index for the current byte
@@ -120,6 +118,7 @@ spin_lock_unlock:
                 freeIdx = j;
                 goto check_free_index;
             }
+            freeByteIdx++;
         }
     }
 
@@ -154,15 +153,28 @@ spin_lock_unlock:
 
     installInfo->m_ProcId = getpid();
 #elif defined(_WIN32)
-    installInfo = (struct InstallInformation *)MapViewOfFile(
-        installShmHandle, // handle to map object
-        AQUA_PROT_READ | AQUA_PROT_WRITE, 0,
-        freeByteIdx * sizeof(struct InstallInformation),
-        sizeof(struct InstallInformation));
+    LPVOID mapBase;
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    SIZE_T gran = si.dwAllocationGranularity;
+    SIZE_T alignedOffset =
+        (freeByteIdx * sizeof(struct InstallInformation)) & ~(gran - 1);
+    SIZE_T offsetDelta =
+        (freeByteIdx * sizeof(struct InstallInformation)) - alignedOffset;
+
+    LOGF("freeByteIdx: %u\n", freeByteIdx);
+    LOGF("file offset: %llu\n",
+         freeByteIdx * sizeof(struct InstallInformation));
+    mapBase = MapViewOfFile(installShmHandle, // handle to map object
+                            AQUA_PROT_READ | AQUA_PROT_WRITE,
+                            (DWORD)(alignedOffset >> 32),
+                            (DWORD)(alignedOffset & 0xFFFFFFFF),
+                            offsetDelta + sizeof(struct InstallInformation));
     DIE(installInfo == NULL, "Could not map service information");
 
-    DIE(!CloseHandle(installShmHandle), "Could not close installShmHandle");
+    // DIE(!CloseHandle(installShmHandle), "Could not close installShmHandle");
 
+    installInfo = (struct InstallInformation *)((char *)mapBase + offsetDelta);
     installInfo->m_ProcId = GetCurrentProcessId();
 #else
 #endif

@@ -46,9 +46,10 @@ typedef SIZE_T aqua_size_t;
 #error "Platform not supported by AQUA"
 #endif
 
-#define SHMEM_PATH "/shared_memory"
-#define CONNECT_REQS "/conn-reqs"
-#define INSTALL_MZONE "/install-zone"
+// #define SHMEM_PATH "/shared_memory"
+// #define CONNECT_REQS "/conn-reqs"
+// #define INSTALL_MZONE "/install-zone"
+#define INSTALL_MZONE "install-zone123456"
 #define SERVICES_NUMBER ((uint32_t)1024) // needs to be a power of 2
 
 #define STRING_ID_MAX_LENGTH ((uint32_t)128)
@@ -161,14 +162,14 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
 
     aqua_cond_t m_CallQFullCond;
     aqua_cond_t m_CallQEmptyCond;
-    aqua_cond_t m_ConnectQFullCond;
-    aqua_cond_t m_ConnectQEmptyCond;
-    aqua_cond_t m_DisconnectQFullCond;
-    aqua_cond_t m_DisconnectQEmptyCond;
+    aqua_shared_cond_t m_ConnectQFullCond;
+    aqua_shared_cond_t m_ConnectQEmptyCond;
+    aqua_shared_cond_t m_DisconnectQFullCond;
+    aqua_shared_cond_t m_DisconnectQEmptyCond;
 
     aqua_mutex_t m_CallQMutex;
-    aqua_mutex_t m_ConnectQMutex;
-    aqua_mutex_t m_DisconnectQMutex;
+    aqua_shared_mutex_t m_ConnectQMutex;
+    aqua_shared_mutex_t m_DisconnectQMutex;
     aqua_spinlock_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
@@ -188,9 +189,9 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInfo {
 };
 
 struct DSPQueueMetadata {
-    aqua_cond_t *m_FullCond;
-    aqua_cond_t *m_EmptyCond;
-    aqua_mutex_t *m_Lock;
+    aqua_cond_ptr_t m_FullCond;
+    aqua_cond_ptr_t m_EmptyCond;
+    aqua_mutex_ptr_t m_Lock;
     uint32_t *m_PushIdxPtr;
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;

@@ -121,7 +121,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     struct InstallInfo *installMemZone;
 
     installShmHandle =
-        createShmObject(INSTALL_MZONE, O_RDWR,
+        createShmObject(INSTALL_MZONE "123", O_RDWR,
                         AQUA_S_IRUSR | AQUA_S_IWUSR | AQUA_S_IRGRP |
                             AQUA_S_IWGRP | AQUA_S_IROTH | AQUA_S_IWOTH,
                         sizeof(struct InstallInfo), false);
@@ -136,6 +136,7 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
 
         installInfo = (struct InstallInformation *)&(installMemZone->m_Info[i]);
 
+        LOGF("Current service name: %s\n", installInfo->m_StrId);
         if (!strcmp(installInfo->m_StrId, p_ServiceStrId)) {
             if (installInfo->m_Available) {
                 connected = true;

@@ -259,7 +259,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     rc = close(connectQHandle);
     DIE(rc != 0, "Could not close connectQHandle");
 #elif defined(_WIN32)
-    DIE(!CloseHandle(connectQHandle), "Could not close connectQHandle");
+    // DIE(!CloseHandle(connectQHandle), "Could not close connectQHandle");
 #else
 #endif
 
@@ -271,7 +271,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
 
     createQ((aqua_void_t **)&disconnectQ,
             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-            AQUA_PROT_READ | AQUA_PROT_WRITE, connectQHandle);
+            AQUA_PROT_READ | AQUA_PROT_WRITE, disconnectQHandle);
 
     triggerKernelPageInit(disconnectQ,
                           CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
@@ -281,7 +281,8 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     rc = close(disconnectQHandle);
     DIE(rc != 0, "Could not close disconnectQHandle");
 #elif defined(_WIN32)
-    DIE(!CloseHandle(disconnectQHandle), "Could not close disconnectQHandle");
+    // DIE(!CloseHandle(disconnectQHandle), "Could not close
+    // disconnectQHandle");
 #else
 #endif
 
@@ -342,54 +343,6 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     pthread_cond_init(&p_InstallInfo->m_DisconnectQEmptyCond, &condAttr);
 
     pthread_condattr_destroy(&condAttr);
-#elif defined(_WIN32)
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "connectlist-lock");
-    p_InstallInfo->m_ConnectListLock = CreateMutex(NULL, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_ConnectListLock == NULL,
-        "Could not create connect list mutex");
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "connectQ-lock");
-    p_InstallInfo->m_ConnectQMutex = CreateMutex(NULL, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_ConnectQMutex == NULL,
-        "Could not create connect queue mutex");
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "disconnectQ-lock");
-    p_InstallInfo->m_DisconnectQMutex = CreateMutex(NULL, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_DisconnectQMutex == NULL,
-        "Could not create disconnect queue mutex");
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "connectQ-event-full");
-    p_InstallInfo->m_ConnectQFullCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_ConnectQFullCond == NULL,
-        "Could not create connect queue full event");
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "connectQ-event-empty");
-    p_InstallInfo->m_ConnectQEmptyCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_ConnectQEmptyCond == NULL,
-        "Could not create connect queue empty event");
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "disconnectQ-event-full");
-    p_InstallInfo->m_DisconnectQFullCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_DisconnectQFullCond == NULL,
-        "Could not create disconnect queue full event");
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "disconnectQ-event-empty");
-    p_InstallInfo->m_DisconnectQEmptyCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_DisconnectQEmptyCond == NULL,
-        "Could not create disconnect queue empty event");
-#else
-#endif
 
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
         &p_InstallInfo->m_ConnectQMutex;
@@ -404,6 +357,87 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_DisconnectQFullCond;
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
         &p_InstallInfo->m_DisconnectQEmptyCond;
+
+#elif defined(_WIN32)
+    // WIP: For handles identification in shared userspace memory we use numbers
+    //  TODO: Replace the hardcoded values for shared handle ids
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+             "connectlist-lock");
+    p_InstallInfo->m_ConnectListLock = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_InstallInfo->m_ConnectListLock == NULL,
+        "Could not create connect list mutex");
+
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+    //          "connectQ-lock");
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             0LLU);
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
+        CreateMutex(NULL, FALSE, qSyncName);
+    // p_InstallInfo->m_ConnectQMutex = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock == NULL,
+        "Could not create connect queue mutex");
+    p_InstallInfo->m_ConnectQMutex = 0LLU;
+
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+    //          "disconnectQ-lock");
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             1LLU);
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock =
+        CreateMutex(NULL, FALSE, qSyncName);
+    // p_InstallInfo->m_DisconnectQMutex = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock == NULL,
+        "Could not create disconnect queue mutex");
+    p_InstallInfo->m_DisconnectQMutex = 1LLU;
+
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+    //          "connectQ-event-full");
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             1000LLU);
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_FullCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    // p_InstallInfo->m_ConnectQFullCond =
+    //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_FullCond == NULL,
+        "Could not create connect queue full event");
+    p_InstallInfo->m_ConnectQFullCond = 1000LLU;
+
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+    //          "connectQ-event-empty");
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             1001LLU);
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_EmptyCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    // p_InstallInfo->m_ConnectQEmptyCond =
+    //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_EmptyCond == NULL,
+        "Could not create connect queue empty event");
+    p_InstallInfo->m_ConnectQEmptyCond = 1001LLU;
+
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+    //          "disconnectQ-event-full");
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             1002LLU);
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_FullCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    // p_InstallInfo->m_DisconnectQFullCond =
+    //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_FullCond == NULL,
+        "Could not create disconnect queue full event");
+    p_InstallInfo->m_DisconnectQFullCond = 1002LLU;
+
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
+    //          "disconnectQ-event-empty");
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             1003LLU);
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    // p_InstallInfo->m_DisconnectQEmptyCond =
+    //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond == NULL,
+        "Could not create disconnect queue empty event");
+    p_InstallInfo->m_DisconnectQEmptyCond = 1003LLU;
+#else
+#endif
 
     return rc;
 }

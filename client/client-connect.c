@@ -3,6 +3,7 @@
 #include "client-connect.h"
 #include "commons.h"
 #include "dsp.h"
+#include "log.h"
 #include "macros.h"
 #include "system-values.h"
 
@@ -215,8 +216,8 @@ static int32_t s_ProcessConnectionRequest(
     rc = close(requestResponseQHandle);
     DIE(rc != 0, "Could not close requestResponseQHandle");
 #elif defined(_WIN32)
-    DIE(!CloseHandle(requestResponseQHandle),
-        "Could not close requestResponseQHandle");
+    // DIE(!CloseHandle(requestResponseQHandle),
+    //     "Could not close requestResponseQHandle");
 #else
 #endif
 
@@ -303,7 +304,7 @@ static int32_t s_ProcessConnectionRequest(
     rc = close(returnQHandle);
     DIE(rc != 0, "Could not close returnQHandle");
 #elif defined(_WIN32)
-    DIE(!CloseHandle(returnQHandle), "Could not close returnQHandle");
+    // DIE(!CloseHandle(returnQHandle), "Could not close returnQHandle");
 #else
 #endif
 
@@ -396,8 +397,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
         &p_ReturnInfo->m_ResponseQueue, p_ReturnInfo->m_ResponseQueue.m_MaxSize,
         do {
             /**
-             * WIP: Add the information to the response queue. Now the signal
-             is
+             * WIP: Add the information to the response queue. Now the signal is
              * enough
              */
             idx = *p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr;
@@ -438,6 +438,7 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
     aqua_file_handle connectQHandle, disconnectQHandle;
     struct ConnectRequest *connectQ;
     struct ConnectRequest *disconnectQ;
+    char qSyncName[RETURNQ_NAME_MAX_SIZE];
 
     /**
      * TODO: Implement successfull connection functionality
@@ -487,12 +488,27 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_ConnectQPopIdx;
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_Size =
         &p_InstallInfo->m_ConnectQSize;
+
+    // Obtain the handles for connect queue
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_ConnectQMutex);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
-        &p_InstallInfo->m_ConnectQMutex;
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
+    //     &p_InstallInfo->m_ConnectQMutex;
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_ConnectQFullCond);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_FullCond =
-        &p_InstallInfo->m_ConnectQFullCond;
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_FullCond =
+    //     &p_InstallInfo->m_ConnectQFullCond;
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_ConnectQEmptyCond);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_EmptyCond =
-        &p_InstallInfo->m_ConnectQEmptyCond;
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_EmptyCond =
+    //     &p_InstallInfo->m_ConnectQEmptyCond;
+
     p_ConnectInfo->m_ConnectLock = &p_InstallInfo->m_ConnectListLock;
 
     p_ConnectInfo->m_SendDisconnectRequest = s_SendDisconnectRequest;
@@ -503,12 +519,26 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_DisconnectQPopIdx;
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Size =
         &p_InstallInfo->m_DisconnectQSize;
+
+    // Obtain the handles for disconnect queue
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_DisconnectQMutex);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock =
-        &p_InstallInfo->m_DisconnectQMutex;
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock =
+    //     &p_InstallInfo->m_DisconnectQMutex;
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_DisconnectQFullCond);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_FullCond =
-        &p_InstallInfo->m_DisconnectQFullCond;
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_FullCond =
+    //     &p_InstallInfo->m_DisconnectQFullCond;
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_DisconnectQEmptyCond);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
-        &p_InstallInfo->m_DisconnectQEmptyCond;
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
+    //     &p_InstallInfo->m_DisconnectQEmptyCond;
 
     return rc;
 }

@@ -41,7 +41,7 @@
     CHOOSE_MACRO9(p_2, p_3, p_4, p_5, p_6, p_7, p_8, p_9, p_10, p_Macro,       \
                   __VA_ARGS__)
 
-#ifdef linux
+#if defined(__linux__)
 #define DIE(assertion, call_description)                                       \
     do {                                                                       \
         if (assertion) {                                                       \
@@ -52,7 +52,7 @@
     } while (0)
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32)
 #define DIE(assertion, call_description)                                       \
     do {                                                                       \
         LPVOID errorStr;                                                       \
@@ -72,7 +72,7 @@
     } while (0)
 #endif
 
-#ifdef linux
+#if defined(__linux__)
 #define max(a, b)                                                              \
     ({                                                                         \
         __typeof__(a) _a = (a);                                                \
@@ -131,11 +131,11 @@
 #ifdef _WIN32
 #define QPUSH(p_Queue, p_QMaxSize, p_Code)                                     \
     do {                                                                       \
-        WaitForSingleObject(*(p_Queue)->m_Metadata.m_Lock, INFINITE);          \
+        WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);           \
         while (*(p_Queue)->m_Metadata.m_Size == (p_QMaxSize)) {                \
-            ReleaseMutex(*(p_Queue)->m_Metadata.m_Lock);                       \
-            WaitForSingleObject(*(p_Queue)->m_Metadata.m_EmptyCond, INFINITE); \
-            WaitForSingleObject(*(p_Queue)->m_Metadata.m_Lock, INFINITE);      \
+            ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                       \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_EmptyCond, INFINITE);  \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);       \
         }                                                                      \
                                                                                \
         p_Code;                                                                \
@@ -144,18 +144,18 @@
             ((*(p_Queue)->m_Metadata.m_PushIdxPtr) + 1) % (p_QMaxSize);        \
         (*(p_Queue)->m_Metadata.m_Size)++;                                     \
                                                                                \
-        ReleaseMutex(*(p_Queue)->m_Metadata.m_Lock);                           \
+        ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                            \
                                                                                \
-        SetEvent(*(p_Queue)->m_Metadata.m_FullCond);                           \
+        SetEvent((p_Queue)->m_Metadata.m_FullCond);                            \
     } while (0)
 
 #define QPOP(p_Queue, p_QMaxSize, p_Code)                                      \
     do {                                                                       \
-        WaitForSingleObject(*(p_Queue)->m_Metadata.m_Lock, INFINITE);          \
+        WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);           \
         while (*(p_Queue)->m_Metadata.m_Size == 0) {                           \
-            ReleaseMutex(*(p_Queue)->m_Metadata.m_Lock);                       \
-            WaitForSingleObject(*(p_Queue)->m_Metadata.m_FullCond, INFINITE);  \
-            WaitForSingleObject(*(p_Queue)->m_Metadata.m_Lock, INFINITE);      \
+            ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                        \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_FullCond, INFINITE);   \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);       \
         }                                                                      \
                                                                                \
         p_Code;                                                                \
@@ -164,9 +164,9 @@
             ((*(p_Queue)->m_Metadata.m_PopIdxPtr) + 1) % (p_QMaxSize);         \
         (*(p_Queue)->m_Metadata.m_Size)--;                                     \
                                                                                \
-        ReleaseMutex(*(p_Queue)->m_Metadata.m_Lock);                           \
+        ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                            \
                                                                                \
-        SetEvent(*(p_Queue)->m_Metadata.m_EmptyCond);                          \
+        SetEvent((p_Queue)->m_Metadata.m_EmptyCond);                           \
     } while (0)
 #endif
 

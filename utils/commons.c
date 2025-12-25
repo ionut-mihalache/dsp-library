@@ -20,7 +20,6 @@
 #include "macros.h"
 #include "system-values.h"
 
-#if defined(_WIN32)
 static inline aqua_void_t s_ModeToPerms(aqua_mode_t *ownerAccess,
                                         aqua_mode_t *groupAccess,
                                         aqua_mode_t *otherAccess,
@@ -113,8 +112,51 @@ end:
     // sa.lpSecurityDescriptor = sd;
     // sa.bInheritHandle = FALSE;
 
+    // SYSTEM_INFO si;
+    // size_t allocGran;
+    // size_t mappingSize;
+    // GetSystemInfo(&si);
+    // allocGran = si.dwAllocationGranularity;
+
+    // // Round up to nearest allocation granularity
+    // mappingSize = (p_Size + allocGran - 1) & ~(allocGran - 1);
+
+    // SYSTEM_INFO si;
+    // SIZE_T gran;
+    // SIZE_T mapSize;
+    // GetSystemInfo(&si);
+    // gran = si.dwAllocationGranularity;
+
+    // // Round up size to allocation granularity
+    // mapSize = (p_Size + gran - 1) & ~(gran - 1);
+
+    SECURITY_DESCRIPTOR sd;
+    SECURITY_ATTRIBUTES sa;
+    PACL pAcl = NULL;
+    EXPLICIT_ACCESS ea;
+
+    // Creează un DACL permisiv pentru Everyone
+    ZeroMemory(&ea, sizeof(EXPLICIT_ACCESS));
+    ea.grfAccessPermissions = FILE_MAP_ALL_ACCESS;
+    ea.grfAccessMode = GRANT_ACCESS;
+    ea.grfInheritance = NO_INHERITANCE;
+    ea.Trustee.TrusteeForm = TRUSTEE_IS_WELL_KNOWN_GROUP;
+    ea.Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+    ea.Trustee.ptstrName = "EVERYONE";
+
+    SetEntriesInAcl(1, &ea, NULL, &pAcl);
+
+    InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION);
+    SetSecurityDescriptorDacl(&sd, TRUE, pAcl, FALSE);
+
+    sa.nLength = sizeof(sa);
+    sa.lpSecurityDescriptor = &sd;
+    sa.bInheritHandle = FALSE;
+
+    fprintf(stdout, "Creating object (%s) with size %lu.\n", p_Name, p_Size);
+
     handle = CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
-                               NULL,                 // default security
+                               &sa,                 // default security
                                PAGE_READWRITE,       // read/write access
                                0,      // maximum object size (high-order DWORD)
                                p_Size, // maximum object size (low-order DWORD)
@@ -145,8 +187,8 @@ aqua_void_t createQ(aqua_void_t **p_QPtrRes, aqua_size_t p_Size,
                                p_Prot, 0, 0, p_Size);
     DIE(*p_QPtrRes == NULL, "Could not map return queue memory");
 
-    bRet = VirtualLock(*p_QPtrRes, p_Size);
-    DIE(bRet == FALSE, "Could not lock memory in RAM");
+    // bRet = VirtualLock(*p_QPtrRes, p_Size);
+    // DIE(bRet == FALSE, "Could not lock memory in RAM");
 #endif
 }
 
@@ -160,12 +202,56 @@ aqua_void_t createQSimple(aqua_void_t **p_QPtrRes, aqua_size_t p_Size,
 #if defined(_WIN32)
     BOOL bRet;
 
+    LPVOID ptr;
+
+    // ptr = MapViewOfFile(p_FileHandle, FILE_MAP_READ, 0, 0, 0);
+    // fprintf(stderr, "MapViewOfFile(FILE_MAP_READ): %s (err=%lu)\n",
+    //         ptr ? "succeeded" : "failed", ptr ? 0 : GetLastError());
+    // if (ptr) {
+    //     UnmapViewOfFile(ptr);
+    // }
+
+    // ptr = MapViewOfFile(p_FileHandle, FILE_MAP_WRITE, 0, 0, 0);
+    // fprintf(stderr, "MapViewOfFile(FILE_MAP_WRITE): %s (err=%lu)\n",
+    //         ptr ? "succeeded" : "failed", ptr ? 0 : GetLastError());
+    // if (ptr) {
+    //     UnmapViewOfFile(ptr);
+    // }
+
+    // ptr = MapViewOfFile(p_FileHandle, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+    // fprintf(stderr, "MapViewOfFile(FILE_MAP_ALL_ACCESS): %s (err=%lu)\n",
+    //         ptr ? "succeeded" : "failed", ptr ? 0 : GetLastError());
+    // if (ptr) {
+    //     UnmapViewOfFile(ptr);
+    // }
+    // fflush(stderr);
+
+    // LPVOID rptr = MapViewOfFile(p_FileHandle, FILE_MAP_READ, 0, 0, 0);
+    // if (!rptr) {
+    //     fprintf(stderr, "MapViewOfFile(FILE_MAP_READ) failed: %lu\n",
+    //             GetLastError());
+    // } else {
+    //     fprintf(stderr, "MapViewOfFile(FILE_MAP_READ) succeeded\n");
+    //     UnmapViewOfFile(rptr);
+    // }
+
+    SYSTEM_INFO si;
+    SIZE_T gran;
+    SIZE_T mapSize;
+    GetSystemInfo(&si);
+    gran = si.dwAllocationGranularity;
+
+    // Round up size to allocation granularity
+    // mapSize = (p_Size + gran - 1) & ~(gran - 1);
+
+    fprintf(stdout, "Mapping object with size %llu.\n", p_Size);
+
     *p_QPtrRes = MapViewOfFile(p_FileHandle, // handle to map object
                                p_Prot, 0, 0, p_Size);
     DIE(*p_QPtrRes == NULL, "Could not map memory");
 
-    bRet = VirtualLock(*p_QPtrRes, p_Size);
-    DIE(bRet == FALSE, "Could not lock memory in RAM");
+    // bRet = VirtualLock(*p_QPtrRes, p_Size);
+    // DIE(bRet == FALSE, "Could not lock memory in RAM");
 #endif
 }
 
