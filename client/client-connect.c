@@ -172,10 +172,10 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectRequest->m_ConnectionIdx = p_ConnId;
 
     memcpy(p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQName,
-           p_ConnectInformation->m_ReturnQName,
+           p_ConnectInformation->m_RequestResponseQName,
            strlen(p_ConnectInformation->m_ReturnQName));
     memcpy(p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQName,
-           p_ConnectInformation->m_RequestResponseQName,
+           p_ConnectInformation->m_ReturnQName,
            strlen(p_ConnectInformation->m_RequestResponseQName));
 
     memset(p_ConnectRequest->m_ReturnQName, 0, RETURNQ_NAME_MAX_SIZE);
@@ -419,6 +419,9 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
 #else
 #endif
 
+    fprintf(stdout, "Sending connection request (%u, %s, %s)\n", connId,
+            p_RequestInfo->m_ReturnQName,
+            p_RequestInfo->m_RequestResponseQName);
     QPUSH(
         queue, CONNECTQ_MAX_SIZE, do {
             idx = *queue->m_Metadata.m_PushIdxPtr;

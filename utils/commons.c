@@ -154,10 +154,8 @@ end:
     sa.lpSecurityDescriptor = &sd;
     sa.bInheritHandle = FALSE;
 
-    fprintf(stdout, "Creating object (%s) with size %lu.\n", p_Name, p_Size);
-
     handle = CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
-                               &sa,                 // default security
+                               &sa,                  // default security
                                PAGE_READWRITE,       // read/write access
                                0,      // maximum object size (high-order DWORD)
                                p_Size, // maximum object size (low-order DWORD)
@@ -244,8 +242,6 @@ aqua_void_t createQSimple(aqua_void_t **p_QPtrRes, aqua_size_t p_Size,
 
     // Round up size to allocation granularity
     // mapSize = (p_Size + gran - 1) & ~(gran - 1);
-
-    fprintf(stdout, "Mapping object with size %llu.\n", p_Size);
 
     *p_QPtrRes = MapViewOfFile(p_FileHandle, // handle to map object
                                p_Prot, 0, 0, p_Size);

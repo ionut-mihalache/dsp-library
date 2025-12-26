@@ -162,9 +162,6 @@ spin_lock_unlock:
     SIZE_T offsetDelta =
         (freeByteIdx * sizeof(struct InstallInformation)) - alignedOffset;
 
-    LOGF("freeByteIdx: %u\n", freeByteIdx);
-    LOGF("file offset: %llu\n",
-         freeByteIdx * sizeof(struct InstallInformation));
     mapBase = MapViewOfFile(installShmHandle, // handle to map object
                             AQUA_PROT_READ | AQUA_PROT_WRITE,
                             (DWORD)(alignedOffset >> 32),

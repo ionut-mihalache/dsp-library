@@ -1,7 +1,6 @@
 #include <chrono>
 #include <ratio>
 #include <stdio.h>
-#include <stdlib.h>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -43,10 +42,10 @@ int main() {
         return 0;
     }
 
-    sprintf(requestInfo->m_ReturnQName, "%s", "return-q-123");
+    sprintf(requestInfo->m_ReturnQName, "%s", "return-q-5656565656");
     requestInfo->m_ReturnQSize = 1;
 
-    sprintf(requestInfo->m_RequestResponseQName, "%s", "response-q-123");
+    sprintf(requestInfo->m_RequestResponseQName, "%s", "response-q-5656565656");
     requestInfo->m_ResponseQSize = 1;
     requestInfo->m_QType = SMBQ;
 
