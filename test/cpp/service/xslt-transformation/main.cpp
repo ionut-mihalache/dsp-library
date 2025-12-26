@@ -1,9 +1,35 @@
 #include <iostream>
 #include <memory>
+#include <string>
+#include <cstdio>
 
 extern "C" {
 #include "dsp-service.h"
 #include "dsp.h"
+}
+
+#include "SaxonCHE/include/saxonc/SaxonProcessor.h"
+#include "SaxonCHE/include/saxonc/Xslt30Processor.h"
+
+string mf_GetXmlTransformed(
+        const string& xmlBytes,
+        const string& xsltBytes) {
+
+    SaxonProcessor saxon(false); // false = HE (fără licență)
+    XsltProcessor* xslt = saxon.newXsltProcessor();
+
+    XdmNode* xmlNode = saxon.parseXmlFromString(xmlBytes.c_str());
+    xslt->compileFromString(xsltBytes.c_str());
+    xslt->setSource(xmlNode);
+
+    const char* result = xslt->transformToString();
+
+    string output = result ? result : "";
+
+    delete xslt;
+    delete xmlNode;
+
+    return output;
 }
 
 int main() {
@@ -32,6 +58,14 @@ int main() {
         receiveCall(callData.get(), callInfo.get());
 
         std::cout << callData->m_CallInfo << std::endl;
+
+        std::unique_ptr<SMBCall> returnData(new SMBCall);
+
+        int size = sprintf((char *)returnData->m_CallInfo, "It looks like it works!");
+        returnData->m_Metadata.m_Size = size;
+        returnData->m_Metadata.m_ConnId = callData->m_Metadata.m_ConnId;
+
+        sendReturn(returnInfo.get(), returnData.get());
     }
 
     // std::cout << "Hello World" << std::endl;

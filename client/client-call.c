@@ -172,6 +172,9 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     aqua_mode_t qMode;
     aqua_object_size_t qSize;
     aqua_void_t *callQ;
+#if defined(_WIN32)
+    char qSyncName[RETURNQ_NAME_MAX_SIZE];
+#endif
 
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
@@ -253,9 +256,30 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
 #if defined(__linux__)
     rc = close(callQHandle);
     DIE(rc != 0, "Could not close callQHandle");
+
+    p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
+    p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
+    p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
 #elif defined(_WIN32)
     DIE(!CloseHandle(callQHandle), "Could not close callQHandle");
+
+    // Obtain the handles for disconnect queue
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_CallQMutex);
+    p_CallInfo->m_Q.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_CallQFullCond);
+    p_CallInfo->m_Q.m_Metadata.m_FullCond =
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             p_InstallInfo->m_CallQEmptyCond);
+    p_CallInfo->m_Q.m_Metadata.m_EmptyCond =
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
 #else
+#error "Platform not supported by AQUA"
 #endif
 
     p_CallInfo->m_CallFn = s_QPush;
@@ -264,9 +288,6 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
     p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
     p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
-    p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
-    p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
-    p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
     p_CallInfo->m_Q.m_Type = p_InstallInfo->m_CallQType;
 
     return rc;

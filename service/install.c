@@ -14,6 +14,8 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
     struct ConnectionInformation *connInfo;
 #if defined(_WIN32)
     char qSyncName[RETURNQ_NAME_MAX_SIZE];
+    SIZE_T mutexId = 3;
+    SIZE_T eventId = 1006;
 #endif
 
     for (i = 0; i < OPENED_CONNECTIONS; ++i) {
@@ -65,47 +67,86 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
         rc = pthread_condattr_destroy(&condAttr);
         DIE(rc != 0, "Could not destroy condition attribute object");
 #elif defined(_WIN32)
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
-                 p_InstallInfo->m_StrId, "returnQ-lock", i);
-        connInfo->m_ReturnQMutex = CreateMutex(NULL, FALSE, qSyncName);
-        DIE(connInfo->m_ReturnQMutex == NULL,
+        // TODO: Replace the hardcoded values
+        // At this point we just create the object which will be opened when
+        // needed by the service and the client snprintf(qSyncName,
+        // sizeof(qSyncName), "%s-%s-%u",
+        //          p_InstallInfo->m_StrId, "returnQ-lock", i);
+        fprintf(stdout, "Creating mutex %llu\n", mutexId);
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q", mutexId);
+        // connInfo->m_ReturnQMutex = CreateMutex(NULL, FALSE, qSyncName);
+        DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
             "Could not create return queue mutex");
+        connInfo->m_ReturnQMutex = mutexId;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
-                 p_InstallInfo->m_StrId, "requestResponseQ-lock", i);
-        connInfo->m_RequestResponseQMutex = CreateMutex(NULL, FALSE, NULL);
-        DIE(connInfo->m_RequestResponseQMutex == NULL,
+        mutexId++;
+
+        // snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+        //          p_InstallInfo->m_StrId, "requestResponseQ-lock", i);
+        // connInfo->m_RequestResponseQMutex = CreateMutex(NULL, FALSE, NULL);
+        // DIE(connInfo->m_RequestResponseQMutex == NULL,
+        //     "Could not create request-response queue mutex");
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
+                 mutexId);
+        DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
             "Could not create request-response queue mutex");
+        connInfo->m_RequestResponseQMutex = mutexId;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
-                 p_InstallInfo->m_StrId, "returnQ-event-full", i);
-        connInfo->m_ReturnQFullCond =
-            CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        DIE(connInfo->m_ReturnQFullCond == NULL,
-            "Could not create return queue full event");
+        mutexId++;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
-                 p_InstallInfo->m_StrId, "returnQ-event-empty", i);
-        connInfo->m_ReturnQEmptyCond =
-            CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        DIE(connInfo->m_ReturnQEmptyCond == NULL,
+        // snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+        //          p_InstallInfo->m_StrId, "returnQ-event-full", i);
+        // connInfo->m_ReturnQFullCond =
+        //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // DIE(connInfo->m_ReturnQFullCond == NULL,
+        //     "Could not create return queue full event");
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q", eventId);
+        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+            "Could not create call queue full event");
+        connInfo->m_ReturnQFullCond = eventId;
+
+        eventId++;
+
+        // snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+        //          p_InstallInfo->m_StrId, "returnQ-event-empty", i);
+        // connInfo->m_ReturnQEmptyCond =
+        //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // DIE(connInfo->m_ReturnQEmptyCond == NULL,
+        //     "Could not create return queue empty event");
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q", eventId);
+        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
             "Could not create return queue empty event");
+        connInfo->m_ReturnQEmptyCond = eventId;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
-                 p_InstallInfo->m_StrId, "requestResponseQ-event-full", i);
-        connInfo->m_RequestResponseQFullCond =
-            CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        DIE(connInfo->m_RequestResponseQFullCond == NULL,
+        eventId++;
+
+        // snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+        //          p_InstallInfo->m_StrId, "requestResponseQ-event-full", i);
+        // connInfo->m_RequestResponseQFullCond =
+        //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // DIE(connInfo->m_RequestResponseQFullCond == NULL,
+        //     "Could not create request-response full event");
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
+                 eventId);
+        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
             "Could not create request-response full event");
+        connInfo->m_RequestResponseQFullCond = eventId;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
-                 p_InstallInfo->m_StrId, "requestResponseQ-event-empty", i);
-        connInfo->m_RequestResponseQEmptyCond =
-            CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        DIE(connInfo->m_RequestResponseQEmptyCond == NULL,
+        eventId++;
+
+        // snprintf(qSyncName, sizeof(qSyncName), "%s-%s-%u",
+        //          p_InstallInfo->m_StrId, "requestResponseQ-event-empty", i);
+        // connInfo->m_RequestResponseQEmptyCond =
+        //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // DIE(connInfo->m_RequestResponseQEmptyCond == NULL,
+        //     "Could not create request-response empty event");
+        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
+                 eventId);
+        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
             "Could not create request-response empty event");
-
+        connInfo->m_RequestResponseQEmptyCond = eventId;
 #else
+#error "Platform not supported by AQUA"
 #endif
     }
 
@@ -357,7 +398,6 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_DisconnectQFullCond;
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
         &p_InstallInfo->m_DisconnectQEmptyCond;
-
 #elif defined(_WIN32)
     // WIP: For handles identification in shared userspace memory we use numbers
     //  TODO: Replace the hardcoded values for shared handle ids
@@ -437,6 +477,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
         "Could not create disconnect queue empty event");
     p_InstallInfo->m_DisconnectQEmptyCond = 1003LLU;
 #else
+#error "Platform not supported by AQUA"
 #endif
 
     return rc;

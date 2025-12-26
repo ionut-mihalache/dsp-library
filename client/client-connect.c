@@ -161,6 +161,9 @@ static int32_t s_ProcessConnectionRequest(
     aqua_object_size_t qSize;
     void *returnQ;
     struct ConnectResponseInformation *requestResponseQ;
+#if defined(_WIN32)
+    char qSyncName[RETURNQ_NAME_MAX_SIZE];
+#endif
 
     /**
      * With the connection index found we need to construct the request for the
@@ -313,12 +316,29 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize = 0;
 
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQFullCond;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQEmptyCond;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQMutex;
+
+    // Obtain the handles for return queue
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
+             p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond);
+    p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQFullCond;
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
+             p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond);
+    p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQEmptyCond;
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
+             p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex);
+    p_ReturnInfo->m_Q.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQMutex;
+
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
         &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx;
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
@@ -327,12 +347,30 @@ static int32_t s_ProcessConnectionRequest(
         &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize;
 
     p_ReturnInfo->m_Q.m_Data = returnQ;
-    p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
-    p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond;
-    p_ReturnInfo->m_Q.m_Metadata.m_Lock =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex;
+
+    // Obtain the handles for request-return queue
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
+             p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQFullCond);
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
+
+    snprintf(
+        qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
+        p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQEmptyCond);
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
+        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+    // p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond;
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
+             p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQMutex);
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+    // p_ReturnInfo->m_Q.m_Metadata.m_Lock =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex;
+
     p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdx;
     p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
@@ -438,7 +476,9 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
     aqua_file_handle connectQHandle, disconnectQHandle;
     struct ConnectRequest *connectQ;
     struct ConnectRequest *disconnectQ;
+#if defined(_WIN32)
     char qSyncName[RETURNQ_NAME_MAX_SIZE];
+#endif
 
     /**
      * TODO: Implement successfull connection functionality

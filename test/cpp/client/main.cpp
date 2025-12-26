@@ -128,6 +128,6 @@ int main() {
     sendDisconnectRequest(connectInfo.get(),
                           &(returnInfo->m_ConnectResponseInformation));
 
-    // fprintf(stdout, "%s\n", returnData->m_CallInfo);
+    fprintf(stdout, "%s\n", returnData->m_CallInfo);
     return 0;
 }

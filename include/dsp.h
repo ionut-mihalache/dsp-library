@@ -83,7 +83,7 @@ typedef SIZE_T aqua_size_t;
 #define CONNECTQ_NAME_MAX_SIZE ((uint32_t)256)
 #define RETURNQ_NAME_MAX_SIZE ((uint32_t)256)
 
-#define OPENED_CONNECTIONS ((uint32_t)2048)
+#define OPENED_CONNECTIONS ((uint32_t)32)
 
 enum QType {
     SMBQ, // 0
@@ -132,13 +132,13 @@ struct ConnectionInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 
-    aqua_cond_t m_ReturnQFullCond;
-    aqua_cond_t m_ReturnQEmptyCond;
-    aqua_cond_t m_RequestResponseQFullCond;
-    aqua_cond_t m_RequestResponseQEmptyCond;
+    aqua_shared_cond_t m_ReturnQFullCond;
+    aqua_shared_cond_t m_ReturnQEmptyCond;
+    aqua_shared_cond_t m_RequestResponseQFullCond;
+    aqua_shared_cond_t m_RequestResponseQEmptyCond;
 
-    aqua_mutex_t m_ReturnQMutex;
-    aqua_mutex_t m_RequestResponseQMutex;
+    aqua_shared_mutex_t m_ReturnQMutex;
+    aqua_shared_mutex_t m_RequestResponseQMutex;
 
     void *m_RequestResponseQ, *m_ReturnQ;
     size_t m_RequestResponseQMapSize, m_ReturnQMapSize;
@@ -160,14 +160,14 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     char m_StrId[STRING_ID_MAX_LENGTH];
     char m_Version[VERSION_MAX_LENGTH];
 
-    aqua_cond_t m_CallQFullCond;
-    aqua_cond_t m_CallQEmptyCond;
+    aqua_shared_cond_t m_CallQFullCond;
+    aqua_shared_cond_t m_CallQEmptyCond;
     aqua_shared_cond_t m_ConnectQFullCond;
     aqua_shared_cond_t m_ConnectQEmptyCond;
     aqua_shared_cond_t m_DisconnectQFullCond;
     aqua_shared_cond_t m_DisconnectQEmptyCond;
 
-    aqua_mutex_t m_CallQMutex;
+    aqua_shared_mutex_t m_CallQMutex;
     aqua_shared_mutex_t m_ConnectQMutex;
     aqua_shared_mutex_t m_DisconnectQMutex;
     aqua_spinlock_t m_ConnectListLock;

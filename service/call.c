@@ -259,26 +259,36 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     pthread_cond_init(&p_InstallInfo->m_CallQEmptyCond, &condAttr);
 
     pthread_condattr_destroy(&condAttr);
-#elif defined(_WIN32)
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "callQ-event-full");
-    p_InstallInfo->m_CallQFullCond = CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_CallQFullCond == NULL,
-        "Could not create call queue full event");
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "callQ-event-empty");
-    p_InstallInfo->m_CallQEmptyCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_CallQEmptyCond == NULL,
-        "Could not create call queue empty event");
-#else
-#endif
 
     p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
     p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
+#elif defined(_WIN32)
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             2LLU);
+    p_CallInfo->m_Q.m_Metadata.m_Lock = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_CallInfo->m_Q.m_Metadata.m_Lock == NULL,
+        "Could not create call queue mutex");
+    p_InstallInfo->m_CallQMutex = 2LLU;
 
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             1004LLU);
+    p_CallInfo->m_Q.m_Metadata.m_FullCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_CallInfo->m_Q.m_Metadata.m_FullCond == NULL,
+        "Could not create call queue full event");
+    p_InstallInfo->m_CallQFullCond = 1004LLU;
+
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             1005LLU);
+    p_CallInfo->m_Q.m_Metadata.m_EmptyCond =
+        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    DIE(p_CallInfo->m_Q.m_Metadata.m_EmptyCond == NULL,
+        "Could not create call queue full event");
+    p_InstallInfo->m_CallQFullCond = 1005LLU;
+#else
+#error "Platform not supported by AQUA"
+#endif
     return rc;
 }
 
