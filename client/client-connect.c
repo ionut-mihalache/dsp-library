@@ -1,3 +1,4 @@
+#include <stdint.h>
 #include <string.h>
 
 #include "client-connect.h"
@@ -392,6 +393,8 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     uint32_t idx;
     uint32_t connId;
     struct ConnectQueue *queue = &p_ConnectInfo->m_ConnectQ;
+    LONG oldConnectQSize;
+    uint32_t expected = 0;
 
     /**
      *  search for a free spot in the opened connections for the service
@@ -422,13 +425,51 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
     fprintf(stdout, "Sending connection request (%u, %s, %s)\n", connId,
             p_RequestInfo->m_ReturnQName,
             p_RequestInfo->m_RequestResponseQName);
-    QPUSH(
-        queue, CONNECTQ_MAX_SIZE, do {
-            idx = *queue->m_Metadata.m_PushIdxPtr;
-            s_ProcessConnectionRequest(connId, p_ReturnInfo,
-                                       &queue->m_Data[idx], p_ConnectInfo,
-                                       p_RequestInfo);
-        } while (0));
+
+    oldConnectQSize =
+        InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
+    while (oldConnectQSize == CONNECTQ_MAX_SIZE) {
+        InterlockedExchangeAdd(queue->m_Metadata.m_WaitConsume, 1);
+        expected = 0;
+        WaitOnAddress(queue->m_Metadata.m_WaitConsume, &expected,
+                      sizeof(expected), INFINITE);
+        InterlockedExchangeAdd(queue->m_Metadata.m_WaitConsume, -1);
+        oldConnectQSize =
+            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
+    }
+
+    while (1) {
+        LONG prev =
+            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic,
+                                       oldConnectQSize + 1, oldConnectQSize);
+
+        if (prev == oldConnectQSize) {
+            break;
+        }
+
+        expected = 0;
+        if (oldConnectQSize == CONNECTQ_MAX_SIZE) {
+            InterlockedExchangeAdd(queue->m_Metadata.m_WaitConsume, 1);
+
+            WaitOnAddress(queue->m_Metadata.m_WaitConsume, &expected,
+                          sizeof(expected), // LONG, nu uint32_t
+                          INFINITE);
+
+            InterlockedExchangeAdd(queue->m_Metadata.m_WaitConsume, -1);
+        }
+
+        oldConnectQSize =
+            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
+    }
+
+    idx = InterlockedExchangeAdd(queue->m_Metadata.m_PushIdxAtomic, 1) %
+          CONNECTQ_MAX_SIZE;
+    s_ProcessConnectionRequest(connId, p_ReturnInfo, &queue->m_Data[idx],
+                               p_ConnectInfo, p_RequestInfo);
+
+    if (InterlockedCompareExchange(queue->m_Metadata.m_WaitProduce, 0, 0) > 0) {
+        WakeByAddressAll(&queue->m_Metadata.m_WaitProduce);
+    }
 
     /**
      * Wait for the response from the service to announce that the communication
@@ -531,6 +572,17 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_ConnectQPopIdx;
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_Size =
         &p_InstallInfo->m_ConnectQSize;
+
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitConsume =
+        &p_InstallInfo->m_ConnectQWaitConsume;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitProduce =
+        &p_InstallInfo->m_ConnectQWaitProduce;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
+        &p_InstallInfo->m_ConnectQPushIdxAtomic;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxAtomic =
+        &p_InstallInfo->m_ConnectQPopIdxAtomic;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_SizeAtomic =
+        &p_InstallInfo->m_ConnectQSizeAtomic;
 
     // Obtain the handles for connect queue
     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,

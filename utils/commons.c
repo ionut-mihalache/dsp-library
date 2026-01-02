@@ -154,6 +154,8 @@ end:
     sa.lpSecurityDescriptor = &sd;
     sa.bInheritHandle = FALSE;
 
+    fprintf(stdout, "Creating shared memory object %s.\n", p_Name);
+
     handle = CreateFileMapping(INVALID_HANDLE_VALUE, // use paging file
                                &sa,                  // default security
                                PAGE_READWRITE,       // read/write access

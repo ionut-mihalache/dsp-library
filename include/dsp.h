@@ -175,6 +175,9 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
     uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
+    LONG m_ConnectQPushIdxAtomic, m_ConnectQPopIdxAtomic,
+        m_ConnectQSizeAtomic;
+    LONG m_ConnectQWaitConsume, m_ConnectQWaitProduce;
 
     enum QType m_CallQType;
 
@@ -195,6 +198,11 @@ struct DSPQueueMetadata {
     uint32_t *m_PushIdxPtr;
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;
+    LONG *m_WaitProduce;
+    LONG *m_WaitConsume;
+    LONG *m_PushIdxAtomic;
+    LONG *m_PopIdxAtomic;
+    LONG *m_SizeAtomic;
 };
 
 struct ConnectResponseQueue {

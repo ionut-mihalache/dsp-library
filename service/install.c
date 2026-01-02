@@ -151,28 +151,82 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     int32_t rc = 0;
     struct ConnectQueue *queue = &p_ConnectInfo->m_ConnectQ;
     struct ConnectResponseInformation responseInfo;
+    LONG oldConnectQSize = 0;
+    uint32_t idx;
+    uint32_t expected = 0;
 
-    QPOP(
-        queue, CONNECTQ_MAX_SIZE, do {
-            fprintf(stdout, "Received connection request (%s, %s)\n",
-                    queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ReturnQName,
-                    queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]
-                        .m_RequestResponseQName);
+    oldConnectQSize =
+        InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
+    while (oldConnectQSize == 0) {
+        InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, 1);
+        expected = 0;
+        WaitOnAddress(queue->m_Metadata.m_WaitProduce, &expected,
+                      sizeof(uint32_t), INFINITE);
+        InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, -1);
+        oldConnectQSize =
+            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
+    }
 
-            configureServiceReturnInformation(
-                p_ReturnInfo, p_ConnectInfo,
-                &queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]);
+    while (1) {
+        LONG prev =
+            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic,
+                                       oldConnectQSize - 1, oldConnectQSize);
 
-            memcpy(responseInfo.m_ReturnQName,
-                   queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ReturnQName,
-                   RETURNQ_NAME_MAX_SIZE);
-            memcpy(responseInfo.m_ReturnRequestQName,
-                   queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]
-                       .m_RequestResponseQName,
-                   RETURNQ_NAME_MAX_SIZE);
-            responseInfo.m_Id =
-                queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ConnectionIdx;
-        } while (0));
+        if (prev == oldConnectQSize) {
+            break;
+        }
+
+        expected = 0;
+        if (oldConnectQSize == CONNECTQ_MAX_SIZE) {
+            InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, 1);
+
+            WaitOnAddress(queue->m_Metadata.m_WaitProduce, &expected,
+                          sizeof(LONG), INFINITE);
+
+            InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, -1);
+        }
+
+        oldConnectQSize =
+            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
+    }
+
+    idx = InterlockedExchangeAdd(queue->m_Metadata.m_PopIdxAtomic, 1) %
+          CONNECTQ_MAX_SIZE;
+    fprintf(stdout, "Current idx is %u: \n", idx);
+    configureServiceReturnInformation(p_ReturnInfo, p_ConnectInfo,
+                                      &queue->m_Data[idx]);
+
+    memcpy(responseInfo.m_ReturnQName, queue->m_Data[idx].m_ReturnQName,
+           RETURNQ_NAME_MAX_SIZE);
+    memcpy(responseInfo.m_ReturnRequestQName,
+           queue->m_Data[idx].m_RequestResponseQName, RETURNQ_NAME_MAX_SIZE);
+    responseInfo.m_Id = queue->m_Data[idx].m_ConnectionIdx;
+
+    if (InterlockedCompareExchange(queue->m_Metadata.m_WaitConsume, 0, 0) > 0) {
+        WakeByAddressAll(&queue->m_Metadata.m_WaitConsume);
+    }
+
+    // QPOP(
+    //     queue, CONNECTQ_MAX_SIZE, do {
+    //         fprintf(stdout, "Received connection request (%s, %s)\n",
+    //                 queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ReturnQName,
+    //                 queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]
+    //                     .m_RequestResponseQName);
+
+    //         configureServiceReturnInformation(
+    //             p_ReturnInfo, p_ConnectInfo,
+    //             &queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]);
+
+    //         memcpy(responseInfo.m_ReturnQName,
+    //                queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ReturnQName,
+    //                RETURNQ_NAME_MAX_SIZE);
+    //         memcpy(responseInfo.m_ReturnRequestQName,
+    //                queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]
+    //                    .m_RequestResponseQName,
+    //                RETURNQ_NAME_MAX_SIZE);
+    //         responseInfo.m_Id =
+    //             queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ConnectionIdx;
+    //     } while (0));
 
     s_SendConnectResponse(p_ReturnInfo, &responseInfo);
 
@@ -253,6 +307,12 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_InstallInfo->m_ConnectQPopIdx = 0;
     p_InstallInfo->m_ConnectQSize = 0;
 
+    InterlockedExchange(&p_InstallInfo->m_ConnectQWaitConsume, 0);
+    InterlockedExchange(&p_InstallInfo->m_ConnectQWaitProduce, 0);
+    InterlockedExchange(&p_InstallInfo->m_ConnectQPushIdxAtomic, 0);
+    InterlockedExchange(&p_InstallInfo->m_ConnectQPopIdxAtomic, 0);
+    InterlockedExchange(&p_InstallInfo->m_ConnectQSizeAtomic, 0);
+
     p_InstallInfo->m_DisconnectQPushIdx = 0;
     p_InstallInfo->m_DisconnectQPopIdx = 0;
     p_InstallInfo->m_DisconnectQSize = 0;
@@ -311,6 +371,17 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_Size =
         &p_InstallInfo->m_ConnectQSize;
     p_ConnectInfo->m_Connections = p_InstallInfo->m_Connections;
+
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
+        &p_InstallInfo->m_ConnectQPushIdxAtomic;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxAtomic =
+        &p_InstallInfo->m_ConnectQPopIdxAtomic;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitConsume =
+        &p_InstallInfo->m_ConnectQWaitConsume;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitProduce =
+        &p_InstallInfo->m_ConnectQWaitProduce;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_SizeAtomic =
+        &p_InstallInfo->m_ConnectQSizeAtomic;
 
     p_ConnectInfo->m_ReceiveDisconnectRequest = s_ReceiveDisconnectRequest;
     p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
