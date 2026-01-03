@@ -38,7 +38,7 @@ dirs:
 	if not exist $(LIBDIR) mkdir $(LIBDIR)
 
 $(LIBDIR)\$(DLL_NAME): $(OBJS)
-	$(LD) $(LDFLAGS) /OUT:$(LIBDIR)\$(DLL_NAME) /IMPLIB:$(LIBDIR)\$(LIB_NAME) $(OBJS) Synchronization.Lib
+	$(LD) $(LDFLAGS) /OUT:$(LIBDIR)\$(DLL_NAME) /IMPLIB:$(LIBDIR)\$(LIB_NAME) $(OBJS)
 
 # -------------------------
 # Compile rules (explicit)

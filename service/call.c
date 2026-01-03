@@ -6,82 +6,82 @@
 #include "macros.h"
 #include "system-values.h"
 
-static int32_t s_SMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_SMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                              uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct SMBCall *qData = (struct SMBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct SMBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct SMBCall));
 
     return rc;
 }
 
-static int32_t s_EMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_EMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                              uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct EMBCall *qData = (struct EMBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct EMBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct EMBCall));
 
     return rc;
 }
 
-static int32_t s_QMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_QMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                              uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct QMBCall *qData = (struct QMBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct QMBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct QMBCall));
 
     return rc;
 }
 
-static int32_t s_HMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_HMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                              uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct HMBCall *qData = (struct HMBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct HMBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct HMBCall));
 
     return rc;
 }
 
-static int32_t s_MBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_MBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                             uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct MBCall *qData = (struct MBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct MBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct MBCall));
 
     return rc;
 }
 
-static int32_t s_DMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_DMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                              uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct DMBCall *qData = (struct DMBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct DMBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct DMBCall));
 
     return rc;
 }
 
-static int32_t s_HGBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_HGBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                              uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct HGBCall *qData = (struct HGBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct HGBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct HGBCall));
 
     return rc;
 }
 
-static int32_t s_GBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
+static int32_t s_GBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue,
+                             uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct GBCall *qData = (struct GBCall *)p_Queue->m_Data;
 
-    memcpy(p_CallInfo, &qData[*p_Queue->m_Metadata.m_PopIdxPtr],
-           sizeof(struct GBCall));
+    memcpy(p_CallInfo, &qData[p_CurrIdx], sizeof(struct GBCall));
 
     return rc;
 }
@@ -95,12 +95,10 @@ static int32_t s_QPopDMB(struct DMBCall *callInfo, struct DSPQueue *queue);
 static int32_t s_QPopHGB(struct HGBCall *callInfo, struct DSPQueue *queue);
 static int32_t s_QPopGB(struct GBCall *callInfo, struct DSPQueue *queue);
 
-/**
- * TODO: Return correct error code. This function 'never fails' at the moment.
- */
+// TODO: Return correct error code. This function 'never fails' at the moment.
 static int32_t s_QPopA(struct DSPQueue *queue, void *callInfo,
                        uint32_t qMaxSize,
-                       int32_t (*fn)(void *, struct DSPQueue *));
+                       int32_t (*fn)(void *, struct DSPQueue *, uint32_t));
 
 static int32_t s_QPop(struct CommunicationInfo *p_CInfo) {
     switch (p_CInfo->m_Q->m_Type) {
@@ -121,9 +119,7 @@ static int32_t s_QPop(struct CommunicationInfo *p_CInfo) {
     case GBQ:
         return s_QPopGB((struct GBCall *)p_CInfo->m_Data, p_CInfo->m_Q);
     default:
-        /**
-         * TODO
-         */
+        // TODO
         return (-1);
     }
 }
@@ -208,9 +204,7 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
 
         break;
     default:
-        /**
-         * TODO
-         */
+        // TODO
         DIE(true, "QType is not recognized");
     }
 
@@ -231,9 +225,20 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
 
     p_CallInfo->m_ReceiveCallFn = s_QPop;
     p_CallInfo->m_Q.m_Data = callQ;
-    p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
-    p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
-    p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+
+    // p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
+    // p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
+    // p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+    p_CallInfo->m_Q.m_Metadata.m_PushIdxAtomic =
+        &p_InstallInfo->m_CallQPushIdxAtomic;
+    p_CallInfo->m_Q.m_Metadata.m_PopIdxAtomic =
+        &p_InstallInfo->m_CallQPopIdxAtomic;
+    p_CallInfo->m_Q.m_Metadata.m_WaitConsume =
+        &p_InstallInfo->m_CallQWaitConsume;
+    p_CallInfo->m_Q.m_Metadata.m_WaitProduce =
+        &p_InstallInfo->m_CallQWaitProduce;
+    p_CallInfo->m_Q.m_Metadata.m_SizeAtomic = &p_InstallInfo->m_CallQSizeAtomic;
+
     p_CallInfo->m_Q.m_Type = p_InstallInfo->m_CallQType;
 
 #if defined(__linux__)
@@ -264,12 +269,12 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
     p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
 #elif defined(_WIN32)
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             2LLU);
-    p_CallInfo->m_Q.m_Metadata.m_Lock = CreateMutex(NULL, FALSE, qSyncName);
-    DIE(p_CallInfo->m_Q.m_Metadata.m_Lock == NULL,
-        "Could not create call queue mutex");
-    p_InstallInfo->m_CallQMutex = 2LLU;
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+    //          2LLU);
+    // p_CallInfo->m_Q.m_Metadata.m_Lock = CreateMutex(NULL, FALSE, qSyncName);
+    // DIE(p_CallInfo->m_Q.m_Metadata.m_Lock == NULL,
+    //     "Could not create call queue mutex");
+    // p_InstallInfo->m_CallQMutex = 2LLU;
 
     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
              1004LLU);
@@ -324,15 +329,17 @@ static int32_t s_QPopGB(struct GBCall *p_CallInfo, struct DSPQueue *p_Queue) {
     return s_QPopA(p_Queue, p_CallInfo, GB_Q_MAX_SIZE, s_GBPopHelper);
 }
 
-/**
- * TODO: Return correct error code. This function 'never fails' at the moment.
- */
+// TODO: Return correct error code. This function 'never fails' at the moment.
 static int32_t s_QPopA(struct DSPQueue *p_Queue, void *p_CallInfo,
                        uint32_t p_QMaxSize,
-                       int32_t (*p_Fn)(void *, struct DSPQueue *)) {
+                       int32_t (*p_Fn)(void *, struct DSPQueue *, uint32_t)) {
     int32_t rc = 0;
 
-    QPOP(p_Queue, p_QMaxSize, do { rc = p_Fn(p_CallInfo, p_Queue); } while (0));
+    USQPOP(
+        p_Queue, p_QMaxSize,
+        do { rc = p_Fn(p_CallInfo, p_Queue, currIdx); } while (0));
+    // QPOP(p_Queue, p_QMaxSize, do { rc = p_Fn(p_CallInfo, p_Queue); } while
+    // (0));
 
     return rc;
 }

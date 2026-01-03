@@ -166,18 +166,26 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     aqua_shared_cond_t m_ConnectQEmptyCond;
     aqua_shared_cond_t m_DisconnectQFullCond;
     aqua_shared_cond_t m_DisconnectQEmptyCond;
+    aqua_shared_cond_t m_CallQProduceCond, m_CallQConsumeCond;
+    aqua_shared_cond_t m_ConnectQProduceCond, m_ConnectQConsumeCond;
+    aqua_shared_cond_t m_DisconnectQProduceCond, m_DisconnectQConsumeCond;
 
     aqua_shared_mutex_t m_CallQMutex;
     aqua_shared_mutex_t m_ConnectQMutex;
     aqua_shared_mutex_t m_DisconnectQMutex;
-    aqua_spinlock_t m_ConnectListLock;
+    // aqua_spinlock_t m_ConnectListLock;
+    aqua_shared_spinlock_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
     uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
-    LONG m_ConnectQPushIdxAtomic, m_ConnectQPopIdxAtomic,
-        m_ConnectQSizeAtomic;
-    LONG m_ConnectQWaitConsume, m_ConnectQWaitProduce;
+    LONG m_CallQPushIdxAtomic, m_CallQPopIdxAtomic, m_CallQSizeAtomic;
+    LONG m_CallQWaitProduce, m_CallQWaitConsume;
+    LONG m_ConnectQPushIdxAtomic, m_ConnectQPopIdxAtomic, m_ConnectQSizeAtomic;
+    LONG m_ConnectQWaitProduce, m_ConnectQWaitConsume;
+    LONG m_DisconnectQPushIdxAtomic, m_DisconnectQPopIdxAtomic,
+        m_DisconnectQSizeAtomic;
+    LONG m_DisconnectQWaitProduce, m_DisconnectQWaitConsume;
 
     enum QType m_CallQType;
 
@@ -203,6 +211,8 @@ struct DSPQueueMetadata {
     LONG *m_PushIdxAtomic;
     LONG *m_PopIdxAtomic;
     LONG *m_SizeAtomic;
+    aqua_cond_ptr_t m_ConsumeCond;
+    aqua_cond_ptr_t m_ProduceCond;
 };
 
 struct ConnectResponseQueue {

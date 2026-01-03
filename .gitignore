@@ -21,3 +21,4 @@ build/
 .vs/
 *.pdb
 *.pdb.*
+.clangd

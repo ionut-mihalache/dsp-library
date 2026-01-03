@@ -22,7 +22,9 @@ int main() {
 
         std::unique_ptr<SMBCall> callData(new SMBCall);
 
+        std::cout << "Waiting for call request..." << std::endl;
         receiveCall(callData.get(), callInfo.get());
+        std::cout << "Call request received..." << std::endl;
 
         std::cout << callData->m_CallInfo << std::endl;
 

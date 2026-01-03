@@ -31,7 +31,7 @@ struct ServiceConnectInfo {
     struct ConnectQueue m_ConnectQ;
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
-    aqua_spinlock_t *m_ConnectLock;
+    aqua_spinlock_ptr_t m_ConnectLock;
     // aqua_mutex_t *m_ConnectLock;
     int32_t (*m_ReceiveConnectRequest)(struct ServiceReturnInfo *,
                                        struct ServiceConnectInfo *);

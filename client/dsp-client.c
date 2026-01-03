@@ -32,7 +32,7 @@ void callFn(struct ClientCallInfo *p_CallInfo, void *p_CallData) {
     cInfo.m_Data = p_CallData;
 
     p_CallInfo->m_CallFn(&cInfo);
-};
+}
 
 void returnFn(void *p_ReturnData, struct ClientReturnInfo *p_ReturnInfo) {
     struct CommunicationInfo cInfo;

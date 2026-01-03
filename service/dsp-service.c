@@ -169,7 +169,8 @@ spin_lock_unlock:
                             offsetDelta + sizeof(struct InstallInformation));
     DIE(installInfo == NULL, "Could not map service information");
 
-    // DIE(!CloseHandle(installShmHandle), "Could not close installShmHandle");
+    // DIE(!CloseHandle(installShmHandle), "Could not close
+    // installShmHandle");
 
     installInfo = (struct InstallInformation *)((char *)mapBase + offsetDelta);
     installInfo->m_ProcId = GetCurrentProcessId();
@@ -216,9 +217,16 @@ spin_lock_unlock:
     sprintf(installInfo->m_DisconnectQName, "%s-%s-disconnect-q", p_StrId,
             p_Version);
 
-    installInfo->m_CallQPushIdx = 0;
-    installInfo->m_CallQPopIdx = 0;
-    installInfo->m_CallQSize = 0;
+    // installInfo->m_CallQPushIdx = 0;
+    // installInfo->m_CallQPopIdx = 0;
+    // installInfo->m_CallQSize = 0;
+
+    InterlockedExchange(&installInfo->m_CallQWaitConsume, 0);
+    InterlockedExchange(&installInfo->m_CallQWaitProduce, 0);
+    InterlockedExchange(&installInfo->m_CallQPushIdxAtomic, 0);
+    InterlockedExchange(&installInfo->m_CallQPopIdxAtomic, 0);
+    InterlockedExchange(&installInfo->m_CallQSizeAtomic, 0);
+
     installInfo->m_CallQType = (enum QType)p_CallQType;
 
     initializeServiceConnections(installInfo);

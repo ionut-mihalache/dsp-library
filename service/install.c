@@ -151,82 +151,19 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
     int32_t rc = 0;
     struct ConnectQueue *queue = &p_ConnectInfo->m_ConnectQ;
     struct ConnectResponseInformation responseInfo;
-    LONG oldConnectQSize = 0;
-    uint32_t idx;
-    uint32_t expected = 0;
 
-    oldConnectQSize =
-        InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
-    while (oldConnectQSize == 0) {
-        InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, 1);
-        expected = 0;
-        WaitOnAddress(queue->m_Metadata.m_WaitProduce, &expected,
-                      sizeof(uint32_t), INFINITE);
-        InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, -1);
-        oldConnectQSize =
-            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
-    }
+    USQPOP(
+        queue, CONNECTQ_MAX_SIZE, do {
+            configureServiceReturnInformation(p_ReturnInfo, p_ConnectInfo,
+                                              &queue->m_Data[currIdx]);
 
-    while (1) {
-        LONG prev =
-            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic,
-                                       oldConnectQSize - 1, oldConnectQSize);
-
-        if (prev == oldConnectQSize) {
-            break;
-        }
-
-        expected = 0;
-        if (oldConnectQSize == CONNECTQ_MAX_SIZE) {
-            InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, 1);
-
-            WaitOnAddress(queue->m_Metadata.m_WaitProduce, &expected,
-                          sizeof(LONG), INFINITE);
-
-            InterlockedExchangeAdd(queue->m_Metadata.m_WaitProduce, -1);
-        }
-
-        oldConnectQSize =
-            InterlockedCompareExchange(queue->m_Metadata.m_SizeAtomic, 0, 0);
-    }
-
-    idx = InterlockedExchangeAdd(queue->m_Metadata.m_PopIdxAtomic, 1) %
-          CONNECTQ_MAX_SIZE;
-    fprintf(stdout, "Current idx is %u: \n", idx);
-    configureServiceReturnInformation(p_ReturnInfo, p_ConnectInfo,
-                                      &queue->m_Data[idx]);
-
-    memcpy(responseInfo.m_ReturnQName, queue->m_Data[idx].m_ReturnQName,
-           RETURNQ_NAME_MAX_SIZE);
-    memcpy(responseInfo.m_ReturnRequestQName,
-           queue->m_Data[idx].m_RequestResponseQName, RETURNQ_NAME_MAX_SIZE);
-    responseInfo.m_Id = queue->m_Data[idx].m_ConnectionIdx;
-
-    if (InterlockedCompareExchange(queue->m_Metadata.m_WaitConsume, 0, 0) > 0) {
-        WakeByAddressAll(&queue->m_Metadata.m_WaitConsume);
-    }
-
-    // QPOP(
-    //     queue, CONNECTQ_MAX_SIZE, do {
-    //         fprintf(stdout, "Received connection request (%s, %s)\n",
-    //                 queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ReturnQName,
-    //                 queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]
-    //                     .m_RequestResponseQName);
-
-    //         configureServiceReturnInformation(
-    //             p_ReturnInfo, p_ConnectInfo,
-    //             &queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]);
-
-    //         memcpy(responseInfo.m_ReturnQName,
-    //                queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ReturnQName,
-    //                RETURNQ_NAME_MAX_SIZE);
-    //         memcpy(responseInfo.m_ReturnRequestQName,
-    //                queue->m_Data[*queue->m_Metadata.m_PopIdxPtr]
-    //                    .m_RequestResponseQName,
-    //                RETURNQ_NAME_MAX_SIZE);
-    //         responseInfo.m_Id =
-    //             queue->m_Data[*queue->m_Metadata.m_PopIdxPtr].m_ConnectionIdx;
-    //     } while (0));
+            memcpy(responseInfo.m_ReturnQName,
+                   queue->m_Data[currIdx].m_ReturnQName, RETURNQ_NAME_MAX_SIZE);
+            memcpy(responseInfo.m_ReturnRequestQName,
+                   queue->m_Data[currIdx].m_RequestResponseQName,
+                   RETURNQ_NAME_MAX_SIZE);
+            responseInfo.m_Id = queue->m_Data[currIdx].m_ConnectionIdx;
+        } while (0));
 
     s_SendConnectResponse(p_ReturnInfo, &responseInfo);
 
@@ -236,15 +173,12 @@ s_ReceiveConnectRequest(struct ServiceReturnInfo *p_ReturnInfo,
 static int32_t
 s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     int32_t rc = 0;
-    uint32_t idx;
     uint32_t connId;
     struct DisconnectQueue *queue = &p_ConnectInfo->m_DisconnectQ;
 
-    QPOP(
-        queue, CONNECTQ_MAX_SIZE, do {
-            idx = *queue->m_Metadata.m_PopIdxPtr;
-            connId = queue->m_Data[idx].m_ConnectionIdx;
-        } while (0));
+    USQPOP(
+        queue, CONNECTQ_MAX_SIZE,
+        do { connId = queue->m_Data[currIdx].m_ConnectionIdx; } while (0));
 
 #if defined(__linux__)
     pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
@@ -271,7 +205,7 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
 #elif defined(_WIN32)
-    WaitForSingleObject(*p_ConnectInfo->m_ConnectLock, INFINITE);
+    WaitForSingleObject(p_ConnectInfo->m_ConnectLock, INFINITE);
 
     DIE(!UnmapViewOfFile(
             p_ConnectInfo->m_Connections[connId].m_RequestResponseQ),
@@ -286,7 +220,7 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     // TODO: Check how to handle unlinking for windows
 
-    ReleaseMutex(*p_ConnectInfo->m_ConnectLock);
+    ReleaseMutex(p_ConnectInfo->m_ConnectLock);
 #else
 #endif
     return rc;
@@ -300,12 +234,8 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     struct ConnectRequest *connectQ;
     struct ConnectRequest *disconnectQ;
 #if defined(_WIN32)
-    char qSyncName[RETURNQ_NAME_MAX_SIZE];
+    char qSyncName[RETURNQ_NAME_MAX_SIZE << 1];
 #endif
-
-    p_InstallInfo->m_ConnectQPushIdx = 0;
-    p_InstallInfo->m_ConnectQPopIdx = 0;
-    p_InstallInfo->m_ConnectQSize = 0;
 
     InterlockedExchange(&p_InstallInfo->m_ConnectQWaitConsume, 0);
     InterlockedExchange(&p_InstallInfo->m_ConnectQWaitProduce, 0);
@@ -313,9 +243,11 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     InterlockedExchange(&p_InstallInfo->m_ConnectQPopIdxAtomic, 0);
     InterlockedExchange(&p_InstallInfo->m_ConnectQSizeAtomic, 0);
 
-    p_InstallInfo->m_DisconnectQPushIdx = 0;
-    p_InstallInfo->m_DisconnectQPopIdx = 0;
-    p_InstallInfo->m_DisconnectQSize = 0;
+    InterlockedExchange(&p_InstallInfo->m_DisconnectQWaitConsume, 0);
+    InterlockedExchange(&p_InstallInfo->m_DisconnectQWaitProduce, 0);
+    InterlockedExchange(&p_InstallInfo->m_DisconnectQPushIdxAtomic, 0);
+    InterlockedExchange(&p_InstallInfo->m_DisconnectQPopIdxAtomic, 0);
+    InterlockedExchange(&p_InstallInfo->m_DisconnectQSizeAtomic, 0);
 
     connectQHandle = createShmObject(
         p_InstallInfo->m_ConnectQName, O_RDWR,
@@ -362,15 +294,10 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
 #else
 #endif
 
+    p_ConnectInfo->m_Connections = p_InstallInfo->m_Connections;
+
     p_ConnectInfo->m_ReceiveConnectRequest = s_ReceiveConnectRequest;
     p_ConnectInfo->m_ConnectQ.m_Data = connectQ;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxPtr =
-        &p_InstallInfo->m_ConnectQPushIdx;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxPtr =
-        &p_InstallInfo->m_ConnectQPopIdx;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Size =
-        &p_InstallInfo->m_ConnectQSize;
-    p_ConnectInfo->m_Connections = p_InstallInfo->m_Connections;
 
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
         &p_InstallInfo->m_ConnectQPushIdxAtomic;
@@ -385,12 +312,17 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
 
     p_ConnectInfo->m_ReceiveDisconnectRequest = s_ReceiveDisconnectRequest;
     p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxPtr =
-        &p_InstallInfo->m_DisconnectQPushIdx;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxPtr =
-        &p_InstallInfo->m_DisconnectQPopIdx;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Size =
-        &p_InstallInfo->m_DisconnectQSize;
+
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxAtomic =
+        &p_InstallInfo->m_DisconnectQPushIdxAtomic;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxAtomic =
+        &p_InstallInfo->m_DisconnectQPopIdxAtomic;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitConsume =
+        &p_InstallInfo->m_DisconnectQWaitConsume;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitProduce =
+        &p_InstallInfo->m_DisconnectQWaitProduce;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_SizeAtomic =
+        &p_InstallInfo->m_DisconnectQSizeAtomic;
 
 #if defined(__linux__)
     pthread_mutexattr_t attr;
@@ -447,59 +379,42 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
 #elif defined(_WIN32)
     // WIP: For handles identification in shared userspace memory we use numbers
     //  TODO: Replace the hardcoded values for shared handle ids
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%s", p_InstallInfo->m_StrId,
-             "connectlist-lock");
-    p_InstallInfo->m_ConnectListLock = CreateMutex(NULL, FALSE, qSyncName);
-    DIE(p_InstallInfo->m_ConnectListLock == NULL,
+    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
+             8912LLU);
+    p_ConnectInfo->m_ConnectLock = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_ConnectLock == NULL,
         "Could not create connect list mutex");
+    p_InstallInfo->m_ConnectListLock = 8912LLU;
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             0LLU);
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
-        CreateMutex(NULL, FALSE, qSyncName);
-    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock == NULL,
-        "Could not create connect queue mutex");
-    p_InstallInfo->m_ConnectQMutex = 0LLU;
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             1LLU);
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock =
-        CreateMutex(NULL, FALSE, qSyncName);
-    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock == NULL,
-        "Could not create disconnect queue mutex");
-    p_InstallInfo->m_DisconnectQMutex = 1LLU;
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             1000LLU);
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_FullCond =
+    // Create connect queue handles
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_produce_cond__",
+             p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_ProduceCond =
         CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_FullCond == NULL,
-        "Could not create connect queue full event");
-    p_InstallInfo->m_ConnectQFullCond = 1000LLU;
+    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_ProduceCond == NULL,
+        "Could not create connect queue produce event");
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             1001LLU);
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_EmptyCond =
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_consume_cond__",
+             p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_ConsumeCond =
         CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_EmptyCond == NULL,
-        "Could not create connect queue empty event");
-    p_InstallInfo->m_ConnectQEmptyCond = 1001LLU;
+    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_ConsumeCond == NULL,
+        "Could not create connect queue consume event");
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             1002LLU);
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_FullCond =
+    // Create disconnect queue handles
+    snprintf(qSyncName, sizeof(qSyncName),
+             "__aqua_%s_disconnect_produce_cond__", p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ProduceCond =
         CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_FullCond == NULL,
-        "Could not create disconnect queue full event");
-    p_InstallInfo->m_DisconnectQFullCond = 1002LLU;
+    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ProduceCond == NULL,
+        "Could not create disconnect queue produce event");
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             1003LLU);
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond =
+    snprintf(qSyncName, sizeof(qSyncName),
+             "__aqua_%s_disconnect_consume_cond__", p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ConsumeCond =
         CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_EmptyCond == NULL,
-        "Could not create disconnect queue empty event");
-    p_InstallInfo->m_DisconnectQEmptyCond = 1003LLU;
+    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ConsumeCond == NULL,
+        "Could not create disconnect queue consume event");
 #else
 #error "Platform not supported by AQUA"
 #endif

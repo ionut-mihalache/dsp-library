@@ -133,7 +133,7 @@
     do {                                                                       \
         WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);           \
         while (*(p_Queue)->m_Metadata.m_Size == (p_QMaxSize)) {                \
-            ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                       \
+            ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                        \
             WaitForSingleObject((p_Queue)->m_Metadata.m_EmptyCond, INFINITE);  \
             WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);       \
         }                                                                      \
@@ -167,6 +167,75 @@
         ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                            \
                                                                                \
         SetEvent((p_Queue)->m_Metadata.m_EmptyCond);                           \
+    } while (0)
+
+#define USQPUSH(p_Queue, p_QMaxSize, p_Code)                                   \
+    do {                                                                       \
+        LONG oldQSize = 0;                                                     \
+        uint32_t currIdx;                                                      \
+        while (true) {                                                         \
+            oldQSize = InterlockedCompareExchange(                             \
+                (p_Queue)->m_Metadata.m_SizeAtomic, 0, 0);                     \
+                                                                               \
+            /* There is room for 'producing' a new connect request */          \
+            if (oldQSize < (LONG)p_QMaxSize) {                                 \
+                currIdx = InterlockedExchangeAdd(                              \
+                              (p_Queue)->m_Metadata.m_PushIdxAtomic, 1) %      \
+                          p_QMaxSize;                                          \
+                                                                               \
+                p_Code;                                                        \
+                                                                               \
+                InterlockedIncrement((p_Queue)->m_Metadata.m_SizeAtomic);      \
+                break;                                                         \
+            }                                                                  \
+                                                                               \
+            /* Wait for a connection request to be consumed */                 \
+            InterlockedIncrement((p_Queue)->m_Metadata.m_WaitConsume);         \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_ConsumeCond,           \
+                                INFINITE);                                     \
+            InterlockedDecrement((p_Queue)->m_Metadata.m_WaitConsume);         \
+        }                                                                      \
+                                                                               \
+        /* Wake only if there are processes that wait for the event */         \
+        if (InterlockedCompareExchange((p_Queue)->m_Metadata.m_WaitProduce, 0, \
+                                       0) > 0) {                               \
+            SetEvent((p_Queue)->m_Metadata.m_ProduceCond);                     \
+        }                                                                      \
+    } while (0)
+
+#define USQPOP(p_Queue, p_QMaxSize, p_Code)                                    \
+    do {                                                                       \
+        LONG oldQSize = 0;                                                     \
+        uint32_t currIdx;                                                      \
+                                                                               \
+        while (true) {                                                         \
+            oldQSize = InterlockedCompareExchange(                             \
+                (p_Queue)->m_Metadata.m_SizeAtomic, 0, 0);                     \
+                                                                               \
+            /* There is a connection request that can be 'consumed' */         \
+            if (oldQSize > 0) {                                                \
+                currIdx = InterlockedExchangeAdd(                              \
+                              (p_Queue)->m_Metadata.m_PopIdxAtomic, 1) %       \
+                          p_QMaxSize;                                          \
+                                                                               \
+                p_Code;                                                        \
+                                                                               \
+                InterlockedDecrement((p_Queue)->m_Metadata.m_SizeAtomic);      \
+                break;                                                         \
+            }                                                                  \
+                                                                               \
+            /* Wait for a connection request to be produced*/                  \
+            InterlockedIncrement((p_Queue)->m_Metadata.m_WaitProduce);         \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_ProduceCond,           \
+                                INFINITE);                                     \
+            InterlockedDecrement((p_Queue)->m_Metadata.m_WaitProduce);         \
+        }                                                                      \
+                                                                               \
+        /* Wake only if there are processes that wait for the event */         \
+        if (InterlockedCompareExchange((p_Queue)->m_Metadata.m_WaitConsume, 0, \
+                                       0) > 0) {                               \
+            SetEvent((p_Queue)->m_Metadata.m_ConsumeCond);                     \
+        }                                                                      \
     } while (0)
 #endif
 
