@@ -42,10 +42,16 @@ int main() {
         return 0;
     }
 
-    sprintf(requestInfo->m_ReturnQName, "%s", "return-q-5656565656");
+    auto now = std::chrono::system_clock::now().time_since_epoch();
+    auto ms =
+        std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
+
+    snprintf(requestInfo->m_ReturnQName, RETURNQ_NAME_MAX_SIZE, "%s-%llu",
+             "return-q-", ms);
     requestInfo->m_ReturnQSize = 1;
 
-    sprintf(requestInfo->m_RequestResponseQName, "%s", "response-q-5656565656");
+    snprintf(requestInfo->m_RequestResponseQName, RETURNQ_NAME_MAX_SIZE,
+             "%s-%llu", "response-q-", ms);
     requestInfo->m_ResponseQSize = 1;
     requestInfo->m_QType = SMBQ;
 
