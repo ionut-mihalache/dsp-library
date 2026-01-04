@@ -191,8 +191,7 @@
                                                                                \
             /* Wait for a connection request to be consumed */                 \
             InterlockedIncrement((p_Queue)->m_Metadata.m_WaitConsume);         \
-            WaitForSingleObject((p_Queue)->m_Metadata.m_ConsumeCond,           \
-                                INFINITE);                                     \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_ConsumeCond, 5);       \
             InterlockedDecrement((p_Queue)->m_Metadata.m_WaitConsume);         \
         }                                                                      \
                                                                                \
@@ -231,8 +230,7 @@
                                                                                \
             /* Wait for a connection request to be produced*/                  \
             InterlockedIncrement((p_Queue)->m_Metadata.m_WaitProduce);         \
-            WaitForSingleObject((p_Queue)->m_Metadata.m_ProduceCond,           \
-                                INFINITE);                                     \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_ProduceCond, 5);       \
             InterlockedDecrement((p_Queue)->m_Metadata.m_WaitProduce);         \
         }                                                                      \
                                                                                \
