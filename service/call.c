@@ -269,28 +269,20 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
     p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
 #elif defined(_WIN32)
-    // snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-    //          2LLU);
-    // p_CallInfo->m_Q.m_Metadata.m_Lock = CreateMutex(NULL, FALSE, qSyncName);
-    // DIE(p_CallInfo->m_Q.m_Metadata.m_Lock == NULL,
-    //     "Could not create call queue mutex");
-    // p_InstallInfo->m_CallQMutex = 2LLU;
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             1004LLU);
-    p_CallInfo->m_Q.m_Metadata.m_FullCond =
+    // Create call queue handles
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_produce_cond__",
+             p_InstallInfo->m_StrId);
+    p_CallInfo->m_Q.m_Metadata.m_ProduceCond =
         CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_CallInfo->m_Q.m_Metadata.m_FullCond == NULL,
-        "Could not create call queue full event");
-    p_InstallInfo->m_CallQFullCond = 1004LLU;
+    DIE(p_CallInfo->m_Q.m_Metadata.m_ProduceCond == NULL,
+        "Could not create connect queue produce event");
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             1005LLU);
-    p_CallInfo->m_Q.m_Metadata.m_EmptyCond =
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_consume_cond__",
+             p_InstallInfo->m_StrId);
+    p_CallInfo->m_Q.m_Metadata.m_ConsumeCond =
         CreateEvent(NULL, FALSE, FALSE, qSyncName);
-    DIE(p_CallInfo->m_Q.m_Metadata.m_EmptyCond == NULL,
-        "Could not create call queue full event");
-    p_InstallInfo->m_CallQFullCond = 1005LLU;
+    DIE(p_CallInfo->m_Q.m_Metadata.m_ConsumeCond == NULL,
+        "Could not create connect queue consume event");
 #else
 #error "Platform not supported by AQUA"
 #endif

@@ -268,20 +268,15 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
 #elif defined(_WIN32)
     DIE(!CloseHandle(callQHandle), "Could not close callQHandle");
 
-    // Obtain the handles for disconnect queue
-    // snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-    //          p_InstallInfo->m_CallQMutex);
-    // p_CallInfo->m_Q.m_Metadata.m_Lock =
-    //     OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
-
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             p_InstallInfo->m_CallQFullCond);
-    p_CallInfo->m_Q.m_Metadata.m_FullCond =
+    // Obtain the handles for call queue
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_produce_cond__",
+             p_InstallInfo->m_StrId);
+    p_CallInfo->m_Q.m_Metadata.m_ProduceCond =
         OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", p_InstallInfo->m_StrId,
-             p_InstallInfo->m_CallQEmptyCond);
-    p_CallInfo->m_Q.m_Metadata.m_EmptyCond =
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_consume_cond__",
+             p_InstallInfo->m_StrId);
+    p_CallInfo->m_Q.m_Metadata.m_ConsumeCond =
         OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
 #else
 #error "Platform not supported by AQUA"
@@ -290,9 +285,6 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
     p_CallInfo->m_CallFn = s_QPush;
     p_CallInfo->m_Q.m_Data = callQ;
 
-    // p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
-    // p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
-    // p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
     p_CallInfo->m_Q.m_Metadata.m_PushIdxAtomic =
         &p_InstallInfo->m_CallQPushIdxAtomic;
     p_CallInfo->m_Q.m_Metadata.m_PopIdxAtomic =

@@ -13,15 +13,15 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
     uint32_t i;
     struct ConnectionInformation *connInfo;
 #if defined(_WIN32)
-    char qSyncName[RETURNQ_NAME_MAX_SIZE];
+    char qSyncName[RETURNQ_NAME_MAX_SIZE << 1];
     SIZE_T mutexId = 3;
     SIZE_T eventId = 1006;
 #endif
 
+#if defined(__linux__)
     for (i = 0; i < OPENED_CONNECTIONS; ++i) {
         connInfo = &p_InstallInfo->m_Connections[i];
 
-#if defined(__linux__)
         pthread_mutexattr_t attr;
         rc = pthread_mutexattr_init(&attr);
         DIE(rc != 0, "Could not init mutex attribute");
@@ -66,57 +66,107 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
 
         rc = pthread_condattr_destroy(&condAttr);
         DIE(rc != 0, "Could not destroy condition attribute object");
+    }
 #elif defined(_WIN32)
-        // TODO: Replace the hardcoded values
-        // At this point we just create the object which will be opened when
-        // needed by the service and the client snprintf(qSyncName,
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q", mutexId);
-        // connInfo->m_ReturnQMutex = CreateMutex(NULL, FALSE, qSyncName);
-        DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
-            "Could not create return queue mutex");
-        connInfo->m_ReturnQMutex = mutexId;
+    // At this point we want to initialize the synchronisation arrays
+    struct ConnectionSyncInformation *connSyncInfo;
+    for (i = 0; i < SYNC_ELEMENTS; ++i) {
+        connSyncInfo = &p_InstallInfo->m_ConnectionsSyncData[i];
 
-        mutexId++;
+        InterlockedExchange(&connSyncInfo->m_ReturnQWaitProduce, 0);
+        InterlockedExchange(&connSyncInfo->m_ReturnQWaitConsume, 0);
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
-                 mutexId);
-        DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
-            "Could not create request-response queue mutex");
-        connInfo->m_RequestResponseQMutex = mutexId;
+        InterlockedExchange(&connSyncInfo->m_RequestResponseQWaitProduce, 0);
+        InterlockedExchange(&connSyncInfo->m_RequestResponseQWaitConsume, 0);
 
-        mutexId++;
-
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q", eventId);
+        // Create return queue handles
+        snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
         DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
-            "Could not create call queue full event");
-        connInfo->m_ReturnQFullCond = eventId;
+            "Could not create return queue produce event");
+        connSyncInfo->m_ReturnQProduceCond = eventId;
 
         eventId++;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q", eventId);
+        snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
         DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
-            "Could not create return queue empty event");
-        connInfo->m_ReturnQEmptyCond = eventId;
+            "Could not create return queue consume event");
+        connSyncInfo->m_ReturnQConsumeCond = eventId;
 
         eventId++;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
-                 eventId);
+        // Crete request-response queue handles
+        snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
         DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
-            "Could not create request-response full event");
-        connInfo->m_RequestResponseQFullCond = eventId;
+            "Could not create request-response queue produce event");
+        connSyncInfo->m_RequestResponseQProduceCond = eventId;
 
         eventId++;
 
-        snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
-                 eventId);
+        snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
         DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
-            "Could not create request-response empty event");
-        connInfo->m_RequestResponseQEmptyCond = eventId;
+            "Could not create request-response queue consume event");
+        connSyncInfo->m_RequestResponseQConsumeCond = eventId;
+
+        eventId++;
+    }
+    // for (i = 0; i < OPENED_CONNECTIONS; ++i) {
+    //     connInfo = &p_InstallInfo->m_Connections[i];
+
+    //     // TODO: Replace the hardcoded values
+    //     // At this point we just create the object which will be opened when
+    //     // needed by the service and the client
+
+    //     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
+    //     mutexId);
+    //     // connInfo->m_ReturnQMutex = CreateMutex(NULL, FALSE, qSyncName);
+    //     DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
+    //         "Could not create return queue mutex");
+    //     connInfo->m_ReturnQMutex = mutexId;
+
+    //     mutexId++;
+
+    //     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu",
+    //     "request-response-q",
+    //              mutexId);
+    //     DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
+    //         "Could not create request-response queue mutex");
+    //     connInfo->m_RequestResponseQMutex = mutexId;
+
+    //     mutexId++;
+
+    //     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
+    //     eventId); DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+    //         "Could not create call queue full event");
+    //     connInfo->m_ReturnQFullCond = eventId;
+
+    //     eventId++;
+
+    //     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
+    //     eventId); DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+    //         "Could not create return queue empty event");
+    //     connInfo->m_ReturnQEmptyCond = eventId;
+
+    //     eventId++;
+
+    //     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu",
+    //     "request-response-q",
+    //              eventId);
+    //     DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+    //         "Could not create request-response full event");
+    //     connInfo->m_RequestResponseQFullCond = eventId;
+
+    //     eventId++;
+
+    //     snprintf(qSyncName, sizeof(qSyncName), "%s-%llu",
+    //     "request-response-q",
+    //              eventId);
+    //     DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+    //         "Could not create request-response empty event");
+    //     connInfo->m_RequestResponseQEmptyCond = eventId;
+    // }
 #else
 #error "Platform not supported by AQUA"
 #endif
-    }
 
     return rc;
 }
@@ -130,17 +180,27 @@ s_SendConnectResponse(struct ServiceReturnInfo *p_ReturnInfo,
      * Send the response to the client to announce that the communication is
      * established
      */
-    QPUSH(
+    USQPUSH(
         &p_ReturnInfo->m_ResponseQueue, p_ReturnInfo->m_ResponseQueue.m_MaxSize,
         do {
-            memcpy(
-                &(p_ReturnInfo->m_ResponseQueue.m_Data
-                      [*p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr]),
-                p_ResponseInfo, sizeof(struct ConnectResponseInformation));
+            memcpy(&(p_ReturnInfo->m_ResponseQueue.m_Data[currIdx]),
+                   p_ResponseInfo, sizeof(struct ConnectResponseInformation));
 
             memcpy(&p_ReturnInfo->m_ConnectResponseInformation, p_ResponseInfo,
                    sizeof(struct ConnectResponseInformation));
         } while (0));
+    // QPUSH(
+    //     &p_ReturnInfo->m_ResponseQueue,
+    //     p_ReturnInfo->m_ResponseQueue.m_MaxSize, do {
+    //         memcpy(
+    //             &(p_ReturnInfo->m_ResponseQueue.m_Data
+    //                   [*p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr]),
+    //             p_ResponseInfo, sizeof(struct ConnectResponseInformation));
+
+    //         memcpy(&p_ReturnInfo->m_ConnectResponseInformation,
+    //         p_ResponseInfo,
+    //                sizeof(struct ConnectResponseInformation));
+    //     } while (0));
 
     return rc;
 }
@@ -295,6 +355,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
 #endif
 
     p_ConnectInfo->m_Connections = p_InstallInfo->m_Connections;
+    p_ConnectInfo->m_ConnectionsSyncData = p_InstallInfo->m_ConnectionsSyncData;
 
     p_ConnectInfo->m_ReceiveConnectRequest = s_ReceiveConnectRequest;
     p_ConnectInfo->m_ConnectQ.m_Data = connectQ;

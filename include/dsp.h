@@ -84,6 +84,7 @@ typedef SIZE_T aqua_size_t;
 #define RETURNQ_NAME_MAX_SIZE ((uint32_t)256)
 
 #define OPENED_CONNECTIONS ((uint32_t)128)
+#define SYNC_ELEMENTS SMB_Q_MAX_SIZE
 
 enum QType {
     SMBQ, // 0
@@ -132,27 +133,50 @@ struct ConnectionInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 
-    aqua_shared_cond_t m_ReturnQFullCond;
-    aqua_shared_cond_t m_ReturnQEmptyCond;
-    aqua_shared_cond_t m_RequestResponseQFullCond;
-    aqua_shared_cond_t m_RequestResponseQEmptyCond;
+    // aqua_shared_cond_t m_ReturnQFullCond;
+    // aqua_shared_cond_t m_ReturnQEmptyCond;
+    // aqua_shared_cond_t m_RequestResponseQFullCond;
+    // aqua_shared_cond_t m_RequestResponseQEmptyCond;
 
-    aqua_shared_mutex_t m_ReturnQMutex;
-    aqua_shared_mutex_t m_RequestResponseQMutex;
+    // aqua_shared_mutex_t m_ReturnQMutex;
+    // aqua_shared_mutex_t m_RequestResponseQMutex;
 
     void *m_RequestResponseQ, *m_ReturnQ;
     size_t m_RequestResponseQMapSize, m_ReturnQMapSize;
 
-    uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
-    uint32_t m_RequestResponseQPushIdx, m_RequestResponseQPopIdx,
-        m_RequestResponseQSize;
+    // uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
+    // uint32_t m_RequestResponseQPushIdx, m_RequestResponseQPopIdx,
+    //     m_RequestResponseQSize;
+
+    LONG m_ReturnQPushIdxAtomic;
+    LONG m_ReturnQPopIdxAtomic;
+    LONG m_ReturnQSizeAtomic;
+
+    LONG m_RequestResponseQPushIdxAtomic;
+    LONG m_RequestResponseQPopIdxAtomic;
+    LONG m_RequestResponseQSizeAtomic;
 
     int32_t m_ConnectionError;
     bool m_Connected;
 };
 
+struct ConnectionSyncInformation {
+    aqua_shared_cond_t m_ReturnQProduceCond;
+    aqua_shared_cond_t m_ReturnQConsumeCond;
+
+    aqua_shared_cond_t m_RequestResponseQProduceCond;
+    aqua_shared_cond_t m_RequestResponseQConsumeCond;
+
+    LONG m_ReturnQWaitProduce;
+    LONG m_ReturnQWaitConsume;
+
+    LONG m_RequestResponseQWaitProduce;
+    LONG m_RequestResponseQWaitConsume;
+};
+
 struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     struct ConnectionInformation m_Connections[OPENED_CONNECTIONS];
+    struct ConnectionSyncInformation m_ConnectionsSyncData[SYNC_ELEMENTS];
 
     char m_CallQName[CALLQ_NAME_MAX_SIZE];
     char m_ConnectQName[CONNECTQ_NAME_MAX_SIZE];
@@ -160,12 +184,12 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     char m_StrId[STRING_ID_MAX_LENGTH];
     char m_Version[VERSION_MAX_LENGTH];
 
-    aqua_shared_cond_t m_CallQFullCond;
-    aqua_shared_cond_t m_CallQEmptyCond;
-    aqua_shared_cond_t m_ConnectQFullCond;
-    aqua_shared_cond_t m_ConnectQEmptyCond;
-    aqua_shared_cond_t m_DisconnectQFullCond;
-    aqua_shared_cond_t m_DisconnectQEmptyCond;
+    // aqua_shared_cond_t m_CallQFullCond;
+    // aqua_shared_cond_t m_CallQEmptyCond;
+    // aqua_shared_cond_t m_ConnectQFullCond;
+    // aqua_shared_cond_t m_ConnectQEmptyCond;
+    // aqua_shared_cond_t m_DisconnectQFullCond;
+    // aqua_shared_cond_t m_DisconnectQEmptyCond;
     aqua_shared_cond_t m_CallQProduceCond, m_CallQConsumeCond;
     aqua_shared_cond_t m_ConnectQProduceCond, m_ConnectQConsumeCond;
     aqua_shared_cond_t m_DisconnectQProduceCond, m_DisconnectQConsumeCond;
@@ -176,9 +200,9 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     // aqua_spinlock_t m_ConnectListLock;
     aqua_shared_spinlock_t m_ConnectListLock;
 
-    uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
-    uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
-    uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
+    // uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
+    // uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
+    // uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
     LONG m_CallQPushIdxAtomic, m_CallQPopIdxAtomic, m_CallQSizeAtomic;
     LONG m_CallQWaitProduce, m_CallQWaitConsume;
     LONG m_ConnectQPushIdxAtomic, m_ConnectQPopIdxAtomic, m_ConnectQSizeAtomic;

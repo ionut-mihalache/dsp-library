@@ -2,114 +2,103 @@
 
 #include "commons.h"
 #include "dsp.h"
-#include "log.h"
 #include "macros.h"
 #include "system-values.h"
 #include "return.h"
 
 static int32_t s_SendReturnFnSMBHelper(struct DSPQueue *p_Queue,
-                                       aqua_void_t *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData,
+                                       uint32_t p_CurrIdx) {
     int32_t rc = 0;
-    uint32_t idx;
     struct SMBCall *qData;
-
-    if (!p_Queue || !p_Queue->m_Data || !p_Queue->m_Metadata.m_PushIdxPtr ||
-        !p_Queue->m_Metadata.m_PopIdxPtr || !p_ReturnData) {
-        ELOGF("queue or return data is not pointer is invalid.\n");
-        rc = -1;
-        goto end;
-    }
-
-    idx = *p_Queue->m_Metadata.m_PushIdxPtr;
 
     qData = (struct SMBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[idx], p_ReturnData, sizeof(struct SMBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct SMBCall));
 
-end:
     return rc;
 }
 
 static int32_t s_SendReturnFnEMBHelper(struct DSPQueue *p_Queue,
-                                       aqua_void_t *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData,
+                                       uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct EMBCall *qData = (struct EMBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct EMBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct EMBCall));
 
     return rc;
 }
 
 static int32_t s_SendReturnFnQMBHelper(struct DSPQueue *p_Queue,
-                                       aqua_void_t *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData,
+                                       uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct QMBCall *qData = (struct QMBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct QMBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct QMBCall));
 
     return rc;
 }
 
 static int32_t s_SendReturnFnHMBHelper(struct DSPQueue *p_Queue,
-                                       aqua_void_t *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData,
+                                       uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct HMBCall *qData = (struct HMBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct HMBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct HMBCall));
 
     return rc;
 }
 
 static int32_t s_SendReturnFnMBHelper(struct DSPQueue *p_Queue,
-                                      aqua_void_t *p_ReturnData) {
+                                      aqua_void_t *p_ReturnData,
+                                      uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct MBCall *qData = (struct MBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct MBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct MBCall));
 
     return rc;
 }
 
 static int32_t s_SendReturnFnDMBHelper(struct DSPQueue *p_Queue,
-                                       aqua_void_t *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData,
+                                       uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct DMBCall *qData = (struct DMBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct DMBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct DMBCall));
 
     return rc;
 }
 
 static int32_t s_SendReturnFnHGBHelper(struct DSPQueue *p_Queue,
-                                       aqua_void_t *p_ReturnData) {
+                                       aqua_void_t *p_ReturnData,
+                                       uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct HGBCall *qData = (struct HGBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct HGBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct HGBCall));
 
     return rc;
 }
 
 static int32_t s_SendReturnFnGBHelper(struct DSPQueue *p_Queue,
-                                      aqua_void_t *p_ReturnData) {
+                                      aqua_void_t *p_ReturnData,
+                                      uint32_t p_CurrIdx) {
     int32_t rc = 0;
     struct GBCall *qData = (struct GBCall *)p_Queue->m_Data;
 
-    memcpy(&qData[*p_Queue->m_Metadata.m_PushIdxPtr], p_ReturnData,
-           sizeof(struct GBCall));
+    memcpy(&qData[p_CurrIdx], p_ReturnData, sizeof(struct GBCall));
 
     return rc;
 }
 
-static int32_t s_SendReturnFnA(struct DSPQueue *queue, aqua_void_t *retData,
-                               uint32_t qMaxSize,
-                               int32_t (*fn)(struct DSPQueue *, aqua_void_t *));
+static int32_t
+s_SendReturnFnA(struct DSPQueue *queue, aqua_void_t *retData, uint32_t qMaxSize,
+                int32_t (*fn)(struct DSPQueue *, aqua_void_t *, uint32_t));
 
 static int32_t s_SendReturnFnSMB(struct DSPQueue *queue,
                                  struct SMBCall *returnData);
@@ -296,42 +285,66 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 #else
 #endif
 
-    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx = 0;
-    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx = 0;
-    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize = 0;
+    // p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx = 0;
+    // p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx = 0;
+    // p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize = 0;
+
+    InterlockedExchange(
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic, 0);
+    InterlockedExchange(
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdxAtomic, 0);
+    InterlockedExchange(
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSizeAtomic, 0);
 
     p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQ = returnQ;
 
     p_ReturnInfo->m_Q.m_Data = returnQ;
 
     // Obtain the handles for return queue
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
-             p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQFullCond);
-    p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
+             p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+                 .m_ReturnQProduceCond,
+             connectionIdx % SYNC_ELEMENTS);
+    p_ReturnInfo->m_Q.m_Metadata.m_ProduceCond =
         OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQFullCond;
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
-             p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQEmptyCond);
-    p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
+             p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+                 .m_ReturnQConsumeCond,
+             connectionIdx % SYNC_ELEMENTS);
+    p_ReturnInfo->m_Q.m_Metadata.m_ConsumeCond =
         OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQEmptyCond;
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
-             p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex);
-    p_ReturnInfo->m_Q.m_Metadata.m_Lock =
-        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+    // snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "return-q",
+    //          p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex);
+    // p_ReturnInfo->m_Q.m_Metadata.m_Lock =
+    //     OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_Q.m_Metadata.m_Lock =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex;
 
-    p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
-    p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
-    p_ReturnInfo->m_Q.m_Metadata.m_Size =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
+    // p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
+    // p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
+    // p_ReturnInfo->m_Q.m_Metadata.m_Size =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
+
+    p_ReturnInfo->m_Q.m_Metadata.m_PushIdxAtomic =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic;
+    p_ReturnInfo->m_Q.m_Metadata.m_PopIdxAtomic =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdxAtomic;
+    p_ReturnInfo->m_Q.m_Metadata.m_SizeAtomic =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSizeAtomic;
+    p_ReturnInfo->m_Q.m_Metadata.m_WaitConsume =
+        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+             .m_ReturnQWaitConsume;
+    p_ReturnInfo->m_Q.m_Metadata.m_WaitProduce =
+        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+             .m_ReturnQWaitProduce;
 
     p_ReturnInfo->m_Q.m_Type = p_Request->m_ReturnQType;
 
@@ -347,37 +360,56 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
 
     // Obtain the handles for request-return queue
-    snprintf(
-        qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
-        p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQFullCond);
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
+             p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+                 .m_RequestResponseQProduceCond,
+             connectionIdx % SYNC_ELEMENTS);
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_ProduceCond =
         OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQFullCond;
 
-    snprintf(qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
-             p_ConnectInfo->m_Connections[connectionIdx]
-                 .m_RequestResponseQEmptyCond);
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
+             p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+                 .m_RequestResponseQConsumeCond,
+             connectionIdx % SYNC_ELEMENTS);
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_ConsumeCond =
         OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx]
     //          .m_RequestResponseQEmptyCond;
 
-    snprintf(
-        qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
-        p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMutex);
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
-        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+    // snprintf(
+    //     qSyncName, sizeof(qSyncName), "%s-%llu", "request-response-q",
+    //     p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMutex);
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
+    //     OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMutex;
 
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
+
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxAtomic =
+        &p_ConnectInfo->m_Connections[connectionIdx]
+             .m_RequestResponseQPushIdxAtomic;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxAtomic =
+        &p_ConnectInfo->m_Connections[connectionIdx]
+             .m_RequestResponseQPopIdxAtomic;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_SizeAtomic =
+        &p_ConnectInfo->m_Connections[connectionIdx]
+             .m_RequestResponseQSizeAtomic;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitConsume =
+        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+             .m_RequestResponseQWaitConsume;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitProduce =
+        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+             .m_RequestResponseQWaitProduce;
+
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ResponseQSize;
 
     return rc;
@@ -433,11 +465,16 @@ static int32_t s_SendReturnFnGB(struct DSPQueue *p_Queue,
 
 static int32_t s_SendReturnFnA(struct DSPQueue *p_Queue, aqua_void_t *p_RetData,
                                uint32_t p_QMaxSize,
-                               int32_t (*p_Fn)(struct DSPQueue *,
-                                               aqua_void_t *)) {
+                               int32_t (*p_Fn)(struct DSPQueue *, aqua_void_t *,
+                                               uint32_t)) {
     int32_t rc = 0;
 
-    QPUSH(p_Queue, p_QMaxSize, do { rc = p_Fn(p_Queue, p_RetData); } while (0));
+    USQPUSH(
+        p_Queue, p_QMaxSize,
+        do { rc = p_Fn(p_Queue, p_RetData, currIdx); } while (0));
+
+    // QPUSH(p_Queue, p_QMaxSize, do { rc = p_Fn(p_Queue, p_RetData); } while
+    // (0));
 
     return rc;
 }

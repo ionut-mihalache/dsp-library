@@ -201,6 +201,11 @@
                                        0) > 0) {                               \
             SetEvent((p_Queue)->m_Metadata.m_ProduceCond);                     \
         }                                                                      \
+                                                                               \
+        if (InterlockedCompareExchange((p_Queue)->m_Metadata.m_WaitProduce, 0, \
+                                       0) == 0) {                              \
+            ResetEvent((p_Queue)->m_Metadata.m_ProduceCond);                   \
+        }                                                                      \
     } while (0)
 
 #define USQPOP(p_Queue, p_QMaxSize, p_Code)                                    \
@@ -235,6 +240,11 @@
         if (InterlockedCompareExchange((p_Queue)->m_Metadata.m_WaitConsume, 0, \
                                        0) > 0) {                               \
             SetEvent((p_Queue)->m_Metadata.m_ConsumeCond);                     \
+        }                                                                      \
+                                                                               \
+        if (InterlockedCompareExchange((p_Queue)->m_Metadata.m_WaitConsume, 0, \
+                                       0) > 0) {                               \
+            ResetEvent((p_Queue)->m_Metadata.m_ConsumeCond);                   \
         }                                                                      \
     } while (0)
 #endif

@@ -33,6 +33,7 @@ struct ClientConnectInfo {
     struct ConnectQueue m_ConnectQ;
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
+    struct ConnectionSyncInformation *m_ConnectionsSyncData;
     aqua_spinlock_ptr_t m_ConnectLock;
     int32_t (*m_SendConnectRequest)(struct ClientReturnInfo *,
                                     struct ClientConnectInfo *,
