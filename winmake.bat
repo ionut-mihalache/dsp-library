@@ -7,9 +7,9 @@ if /I "%~1" == "clean" goto clean
 
 
 :build
-    nmake /f Makefile.win
+    nmake /f windows.mk
     goto :eof
 
 :clean
-    nmake /f Makefile.win clean
+    nmake /f windows.mk clean
     goto :eof
