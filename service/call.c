@@ -226,9 +226,10 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_ReceiveCallFn = s_QPop;
     p_CallInfo->m_Q.m_Data = callQ;
 
-    // p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
-    // p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
-    // p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+    p_CallInfo->m_Q.m_Metadata.m_PushIdxPtr = &p_InstallInfo->m_CallQPushIdx;
+    p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
+    p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
+
     p_CallInfo->m_Q.m_Metadata.m_PushIdxAtomic =
         &p_InstallInfo->m_CallQPushIdxAtomic;
     p_CallInfo->m_Q.m_Metadata.m_PopIdxAtomic =
@@ -269,18 +270,41 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;
     p_CallInfo->m_Q.m_Metadata.m_EmptyCond = &p_InstallInfo->m_CallQEmptyCond;
 #elif defined(_WIN32)
+    // // Create call queue handles
+    // snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_produce_cond__",
+    //          p_InstallInfo->m_StrId);
+    // p_CallInfo->m_Q.m_Metadata.m_ProduceCond =
+    //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    // DIE(p_CallInfo->m_Q.m_Metadata.m_ProduceCond == NULL,
+    //     "Could not create connect queue produce event");
+
+    // snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_consume_cond__",
+    //          p_InstallInfo->m_StrId);
+    // p_CallInfo->m_Q.m_Metadata.m_ConsumeCond =
+    //     CreateEvent(NULL, FALSE, FALSE, qSyncName);
+    // DIE(p_CallInfo->m_Q.m_Metadata.m_ConsumeCond == NULL,
+    //     "Could not create connect queue consume event");
+
     // Create call queue handles
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_mutex",
+             p_InstallInfo->m_StrId);
+    p_CallInfo->m_Q.m_Metadata.m_Lock = CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_CallInfo->m_Q.m_Metadata.m_Lock == NULL,
+        "Could not create connect queue mutex");
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_produce_cond__",
              p_InstallInfo->m_StrId);
     p_CallInfo->m_Q.m_Metadata.m_ProduceCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        CreateSemaphore(NULL, QMB_Q_MAX_SIZE, QMB_Q_MAX_SIZE, qSyncName);
+    // CreateEvent(NULL, FALSE, FALSE, qSyncName);
     DIE(p_CallInfo->m_Q.m_Metadata.m_ProduceCond == NULL,
         "Could not create connect queue produce event");
 
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_consume_cond__",
              p_InstallInfo->m_StrId);
     p_CallInfo->m_Q.m_Metadata.m_ConsumeCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        CreateSemaphore(NULL, 0, QMB_Q_MAX_SIZE, qSyncName);
+    // CreateEvent(NULL, FALSE, FALSE, qSyncName);
     DIE(p_CallInfo->m_Q.m_Metadata.m_ConsumeCond == NULL,
         "Could not create connect queue consume event");
 #else

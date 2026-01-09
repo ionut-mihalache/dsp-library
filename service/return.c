@@ -285,9 +285,9 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
 #else
 #endif
 
-    // p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx = 0;
-    // p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx = 0;
-    // p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize = 0;
+    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx = 0;
+    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx = 0;
+    p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize = 0;
 
     InterlockedExchange(
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic, 0);
@@ -301,12 +301,20 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ReturnInfo->m_Q.m_Data = returnQ;
 
     // Obtain the handles for return queue
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_mutex_%llu_%u",
+             p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+                 .m_ReturnQMutex,
+             connectionIdx % SYNC_ELEMENTS);
+    p_ReturnInfo->m_Q.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
              p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
                  .m_ReturnQProduceCond,
              connectionIdx % SYNC_ELEMENTS);
     p_ReturnInfo->m_Q.m_Metadata.m_ProduceCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQFullCond;
 
@@ -315,7 +323,8 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
                  .m_ReturnQConsumeCond,
              connectionIdx % SYNC_ELEMENTS);
     p_ReturnInfo->m_Q.m_Metadata.m_ConsumeCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQEmptyCond;
 
@@ -326,12 +335,12 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     // p_ReturnInfo->m_Q.m_Metadata.m_Lock =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQMutex;
 
-    // p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
-    // p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
-    // p_ReturnInfo->m_Q.m_Metadata.m_Size =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
+    p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdx;
+    p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx;
+    p_ReturnInfo->m_Q.m_Metadata.m_Size =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
 
     p_ReturnInfo->m_Q.m_Metadata.m_PushIdxAtomic =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic;
@@ -360,12 +369,20 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
 
     // Obtain the handles for request-return queue
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_mutex_%llu_%u",
+             p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+                 .m_RequestResponseQMutex,
+             connectionIdx % SYNC_ELEMENTS);
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
              p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
                  .m_RequestResponseQProduceCond,
              connectionIdx % SYNC_ELEMENTS);
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_ProduceCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQFullCond;
 
@@ -374,7 +391,8 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
                  .m_RequestResponseQConsumeCond,
              connectionIdx % SYNC_ELEMENTS);
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_ConsumeCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
     //     &p_ConnectInfo->m_Connections[connectionIdx]
     //          .m_RequestResponseQEmptyCond;
@@ -387,12 +405,12 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
     //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQMutex;
 
-    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx;
-    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx;
-    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
-    //     &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPushIdx;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQPopIdx;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
+        &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
 
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxAtomic =
         &p_ConnectInfo->m_Connections[connectionIdx]

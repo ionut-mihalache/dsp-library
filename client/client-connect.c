@@ -303,9 +303,9 @@ static int32_t s_ProcessConnectionRequest(
 #else
 #endif
 
-    // p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx = 0;
-    // p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx = 0;
-    // p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize = 0;
+    p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx = 0;
+    p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx = 0;
+    p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize = 0;
     InterlockedExchange(
         &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdxAtomic,
         0);
@@ -319,12 +319,20 @@ static int32_t s_ProcessConnectionRequest(
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
 
     // Obtain the handles for return queue
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_mutex_%llu_%u",
+             p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
+                 .m_ReturnQMutex,
+             p_ConnId % SYNC_ELEMENTS);
+    p_ReturnInfo->m_Q.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
              p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
                  .m_ReturnQProduceCond,
              p_ConnId % SYNC_ELEMENTS);
     p_ReturnInfo->m_Q.m_Metadata.m_ProduceCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_FullCond =
     //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQFullCond;
 
@@ -333,7 +341,8 @@ static int32_t s_ProcessConnectionRequest(
                  .m_ReturnQConsumeCond,
              p_ConnId % SYNC_ELEMENTS);
     p_ReturnInfo->m_Q.m_Metadata.m_ConsumeCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_EmptyCond =
     //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQEmptyCond;
 
@@ -344,12 +353,12 @@ static int32_t s_ProcessConnectionRequest(
     // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
     //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQMutex;
 
-    // p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdx;
-    // p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdx;
-    // p_ReturnInfo->m_Q.m_Metadata.m_Size =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
+    p_ReturnInfo->m_Q.m_Metadata.m_PushIdxPtr =
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdx;
+    p_ReturnInfo->m_Q.m_Metadata.m_PopIdxPtr =
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdx;
+    p_ReturnInfo->m_Q.m_Metadata.m_Size =
+        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
 
     p_ReturnInfo->m_Q.m_Metadata.m_PushIdxAtomic =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdxAtomic;
@@ -371,12 +380,20 @@ static int32_t s_ProcessConnectionRequest(
     p_ReturnInfo->m_ReturnFn = s_QPop;
 
     // Obtain the handles for request-return queue
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_mutex_%llu_%u",
+             p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
+                 .m_RequestResponseQMutex,
+             p_ConnId % SYNC_ELEMENTS);
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__",
              p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
                  .m_RequestResponseQProduceCond,
              p_ConnId % SYNC_ELEMENTS);
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_ProduceCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_Q.m_Metadata.m_FullCond =
     //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQFullCond;
 
@@ -385,7 +402,8 @@ static int32_t s_ProcessConnectionRequest(
                  .m_RequestResponseQConsumeCond,
              p_ConnId % SYNC_ELEMENTS);
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_ConsumeCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
     // p_ReturnInfo->m_Q.m_Metadata.m_EmptyCond =
     //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQEmptyCond;
 
@@ -396,12 +414,12 @@ static int32_t s_ProcessConnectionRequest(
     // p_ReturnInfo->m_Q.m_Metadata.m_Lock =
     //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQMutex;
 
-    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx;
-    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx;
-    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
-    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxPtr =
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxPtr =
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx;
+    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
+        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize;
 
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxAtomic =
         &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdxAtomic;
@@ -568,6 +586,13 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_SendConnectRequest = s_SendConnectRequest;
     p_ConnectInfo->m_ConnectQ.m_Data = connectQ;
 
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Size =
+        &p_InstallInfo->m_ConnectQSize;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxPtr =
+        &p_InstallInfo->m_ConnectQPushIdx;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxPtr =
+        &p_InstallInfo->m_ConnectQPopIdx;
+
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitConsume =
         &p_InstallInfo->m_ConnectQWaitConsume;
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitProduce =
@@ -580,17 +605,32 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_ConnectQSizeAtomic;
 
     // Obtain the handles for connect queue
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_mutex",
+             p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_produce_cond__",
              p_InstallInfo->m_StrId);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_ProduceCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_consume_cond__",
              p_InstallInfo->m_StrId);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_ConsumeCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
 
     p_ConnectInfo->m_SendDisconnectRequest = s_SendDisconnectRequest;
     p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
+
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Size =
+        &p_InstallInfo->m_ConnectQSize;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxPtr =
+        &p_InstallInfo->m_ConnectQPushIdx;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxPtr =
+        &p_InstallInfo->m_ConnectQPopIdx;
 
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitConsume =
         &p_InstallInfo->m_DisconnectQWaitConsume;
@@ -604,14 +644,22 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         &p_InstallInfo->m_DisconnectQSizeAtomic;
 
     // Obtain the handles for disconnect queue
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_disconnect_mutex",
+             p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock =
+        OpenMutex(MUTEX_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName),
              "__aqua_%s_disconnect_produce_cond__", p_InstallInfo->m_StrId);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ProduceCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
+
     snprintf(qSyncName, sizeof(qSyncName),
              "__aqua_%s_disconnect_consume_cond__", p_InstallInfo->m_StrId);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ConsumeCond =
-        OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        // OpenEvent(EVENT_ALL_ACCESS, FALSE, qSyncName);
+        OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, qSyncName);
 
     return rc;
 }

@@ -73,6 +73,24 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
     for (i = 0; i < SYNC_ELEMENTS; ++i) {
         connSyncInfo = &p_InstallInfo->m_ConnectionsSyncData[i];
 
+        snprintf(qSyncName, sizeof(qSyncName), "__aqua_mutex_%llu_%u", mutexId,
+                 i);
+        // connInfo->m_ReturnQMutex = CreateMutex(NULL, FALSE, qSyncName);
+        DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
+            "Could not create return queue mutex");
+        // connInfo->m_ReturnQMutex = mutexId;
+        connSyncInfo->m_ReturnQMutex = mutexId;
+
+        mutexId++;
+
+        snprintf(qSyncName, sizeof(qSyncName), "__aqua_mutex_%llu_%u", mutexId,
+                 i);
+        DIE(CreateMutex(NULL, FALSE, qSyncName) == NULL,
+            "Could not create request-response queue mutex");
+        connSyncInfo->m_RequestResponseQMutex = mutexId;
+
+        mutexId++;
+
         InterlockedExchange(&connSyncInfo->m_ReturnQWaitProduce, 0);
         InterlockedExchange(&connSyncInfo->m_ReturnQWaitConsume, 0);
 
@@ -81,30 +99,50 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
 
         // Create return queue handles
         snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
-        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        //     "Could not create return queue produce event");
+        DIE(CreateSemaphore(
+                NULL, QMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
+                QMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
+                qSyncName) == NULL,
             "Could not create return queue produce event");
+
         connSyncInfo->m_ReturnQProduceCond = eventId;
 
         eventId++;
 
         snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
-        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        //     "Could not create return queue consume event");
+        DIE(CreateSemaphore(
+                NULL, 0, QMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
+                qSyncName) == NULL,
             "Could not create return queue consume event");
+
         connSyncInfo->m_ReturnQConsumeCond = eventId;
 
         eventId++;
 
         // Crete request-response queue handles
         snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
-        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        //     "Could not create request-response queue produce event");
+        DIE(CreateSemaphore(NULL, OPENED_CONNECTIONS / SYNC_ELEMENTS,
+                            OPENED_CONNECTIONS / SYNC_ELEMENTS,
+                            qSyncName) == NULL,
             "Could not create request-response queue produce event");
+
         connSyncInfo->m_RequestResponseQProduceCond = eventId;
 
         eventId++;
 
         snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
-        DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
+        //     "Could not create request-response queue consume event");
+        DIE(CreateSemaphore(NULL, 0, OPENED_CONNECTIONS / SYNC_ELEMENTS,
+                            qSyncName) == NULL,
             "Could not create request-response queue consume event");
+
         connSyncInfo->m_RequestResponseQConsumeCond = eventId;
 
         eventId++;
@@ -273,7 +311,7 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     p_ConnectInfo->m_Connections[connId].m_RequestResponseQ = NULL;
 
     DIE(!UnmapViewOfFile(p_ConnectInfo->m_Connections[connId].m_ReturnQ),
-        "Could not unmap request response queue");
+        "Could not unmap return queue");
     p_ConnectInfo->m_Connections[connId].m_ReturnQ = NULL;
 
     p_ConnectInfo->m_Connections[connId].m_Connected = false;
@@ -296,6 +334,14 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
 #if defined(_WIN32)
     char qSyncName[RETURNQ_NAME_MAX_SIZE << 1];
 #endif
+
+    p_InstallInfo->m_ConnectQSize = 0;
+    p_InstallInfo->m_ConnectQPushIdx = 0;
+    p_InstallInfo->m_ConnectQPopIdx = 0;
+
+    p_InstallInfo->m_DisconnectQSize = 0;
+    p_InstallInfo->m_DisconnectQPushIdx = 0;
+    p_InstallInfo->m_DisconnectQPopIdx = 0;
 
     InterlockedExchange(&p_InstallInfo->m_ConnectQWaitConsume, 0);
     InterlockedExchange(&p_InstallInfo->m_ConnectQWaitProduce, 0);
@@ -360,6 +406,13 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_ReceiveConnectRequest = s_ReceiveConnectRequest;
     p_ConnectInfo->m_ConnectQ.m_Data = connectQ;
 
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Size =
+        &p_InstallInfo->m_ConnectQSize;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxPtr =
+        &p_InstallInfo->m_ConnectQPushIdx;
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxPtr =
+        &p_InstallInfo->m_ConnectQPopIdx;
+
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
         &p_InstallInfo->m_ConnectQPushIdxAtomic;
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxAtomic =
@@ -373,6 +426,13 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
 
     p_ConnectInfo->m_ReceiveDisconnectRequest = s_ReceiveDisconnectRequest;
     p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
+
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Size =
+        &p_InstallInfo->m_ConnectQSize;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxPtr =
+        &p_InstallInfo->m_ConnectQPushIdx;
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxPtr =
+        &p_InstallInfo->m_ConnectQPopIdx;
 
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxAtomic =
         &p_InstallInfo->m_DisconnectQPushIdxAtomic;
@@ -448,32 +508,50 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_InstallInfo->m_ConnectListLock = 8912LLU;
 
     // Create connect queue handles
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_mutex",
+             p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock =
+        CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_Lock == NULL,
+        "Could not create connect queue mutex");
+
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_produce_cond__",
              p_InstallInfo->m_StrId);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_ProduceCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        CreateSemaphore(NULL, CONNECTQ_MAX_SIZE, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_ProduceCond == NULL,
         "Could not create connect queue produce event");
 
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_consume_cond__",
              p_InstallInfo->m_StrId);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_ConsumeCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        CreateSemaphore(NULL, 0, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_ConsumeCond == NULL,
         "Could not create connect queue consume event");
 
     // Create disconnect queue handles
+    snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_disconnect_mutex",
+             p_InstallInfo->m_StrId);
+    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock =
+        CreateMutex(NULL, FALSE, qSyncName);
+    DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_Lock == NULL,
+        "Could not create disconnect queue mutex");
+
     snprintf(qSyncName, sizeof(qSyncName),
              "__aqua_%s_disconnect_produce_cond__", p_InstallInfo->m_StrId);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ProduceCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        CreateSemaphore(NULL, CONNECTQ_MAX_SIZE, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ProduceCond == NULL,
         "Could not create disconnect queue produce event");
 
     snprintf(qSyncName, sizeof(qSyncName),
              "__aqua_%s_disconnect_consume_cond__", p_InstallInfo->m_StrId);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ConsumeCond =
-        CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        // CreateEvent(NULL, FALSE, FALSE, qSyncName);
+        CreateSemaphore(NULL, 0, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ConsumeCond == NULL,
         "Could not create disconnect queue consume event");
 #else

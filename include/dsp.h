@@ -144,9 +144,9 @@ struct ConnectionInformation {
     void *m_RequestResponseQ, *m_ReturnQ;
     size_t m_RequestResponseQMapSize, m_ReturnQMapSize;
 
-    // uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
-    // uint32_t m_RequestResponseQPushIdx, m_RequestResponseQPopIdx,
-    //     m_RequestResponseQSize;
+    uint32_t m_ReturnQPushIdx, m_ReturnQPopIdx, m_ReturnQSize;
+    uint32_t m_RequestResponseQPushIdx, m_RequestResponseQPopIdx,
+        m_RequestResponseQSize;
 
     LONG m_ReturnQPushIdxAtomic;
     LONG m_ReturnQPopIdxAtomic;
@@ -161,6 +161,9 @@ struct ConnectionInformation {
 };
 
 struct ConnectionSyncInformation {
+    aqua_shared_mutex_t m_ReturnQMutex;
+    aqua_shared_mutex_t m_RequestResponseQMutex;
+
     aqua_shared_cond_t m_ReturnQProduceCond;
     aqua_shared_cond_t m_ReturnQConsumeCond;
 
@@ -200,9 +203,9 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     // aqua_spinlock_t m_ConnectListLock;
     aqua_shared_spinlock_t m_ConnectListLock;
 
-    // uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
-    // uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
-    // uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
+    uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
+    uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
+    uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
     LONG m_CallQPushIdxAtomic, m_CallQPopIdxAtomic, m_CallQSizeAtomic;
     LONG m_CallQWaitProduce, m_CallQWaitConsume;
     LONG m_ConnectQPushIdxAtomic, m_ConnectQPopIdxAtomic, m_ConnectQSizeAtomic;

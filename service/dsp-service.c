@@ -217,9 +217,9 @@ spin_lock_unlock:
     sprintf(installInfo->m_DisconnectQName, "%s-%s-disconnect-q", p_StrId,
             p_Version);
 
-    // installInfo->m_CallQPushIdx = 0;
-    // installInfo->m_CallQPopIdx = 0;
-    // installInfo->m_CallQSize = 0;
+    installInfo->m_CallQPushIdx = 0;
+    installInfo->m_CallQPopIdx = 0;
+    installInfo->m_CallQSize = 0;
 
     InterlockedExchange(&installInfo->m_CallQWaitConsume, 0);
     InterlockedExchange(&installInfo->m_CallQWaitProduce, 0);

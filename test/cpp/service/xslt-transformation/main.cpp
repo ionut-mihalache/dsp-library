@@ -68,7 +68,7 @@ int main() {
     };
 
     auto handleCall = [&](std::unique_ptr<SMBCall> callData) {
-        std::cout << callData->m_CallInfo << std::endl;
+        // std::cout << callData->m_CallInfo << std::endl;
 
         std::unique_ptr<SMBCall> returnData(new SMBCall);
 
@@ -83,8 +83,8 @@ int main() {
             std::cout << "Could not get connection "
                       << callData->m_Metadata.m_ConnId << std::endl;
         }
-        // sendReturn(returnInfo.get(), returnData.get());
         sendReturn(returnInfo.get(), returnData.get());
+        std::cout << "Return sent to client" << std::endl;
     };
 
     std::thread connectThread(handleConnect);

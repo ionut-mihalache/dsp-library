@@ -136,7 +136,6 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
 
         installInfo = (struct InstallInformation *)&(installMemZone->m_Info[i]);
 
-        LOGF("Current service name: %s\n", installInfo->m_StrId);
         if (!strcmp(installInfo->m_StrId, p_ServiceStrId)) {
             if (installInfo->m_Available) {
                 connected = true;
