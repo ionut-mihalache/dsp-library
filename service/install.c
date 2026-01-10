@@ -91,11 +91,11 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
 
         mutexId++;
 
-        InterlockedExchange(&connSyncInfo->m_ReturnQWaitProduce, 0);
-        InterlockedExchange(&connSyncInfo->m_ReturnQWaitConsume, 0);
+        // InterlockedExchange(&connSyncInfo->m_ReturnQWaitProduce, 0);
+        // InterlockedExchange(&connSyncInfo->m_ReturnQWaitConsume, 0);
 
-        InterlockedExchange(&connSyncInfo->m_RequestResponseQWaitProduce, 0);
-        InterlockedExchange(&connSyncInfo->m_RequestResponseQWaitConsume, 0);
+        // InterlockedExchange(&connSyncInfo->m_RequestResponseQWaitProduce, 0);
+        // InterlockedExchange(&connSyncInfo->m_RequestResponseQWaitConsume, 0);
 
         // Create return queue handles
         snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
@@ -341,17 +341,17 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_InstallInfo->m_DisconnectQPushIdx = 0;
     p_InstallInfo->m_DisconnectQPopIdx = 0;
 
-    InterlockedExchange(&p_InstallInfo->m_ConnectQWaitConsume, 0);
-    InterlockedExchange(&p_InstallInfo->m_ConnectQWaitProduce, 0);
-    InterlockedExchange(&p_InstallInfo->m_ConnectQPushIdxAtomic, 0);
-    InterlockedExchange(&p_InstallInfo->m_ConnectQPopIdxAtomic, 0);
-    InterlockedExchange(&p_InstallInfo->m_ConnectQSizeAtomic, 0);
+    // InterlockedExchange(&p_InstallInfo->m_ConnectQWaitConsume, 0);
+    // InterlockedExchange(&p_InstallInfo->m_ConnectQWaitProduce, 0);
+    // InterlockedExchange(&p_InstallInfo->m_ConnectQPushIdxAtomic, 0);
+    // InterlockedExchange(&p_InstallInfo->m_ConnectQPopIdxAtomic, 0);
+    // InterlockedExchange(&p_InstallInfo->m_ConnectQSizeAtomic, 0);
 
-    InterlockedExchange(&p_InstallInfo->m_DisconnectQWaitConsume, 0);
-    InterlockedExchange(&p_InstallInfo->m_DisconnectQWaitProduce, 0);
-    InterlockedExchange(&p_InstallInfo->m_DisconnectQPushIdxAtomic, 0);
-    InterlockedExchange(&p_InstallInfo->m_DisconnectQPopIdxAtomic, 0);
-    InterlockedExchange(&p_InstallInfo->m_DisconnectQSizeAtomic, 0);
+    // InterlockedExchange(&p_InstallInfo->m_DisconnectQWaitConsume, 0);
+    // InterlockedExchange(&p_InstallInfo->m_DisconnectQWaitProduce, 0);
+    // InterlockedExchange(&p_InstallInfo->m_DisconnectQPushIdxAtomic, 0);
+    // InterlockedExchange(&p_InstallInfo->m_DisconnectQPopIdxAtomic, 0);
+    // InterlockedExchange(&p_InstallInfo->m_DisconnectQSizeAtomic, 0);
 
     connectQHandle = createShmObject(
         p_InstallInfo->m_ConnectQName, O_RDWR,
@@ -411,16 +411,16 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxPtr =
         &p_InstallInfo->m_ConnectQPopIdx;
 
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
-        &p_InstallInfo->m_ConnectQPushIdxAtomic;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxAtomic =
-        &p_InstallInfo->m_ConnectQPopIdxAtomic;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitConsume =
-        &p_InstallInfo->m_ConnectQWaitConsume;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitProduce =
-        &p_InstallInfo->m_ConnectQWaitProduce;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_SizeAtomic =
-        &p_InstallInfo->m_ConnectQSizeAtomic;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
+    //     &p_InstallInfo->m_ConnectQPushIdxAtomic;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxAtomic =
+    //     &p_InstallInfo->m_ConnectQPopIdxAtomic;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitConsume =
+    //     &p_InstallInfo->m_ConnectQWaitConsume;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitProduce =
+    //     &p_InstallInfo->m_ConnectQWaitProduce;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_SizeAtomic =
+    //     &p_InstallInfo->m_ConnectQSizeAtomic;
 
     p_ConnectInfo->m_ReceiveDisconnectRequest = s_ReceiveDisconnectRequest;
     p_ConnectInfo->m_DisconnectQ.m_Data = disconnectQ;
@@ -432,16 +432,16 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxPtr =
         &p_InstallInfo->m_ConnectQPopIdx;
 
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxAtomic =
-        &p_InstallInfo->m_DisconnectQPushIdxAtomic;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxAtomic =
-        &p_InstallInfo->m_DisconnectQPopIdxAtomic;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitConsume =
-        &p_InstallInfo->m_DisconnectQWaitConsume;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitProduce =
-        &p_InstallInfo->m_DisconnectQWaitProduce;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_SizeAtomic =
-        &p_InstallInfo->m_DisconnectQSizeAtomic;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxAtomic =
+    //     &p_InstallInfo->m_DisconnectQPushIdxAtomic;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxAtomic =
+    //     &p_InstallInfo->m_DisconnectQPopIdxAtomic;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitConsume =
+    //     &p_InstallInfo->m_DisconnectQWaitConsume;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitProduce =
+    //     &p_InstallInfo->m_DisconnectQWaitProduce;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_SizeAtomic =
+    //     &p_InstallInfo->m_DisconnectQSizeAtomic;
 
 #if defined(__linux__)
     pthread_mutexattr_t attr;

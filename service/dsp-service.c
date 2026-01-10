@@ -221,11 +221,11 @@ spin_lock_unlock:
     installInfo->m_CallQPopIdx = 0;
     installInfo->m_CallQSize = 0;
 
-    InterlockedExchange(&installInfo->m_CallQWaitConsume, 0);
-    InterlockedExchange(&installInfo->m_CallQWaitProduce, 0);
-    InterlockedExchange(&installInfo->m_CallQPushIdxAtomic, 0);
-    InterlockedExchange(&installInfo->m_CallQPopIdxAtomic, 0);
-    InterlockedExchange(&installInfo->m_CallQSizeAtomic, 0);
+    // InterlockedExchange(&installInfo->m_CallQWaitConsume, 0);
+    // InterlockedExchange(&installInfo->m_CallQWaitProduce, 0);
+    // InterlockedExchange(&installInfo->m_CallQPushIdxAtomic, 0);
+    // InterlockedExchange(&installInfo->m_CallQPopIdxAtomic, 0);
+    // InterlockedExchange(&installInfo->m_CallQSizeAtomic, 0);
 
     installInfo->m_CallQType = (enum QType)p_CallQType;
 

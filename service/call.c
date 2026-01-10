@@ -230,15 +230,16 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_PopIdxPtr = &p_InstallInfo->m_CallQPopIdx;
     p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
 
-    p_CallInfo->m_Q.m_Metadata.m_PushIdxAtomic =
-        &p_InstallInfo->m_CallQPushIdxAtomic;
-    p_CallInfo->m_Q.m_Metadata.m_PopIdxAtomic =
-        &p_InstallInfo->m_CallQPopIdxAtomic;
-    p_CallInfo->m_Q.m_Metadata.m_WaitConsume =
-        &p_InstallInfo->m_CallQWaitConsume;
-    p_CallInfo->m_Q.m_Metadata.m_WaitProduce =
-        &p_InstallInfo->m_CallQWaitProduce;
-    p_CallInfo->m_Q.m_Metadata.m_SizeAtomic = &p_InstallInfo->m_CallQSizeAtomic;
+    // p_CallInfo->m_Q.m_Metadata.m_PushIdxAtomic =
+    //     &p_InstallInfo->m_CallQPushIdxAtomic;
+    // p_CallInfo->m_Q.m_Metadata.m_PopIdxAtomic =
+    //     &p_InstallInfo->m_CallQPopIdxAtomic;
+    // p_CallInfo->m_Q.m_Metadata.m_WaitConsume =
+    //     &p_InstallInfo->m_CallQWaitConsume;
+    // p_CallInfo->m_Q.m_Metadata.m_WaitProduce =
+    //     &p_InstallInfo->m_CallQWaitProduce;
+    // p_CallInfo->m_Q.m_Metadata.m_SizeAtomic =
+    // &p_InstallInfo->m_CallQSizeAtomic;
 
     p_CallInfo->m_Q.m_Type = p_InstallInfo->m_CallQType;
 

@@ -306,15 +306,15 @@ static int32_t s_ProcessConnectionRequest(
     p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdx = 0;
     p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdx = 0;
     p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize = 0;
-    InterlockedExchange(
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdxAtomic,
-        0);
-    InterlockedExchange(
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdxAtomic,
-        0);
-    InterlockedExchange(
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSizeAtomic,
-        0);
+    // InterlockedExchange(
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdxAtomic,
+    //     0);
+    // InterlockedExchange(
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdxAtomic,
+    //     0);
+    // InterlockedExchange(
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSizeAtomic,
+    //     0);
 
     p_ReturnInfo->m_ResponseQueue.m_Data = requestResponseQ;
 
@@ -360,18 +360,18 @@ static int32_t s_ProcessConnectionRequest(
     p_ReturnInfo->m_Q.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSize;
 
-    p_ReturnInfo->m_Q.m_Metadata.m_PushIdxAtomic =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdxAtomic;
-    p_ReturnInfo->m_Q.m_Metadata.m_PopIdxAtomic =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdxAtomic;
-    p_ReturnInfo->m_Q.m_Metadata.m_SizeAtomic =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSizeAtomic;
-    p_ReturnInfo->m_Q.m_Metadata.m_WaitConsume =
-        &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
-             .m_ReturnQWaitConsume;
-    p_ReturnInfo->m_Q.m_Metadata.m_WaitProduce =
-        &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
-             .m_ReturnQWaitProduce;
+    // p_ReturnInfo->m_Q.m_Metadata.m_PushIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPushIdxAtomic;
+    // p_ReturnInfo->m_Q.m_Metadata.m_PopIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQPopIdxAtomic;
+    // p_ReturnInfo->m_Q.m_Metadata.m_SizeAtomic =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_ReturnQSizeAtomic;
+    // p_ReturnInfo->m_Q.m_Metadata.m_WaitConsume =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
+    //          .m_ReturnQWaitConsume;
+    // p_ReturnInfo->m_Q.m_Metadata.m_WaitProduce =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
+    //          .m_ReturnQWaitProduce;
 
     p_ReturnInfo->m_Q.m_Type = p_ConnectInformation->m_QType;
 
@@ -421,18 +421,18 @@ static int32_t s_ProcessConnectionRequest(
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSize;
 
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxAtomic =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdxAtomic;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxAtomic =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdxAtomic;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_SizeAtomic =
-        &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSizeAtomic;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitConsume =
-        &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
-             .m_RequestResponseQWaitConsume;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitProduce =
-        &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
-             .m_RequestResponseQWaitProduce;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPushIdxAtomic;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQPopIdxAtomic;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_SizeAtomic =
+    //     &p_ConnectInfo->m_Connections[p_ConnId].m_RequestResponseQSizeAtomic;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitConsume =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
+    //          .m_RequestResponseQWaitConsume;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitProduce =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[p_ConnId % SYNC_ELEMENTS]
+    //          .m_RequestResponseQWaitProduce;
 
     return rc;
 }
@@ -593,16 +593,16 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxPtr =
         &p_InstallInfo->m_ConnectQPopIdx;
 
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitConsume =
-        &p_InstallInfo->m_ConnectQWaitConsume;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitProduce =
-        &p_InstallInfo->m_ConnectQWaitProduce;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
-        &p_InstallInfo->m_ConnectQPushIdxAtomic;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxAtomic =
-        &p_InstallInfo->m_ConnectQPopIdxAtomic;
-    p_ConnectInfo->m_ConnectQ.m_Metadata.m_SizeAtomic =
-        &p_InstallInfo->m_ConnectQSizeAtomic;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitConsume =
+    //     &p_InstallInfo->m_ConnectQWaitConsume;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_WaitProduce =
+    //     &p_InstallInfo->m_ConnectQWaitProduce;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_PushIdxAtomic =
+    //     &p_InstallInfo->m_ConnectQPushIdxAtomic;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_PopIdxAtomic =
+    //     &p_InstallInfo->m_ConnectQPopIdxAtomic;
+    // p_ConnectInfo->m_ConnectQ.m_Metadata.m_SizeAtomic =
+    //     &p_InstallInfo->m_ConnectQSizeAtomic;
 
     // Obtain the handles for connect queue
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_connect_mutex",
@@ -632,16 +632,16 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxPtr =
         &p_InstallInfo->m_ConnectQPopIdx;
 
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitConsume =
-        &p_InstallInfo->m_DisconnectQWaitConsume;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitProduce =
-        &p_InstallInfo->m_DisconnectQWaitProduce;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxAtomic =
-        &p_InstallInfo->m_DisconnectQPushIdxAtomic;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxAtomic =
-        &p_InstallInfo->m_DisconnectQPopIdxAtomic;
-    p_ConnectInfo->m_DisconnectQ.m_Metadata.m_SizeAtomic =
-        &p_InstallInfo->m_DisconnectQSizeAtomic;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitConsume =
+    //     &p_InstallInfo->m_DisconnectQWaitConsume;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_WaitProduce =
+    //     &p_InstallInfo->m_DisconnectQWaitProduce;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PushIdxAtomic =
+    //     &p_InstallInfo->m_DisconnectQPushIdxAtomic;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_PopIdxAtomic =
+    //     &p_InstallInfo->m_DisconnectQPopIdxAtomic;
+    // p_ConnectInfo->m_DisconnectQ.m_Metadata.m_SizeAtomic =
+    //     &p_InstallInfo->m_DisconnectQSizeAtomic;
 
     // Obtain the handles for disconnect queue
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_disconnect_mutex",

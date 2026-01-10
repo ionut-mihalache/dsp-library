@@ -67,16 +67,19 @@ int main(int argc, char *argv[]) {
                  "%s-%llu-%d", "return-q", static_cast<long long>(ms),
                  clientIdx);
         requestInfo->m_ReturnQSize = 1;
-        std::cout << requestInfo->m_ReturnQName << std::endl;
+        // std::cout << requestInfo->m_ReturnQName << std::endl;
 
         snprintf(requestInfo->m_RequestResponseQName, RETURNQ_NAME_MAX_SIZE,
                  "%s-%llu-%d", "response-q", ms, clientIdx);
         requestInfo->m_ResponseQSize = 1;
         requestInfo->m_QType = SMBQ;
-        std::cout << requestInfo->m_RequestResponseQName << std::endl;
+        // std::cout << requestInfo->m_RequestResponseQName << std::endl;
 
         sendConnectRequest(returnInfo.get(), connectInfo.get(),
                            requestInfo.get());
+
+        std::cout << "Connection id is: "
+                  << returnInfo->m_ConnectResponseInformation.m_Id << std::endl;
 
         std::unique_ptr<SMBCall> callData;
         try {
@@ -175,10 +178,10 @@ int main(int argc, char *argv[]) {
     clientThreads.reserve(clientsNumber);
 
     for (int32_t i = 0; i < clientsNumber; ++i) {
-        runClient(i);
-        // std::shared_ptr<std::thread> clientThread(
-        //     new std::thread(runClient, i));
-        // clientThreads.push_back(clientThread);
+        // runClient(i);
+        std::shared_ptr<std::thread> clientThread(
+            new std::thread(runClient, i));
+        clientThreads.push_back(clientThread);
     }
 
     for (auto &clientThread : clientThreads) {

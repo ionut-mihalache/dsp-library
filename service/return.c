@@ -289,12 +289,12 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdx = 0;
     p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize = 0;
 
-    InterlockedExchange(
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic, 0);
-    InterlockedExchange(
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdxAtomic, 0);
-    InterlockedExchange(
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSizeAtomic, 0);
+    // InterlockedExchange(
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic, 0);
+    // InterlockedExchange(
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdxAtomic, 0);
+    // InterlockedExchange(
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSizeAtomic, 0);
 
     p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQ = returnQ;
 
@@ -342,18 +342,18 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ReturnInfo->m_Q.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSize;
 
-    p_ReturnInfo->m_Q.m_Metadata.m_PushIdxAtomic =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic;
-    p_ReturnInfo->m_Q.m_Metadata.m_PopIdxAtomic =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdxAtomic;
-    p_ReturnInfo->m_Q.m_Metadata.m_SizeAtomic =
-        &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSizeAtomic;
-    p_ReturnInfo->m_Q.m_Metadata.m_WaitConsume =
-        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
-             .m_ReturnQWaitConsume;
-    p_ReturnInfo->m_Q.m_Metadata.m_WaitProduce =
-        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
-             .m_ReturnQWaitProduce;
+    // p_ReturnInfo->m_Q.m_Metadata.m_PushIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPushIdxAtomic;
+    // p_ReturnInfo->m_Q.m_Metadata.m_PopIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQPopIdxAtomic;
+    // p_ReturnInfo->m_Q.m_Metadata.m_SizeAtomic =
+    //     &p_ConnectInfo->m_Connections[connectionIdx].m_ReturnQSizeAtomic;
+    // p_ReturnInfo->m_Q.m_Metadata.m_WaitConsume =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+    //          .m_ReturnQWaitConsume;
+    // p_ReturnInfo->m_Q.m_Metadata.m_WaitProduce =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+    //          .m_ReturnQWaitProduce;
 
     p_ReturnInfo->m_Q.m_Type = p_Request->m_ReturnQType;
 
@@ -412,21 +412,21 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     p_ReturnInfo->m_ResponseQueue.m_Metadata.m_Size =
         &p_ConnectInfo->m_Connections[connectionIdx].m_RequestResponseQSize;
 
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxAtomic =
-        &p_ConnectInfo->m_Connections[connectionIdx]
-             .m_RequestResponseQPushIdxAtomic;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxAtomic =
-        &p_ConnectInfo->m_Connections[connectionIdx]
-             .m_RequestResponseQPopIdxAtomic;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_SizeAtomic =
-        &p_ConnectInfo->m_Connections[connectionIdx]
-             .m_RequestResponseQSizeAtomic;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitConsume =
-        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
-             .m_RequestResponseQWaitConsume;
-    p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitProduce =
-        &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
-             .m_RequestResponseQWaitProduce;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PushIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[connectionIdx]
+    //          .m_RequestResponseQPushIdxAtomic;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_PopIdxAtomic =
+    //     &p_ConnectInfo->m_Connections[connectionIdx]
+    //          .m_RequestResponseQPopIdxAtomic;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_SizeAtomic =
+    //     &p_ConnectInfo->m_Connections[connectionIdx]
+    //          .m_RequestResponseQSizeAtomic;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitConsume =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+    //          .m_RequestResponseQWaitConsume;
+    // p_ReturnInfo->m_ResponseQueue.m_Metadata.m_WaitProduce =
+    //     &p_ConnectInfo->m_ConnectionsSyncData[connectionIdx % SYNC_ELEMENTS]
+    //          .m_RequestResponseQWaitProduce;
 
     p_ReturnInfo->m_ResponseQueue.m_MaxSize = p_Request->m_ResponseQSize;
 

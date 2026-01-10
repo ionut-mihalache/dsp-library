@@ -133,14 +133,6 @@ struct ConnectionInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 
-    // aqua_shared_cond_t m_ReturnQFullCond;
-    // aqua_shared_cond_t m_ReturnQEmptyCond;
-    // aqua_shared_cond_t m_RequestResponseQFullCond;
-    // aqua_shared_cond_t m_RequestResponseQEmptyCond;
-
-    // aqua_shared_mutex_t m_ReturnQMutex;
-    // aqua_shared_mutex_t m_RequestResponseQMutex;
-
     void *m_RequestResponseQ, *m_ReturnQ;
     size_t m_RequestResponseQMapSize, m_ReturnQMapSize;
 
@@ -148,13 +140,13 @@ struct ConnectionInformation {
     uint32_t m_RequestResponseQPushIdx, m_RequestResponseQPopIdx,
         m_RequestResponseQSize;
 
-    LONG m_ReturnQPushIdxAtomic;
-    LONG m_ReturnQPopIdxAtomic;
-    LONG m_ReturnQSizeAtomic;
+    // LONG m_ReturnQPushIdxAtomic;
+    // LONG m_ReturnQPopIdxAtomic;
+    // LONG m_ReturnQSizeAtomic;
 
-    LONG m_RequestResponseQPushIdxAtomic;
-    LONG m_RequestResponseQPopIdxAtomic;
-    LONG m_RequestResponseQSizeAtomic;
+    // LONG m_RequestResponseQPushIdxAtomic;
+    // LONG m_RequestResponseQPopIdxAtomic;
+    // LONG m_RequestResponseQSizeAtomic;
 
     int32_t m_ConnectionError;
     bool m_Connected;
@@ -170,11 +162,11 @@ struct ConnectionSyncInformation {
     aqua_shared_cond_t m_RequestResponseQProduceCond;
     aqua_shared_cond_t m_RequestResponseQConsumeCond;
 
-    LONG m_ReturnQWaitProduce;
-    LONG m_ReturnQWaitConsume;
+    // LONG m_ReturnQWaitProduce;
+    // LONG m_ReturnQWaitConsume;
 
-    LONG m_RequestResponseQWaitProduce;
-    LONG m_RequestResponseQWaitConsume;
+    // LONG m_RequestResponseQWaitProduce;
+    // LONG m_RequestResponseQWaitConsume;
 };
 
 struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
@@ -193,26 +185,26 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInformation {
     // aqua_shared_cond_t m_ConnectQEmptyCond;
     // aqua_shared_cond_t m_DisconnectQFullCond;
     // aqua_shared_cond_t m_DisconnectQEmptyCond;
-    aqua_shared_cond_t m_CallQProduceCond, m_CallQConsumeCond;
-    aqua_shared_cond_t m_ConnectQProduceCond, m_ConnectQConsumeCond;
-    aqua_shared_cond_t m_DisconnectQProduceCond, m_DisconnectQConsumeCond;
+    // aqua_shared_cond_t m_CallQProduceCond, m_CallQConsumeCond;
+    // aqua_shared_cond_t m_ConnectQProduceCond, m_ConnectQConsumeCond;
+    // aqua_shared_cond_t m_DisconnectQProduceCond, m_DisconnectQConsumeCond;
 
-    aqua_shared_mutex_t m_CallQMutex;
-    aqua_shared_mutex_t m_ConnectQMutex;
-    aqua_shared_mutex_t m_DisconnectQMutex;
+    // aqua_shared_mutex_t m_CallQMutex;
+    // aqua_shared_mutex_t m_ConnectQMutex;
+    // aqua_shared_mutex_t m_DisconnectQMutex;
     // aqua_spinlock_t m_ConnectListLock;
     aqua_shared_spinlock_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
     uint32_t m_DisconnectQPushIdx, m_DisconnectQPopIdx, m_DisconnectQSize;
-    LONG m_CallQPushIdxAtomic, m_CallQPopIdxAtomic, m_CallQSizeAtomic;
-    LONG m_CallQWaitProduce, m_CallQWaitConsume;
-    LONG m_ConnectQPushIdxAtomic, m_ConnectQPopIdxAtomic, m_ConnectQSizeAtomic;
-    LONG m_ConnectQWaitProduce, m_ConnectQWaitConsume;
-    LONG m_DisconnectQPushIdxAtomic, m_DisconnectQPopIdxAtomic,
-        m_DisconnectQSizeAtomic;
-    LONG m_DisconnectQWaitProduce, m_DisconnectQWaitConsume;
+    // LONG m_CallQPushIdxAtomic, m_CallQPopIdxAtomic, m_CallQSizeAtomic;
+    // LONG m_CallQWaitProduce, m_CallQWaitConsume;
+    // LONG m_ConnectQPushIdxAtomic, m_ConnectQPopIdxAtomic,
+    // m_ConnectQSizeAtomic; LONG m_ConnectQWaitProduce, m_ConnectQWaitConsume;
+    // LONG m_DisconnectQPushIdxAtomic, m_DisconnectQPopIdxAtomic,
+    //     m_DisconnectQSizeAtomic;
+    // LONG m_DisconnectQWaitProduce, m_DisconnectQWaitConsume;
 
     enum QType m_CallQType;
 
@@ -227,19 +219,19 @@ struct ALIGN_STRUCT(PAGE_SIZE) InstallInfo {
 };
 
 struct DSPQueueMetadata {
-    aqua_cond_ptr_t m_FullCond;
-    aqua_cond_ptr_t m_EmptyCond;
+    // aqua_cond_ptr_t m_FullCond;
+    // aqua_cond_ptr_t m_EmptyCond;
+    aqua_cond_ptr_t m_ConsumeCond;
+    aqua_cond_ptr_t m_ProduceCond;
     aqua_mutex_ptr_t m_Lock;
     uint32_t *m_PushIdxPtr;
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;
-    LONG *m_WaitProduce;
-    LONG *m_WaitConsume;
-    LONG *m_PushIdxAtomic;
-    LONG *m_PopIdxAtomic;
-    LONG *m_SizeAtomic;
-    aqua_cond_ptr_t m_ConsumeCond;
-    aqua_cond_ptr_t m_ProduceCond;
+    // LONG *m_WaitProduce;
+    // LONG *m_WaitConsume;
+    // LONG *m_PushIdxAtomic;
+    // LONG *m_PopIdxAtomic;
+    // LONG *m_SizeAtomic;
 };
 
 struct ConnectResponseQueue {
