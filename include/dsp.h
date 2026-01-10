@@ -84,7 +84,7 @@ typedef SIZE_T aqua_size_t;
 #define RETURNQ_NAME_MAX_SIZE ((uint32_t)256)
 
 #define OPENED_CONNECTIONS ((uint32_t)128)
-#define SYNC_ELEMENTS SMB_Q_MAX_SIZE
+#define SYNC_ELEMENTS 128
 
 enum QType {
     SMBQ, // 0

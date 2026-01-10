@@ -55,18 +55,20 @@
 #if defined(_WIN32)
 #define DIE(assertion, call_description)                                       \
     do {                                                                       \
-        LPVOID errorStr;                                                       \
-        DWORD errNumber = GetLastError();                                      \
-        FormatMessage(                                                         \
-            FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |      \
-                FORMAT_MESSAGE_IGNORE_INSERTS,                                 \
-            NULL, errNumber, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),        \
-            (LPTSTR) & errorStr, 0, NULL);                                     \
-                                                                               \
         if (assertion) {                                                       \
+            DWORD errNumber = GetLastError();                                  \
+            LPVOID errorStr = NULL;                                            \
+            FormatMessage(                                                     \
+                FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |  \
+                    FORMAT_MESSAGE_IGNORE_INSERTS,                             \
+                NULL, errNumber, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),    \
+                (LPTSTR) & errorStr, 0, NULL);                                 \
+                                                                               \
             fprintf(stderr, "%s (%d): %s - %s\n", __FILE__, __LINE__,          \
                     call_description, (char *)errorStr);                       \
-            LocalFree(errorStr);                                               \
+            if (errorStr) {                                                    \
+                LocalFree(errorStr);                                           \
+            }                                                                  \
             ExitProcess(EXIT_FAILURE);                                         \
         }                                                                      \
     } while (0)
@@ -211,12 +213,14 @@
 #define USQPUSH(p_Queue, p_QMaxSize, p_Code)                                   \
     do {                                                                       \
         uint32_t currIdx;                                                      \
+                                                                               \
         WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);           \
                                                                                \
         while (*(p_Queue)->m_Metadata.m_Size == (p_QMaxSize)) {                \
             ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                        \
             WaitForSingleObject((p_Queue)->m_Metadata.m_ConsumeCond,           \
                                 INFINITE);                                     \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);       \
         }                                                                      \
                                                                                \
         currIdx = *(p_Queue)->m_Metadata.m_PushIdxPtr;                         \
@@ -282,6 +286,7 @@
             ReleaseMutex((p_Queue)->m_Metadata.m_Lock);                        \
             WaitForSingleObject((p_Queue)->m_Metadata.m_ProduceCond,           \
                                 INFINITE);                                     \
+            WaitForSingleObject((p_Queue)->m_Metadata.m_Lock, INFINITE);       \
         }                                                                      \
                                                                                \
         currIdx = *(p_Queue)->m_Metadata.m_PopIdxPtr;                          \

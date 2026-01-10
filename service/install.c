@@ -102,8 +102,7 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
         // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
         //     "Could not create return queue produce event");
         DIE(CreateSemaphore(
-                NULL, QMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
-                QMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
+                NULL, 0, SMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
                 qSyncName) == NULL,
             "Could not create return queue produce event");
 
@@ -115,7 +114,8 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
         // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
         //     "Could not create return queue consume event");
         DIE(CreateSemaphore(
-                NULL, 0, QMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
+                NULL, SMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
+                SMB_Q_MAX_SIZE * (OPENED_CONNECTIONS / SYNC_ELEMENTS),
                 qSyncName) == NULL,
             "Could not create return queue consume event");
 
@@ -127,8 +127,7 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
         snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
         // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
         //     "Could not create request-response queue produce event");
-        DIE(CreateSemaphore(NULL, OPENED_CONNECTIONS / SYNC_ELEMENTS,
-                            OPENED_CONNECTIONS / SYNC_ELEMENTS,
+        DIE(CreateSemaphore(NULL, 0, OPENED_CONNECTIONS / SYNC_ELEMENTS,
                             qSyncName) == NULL,
             "Could not create request-response queue produce event");
 
@@ -139,7 +138,8 @@ int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
         snprintf(qSyncName, sizeof(qSyncName), "__aqua_%llu_%u__", eventId, i);
         // DIE(CreateEvent(NULL, FALSE, FALSE, qSyncName) == NULL,
         //     "Could not create request-response queue consume event");
-        DIE(CreateSemaphore(NULL, 0, OPENED_CONNECTIONS / SYNC_ELEMENTS,
+        DIE(CreateSemaphore(NULL, OPENED_CONNECTIONS / SYNC_ELEMENTS,
+                            OPENED_CONNECTIONS / SYNC_ELEMENTS,
                             qSyncName) == NULL,
             "Could not create request-response queue consume event");
 
@@ -315,8 +315,6 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
     p_ConnectInfo->m_Connections[connId].m_ReturnQ = NULL;
 
     p_ConnectInfo->m_Connections[connId].m_Connected = false;
-
-    // TODO: Check how to handle unlinking for windows
 
     ReleaseMutex(p_ConnectInfo->m_ConnectLock);
 #else
@@ -519,7 +517,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
              p_InstallInfo->m_StrId);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_ProduceCond =
         // CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        CreateSemaphore(NULL, CONNECTQ_MAX_SIZE, CONNECTQ_MAX_SIZE, qSyncName);
+        CreateSemaphore(NULL, 0, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_ProduceCond == NULL,
         "Could not create connect queue produce event");
 
@@ -527,7 +525,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
              p_InstallInfo->m_StrId);
     p_ConnectInfo->m_ConnectQ.m_Metadata.m_ConsumeCond =
         // CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        CreateSemaphore(NULL, 0, CONNECTQ_MAX_SIZE, qSyncName);
+        CreateSemaphore(NULL, CONNECTQ_MAX_SIZE, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_ConnectQ.m_Metadata.m_ConsumeCond == NULL,
         "Could not create connect queue consume event");
 
@@ -543,7 +541,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
              "__aqua_%s_disconnect_produce_cond__", p_InstallInfo->m_StrId);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ProduceCond =
         // CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        CreateSemaphore(NULL, CONNECTQ_MAX_SIZE, CONNECTQ_MAX_SIZE, qSyncName);
+        CreateSemaphore(NULL, 0, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ProduceCond == NULL,
         "Could not create disconnect queue produce event");
 
@@ -551,7 +549,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
              "__aqua_%s_disconnect_consume_cond__", p_InstallInfo->m_StrId);
     p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ConsumeCond =
         // CreateEvent(NULL, FALSE, FALSE, qSyncName);
-        CreateSemaphore(NULL, 0, CONNECTQ_MAX_SIZE, qSyncName);
+        CreateSemaphore(NULL, CONNECTQ_MAX_SIZE, CONNECTQ_MAX_SIZE, qSyncName);
     DIE(p_ConnectInfo->m_DisconnectQ.m_Metadata.m_ConsumeCond == NULL,
         "Could not create disconnect queue consume event");
 #else

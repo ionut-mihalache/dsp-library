@@ -97,6 +97,8 @@ int main() {
         receiveCall(callData.get(), callInfo.get());
         std::cout << "Call request received..." << std::endl;
 
+        // handleCall(std::move(callData));
+
         std::thread callThread(handleCall, std::move(callData));
         callThread.detach();
     }

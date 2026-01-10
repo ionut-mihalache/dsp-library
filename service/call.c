@@ -295,7 +295,7 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_produce_cond__",
              p_InstallInfo->m_StrId);
     p_CallInfo->m_Q.m_Metadata.m_ProduceCond =
-        CreateSemaphore(NULL, QMB_Q_MAX_SIZE, QMB_Q_MAX_SIZE, qSyncName);
+        CreateSemaphore(NULL, 0, QMB_Q_MAX_SIZE, qSyncName);
     // CreateEvent(NULL, FALSE, FALSE, qSyncName);
     DIE(p_CallInfo->m_Q.m_Metadata.m_ProduceCond == NULL,
         "Could not create connect queue produce event");
@@ -303,7 +303,7 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     snprintf(qSyncName, sizeof(qSyncName), "__aqua_%s_call_consume_cond__",
              p_InstallInfo->m_StrId);
     p_CallInfo->m_Q.m_Metadata.m_ConsumeCond =
-        CreateSemaphore(NULL, 0, QMB_Q_MAX_SIZE, qSyncName);
+        CreateSemaphore(NULL, QMB_Q_MAX_SIZE, QMB_Q_MAX_SIZE, qSyncName);
     // CreateEvent(NULL, FALSE, FALSE, qSyncName);
     DIE(p_CallInfo->m_Q.m_Metadata.m_ConsumeCond == NULL,
         "Could not create connect queue consume event");

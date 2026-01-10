@@ -7,6 +7,7 @@
 #include <memory>
 #include <vector>
 #include <thread>
+#include <iostream>
 
 extern "C" {
 #include "dsp.h"
@@ -14,7 +15,7 @@ extern "C" {
 }
 
 int main(int argc, char *argv[]) {
-    auto runClient = [&]() {
+    auto runClient = [&](int32_t clientIdx) {
         std::unique_ptr<ClientConnectInfo> connectInfo;
         std::unique_ptr<ClientCallInfo> callInfo;
 
@@ -38,17 +39,20 @@ int main(int argc, char *argv[]) {
 
         dspConnect(connectInfo.get(), callInfo.get(), "xslt-transformation");
 
-        std::unique_ptr<ClientReturnInfo> returnInfo(new ClientReturnInfo);
-        if (returnInfo == nullptr) {
+        std::unique_ptr<ClientReturnInfo> returnInfo;
+        try {
+            returnInfo = std::make_unique<ClientReturnInfo>();
+        } catch (const std::bad_alloc &) {
             fprintf(stderr,
                     "There was an error with allocating memory for client"
                     "return information.\n");
             return 0;
         }
 
-        std::unique_ptr<ClientConnectRequestInformation> requestInfo(
-            new ClientConnectRequestInformation);
-        if (requestInfo == nullptr) {
+        std::unique_ptr<ClientConnectRequestInformation> requestInfo;
+        try {
+            requestInfo = std::make_unique<ClientConnectRequestInformation>();
+        } catch (const std::bad_alloc &) {
             fprintf(stderr,
                     "There was an error with allocating memory for client"
                     "call information.\n");
@@ -59,20 +63,25 @@ int main(int argc, char *argv[]) {
         auto ms =
             std::chrono::duration_cast<std::chrono::milliseconds>(now).count();
 
-        snprintf(requestInfo->m_ReturnQName, RETURNQ_NAME_MAX_SIZE, "%s-%llu",
-                 "return-q", static_cast<long long>(ms));
+        snprintf(requestInfo->m_ReturnQName, RETURNQ_NAME_MAX_SIZE,
+                 "%s-%llu-%d", "return-q", static_cast<long long>(ms),
+                 clientIdx);
         requestInfo->m_ReturnQSize = 1;
+        std::cout << requestInfo->m_ReturnQName << std::endl;
 
         snprintf(requestInfo->m_RequestResponseQName, RETURNQ_NAME_MAX_SIZE,
-                 "%s-%llu", "response-q", ms);
+                 "%s-%llu-%d", "response-q", ms, clientIdx);
         requestInfo->m_ResponseQSize = 1;
         requestInfo->m_QType = SMBQ;
+        std::cout << requestInfo->m_RequestResponseQName << std::endl;
 
         sendConnectRequest(returnInfo.get(), connectInfo.get(),
                            requestInfo.get());
 
-        std::unique_ptr<SMBCall> callData(new SMBCall);
-        if (callData == nullptr) {
+        std::unique_ptr<SMBCall> callData;
+        try {
+            callData = std::make_unique<SMBCall>();
+        } catch (const std::bad_alloc &) {
             fprintf(stderr,
                     "There was an error with allocating memory for client"
                     "call data.\n");
@@ -134,8 +143,10 @@ int main(int argc, char *argv[]) {
 
         // fprintf(stdout, "Call duration: %lf\n", duration.count());
 
-        std::unique_ptr<SMBCall> returnData(new SMBCall);
-        if (returnData == nullptr) {
+        std::unique_ptr<SMBCall> returnData;
+        try {
+            returnData = std::make_unique<SMBCall>();
+        } catch (const std::bad_alloc &) {
             fprintf(stderr,
                     "There was an error with allocating memory for client"
                     "call data.\n");
@@ -163,9 +174,11 @@ int main(int argc, char *argv[]) {
     std::vector<std::shared_ptr<std::thread>> clientThreads;
     clientThreads.reserve(clientsNumber);
 
-    for (uint32_t i = 0; i < clientsNumber; ++i) {
-        std::shared_ptr<std::thread> clientThread(new std::thread(runClient));
-        clientThreads.push_back(clientThread);
+    for (int32_t i = 0; i < clientsNumber; ++i) {
+        runClient(i);
+        // std::shared_ptr<std::thread> clientThread(
+        //     new std::thread(runClient, i));
+        // clientThreads.push_back(clientThread);
     }
 
     for (auto &clientThread : clientThreads) {
