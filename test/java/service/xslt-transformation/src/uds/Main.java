@@ -2,6 +2,7 @@ package uds;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.net.StandardProtocolFamily;
 import java.net.UnixDomainSocketAddress;
 import java.nio.ByteBuffer;
@@ -24,30 +25,42 @@ import org.w3c.dom.Document;
 public class Main {
     public static void main(String args[]) {
         Path socketPath = Path.of("/tmp/xslt.sock");
+
+        try {
+            Files.deleteIfExists(socketPath);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         UnixDomainSocketAddress socketAddr = UnixDomainSocketAddress.of(socketPath);
 
-        try (
-                ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX)) {
+        try {
+            ServerSocketChannel server = ServerSocketChannel.open(StandardProtocolFamily.UNIX);
             server.bind(socketAddr);
+            System.out.println("Server listening on " + socketPath);
 
-            while (!Thread.currentThread().interrupted()) {
-                System.out.println("Server listening on " + socketPath);
-
+            while (!Thread.currentThread().isInterrupted()) {
                 try (SocketChannel client = server.accept()) {
-                    ByteBuffer buf = ByteBuffer.allocate(1024);
+                    ByteBuffer buf = ByteBuffer.allocate(65548);
                     client.read(buf);
                     buf.flip();
 
-                    System.out.println("Received: " + new String(buf.array(), 0, buf.limit()));
+                    int xmlLength = buf.getInt();
+                    byte[] xmlBytes = new byte[xmlLength];
+                    buf.get(xmlBytes);
+
+                    // System.out.println("Received: " + new String(buf.array(), 0, buf.limit()));
 
                     Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                     byte[] xsltData = Files.readAllBytes(xsltPath);
 
-                    String result = Main.mf_GetXmlTransformed("TODO".getBytes(), xsltData);
+                    String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
 
                     client.write(ByteBuffer.wrap(result.getBytes()));
                 }
             }
+
+            server.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
