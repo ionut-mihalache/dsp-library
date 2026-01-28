@@ -126,5 +126,5 @@ if __name__ == "__main__":
     # sys.argv[3] = CSV B
     # sys.argv[4] = CSV C
 
-    # create_combined_client_exec_time_plot2(sys.argv[1], sys.argv[2], sys.argv[3])
-    create_combined_client_exec_time_plot3(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    create_combined_client_exec_time_plot2(sys.argv[1], sys.argv[2], sys.argv[3], "AQUA", "UDS")
+    # create_combined_client_exec_time_plot3(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
