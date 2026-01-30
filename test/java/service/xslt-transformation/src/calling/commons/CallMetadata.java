@@ -13,6 +13,8 @@ import com.sun.jna.Structure.FieldOrder;
 
 @FieldOrder({ "m_Size", "m_ConnId", "m_DataReady" })
 public class CallMetadata extends Structure {
+    public static class ByValue extends CallMetadata implements Structure.ByValue {}
+
     public int m_Size;
     public int m_ConnId;
     public byte m_DataReady;

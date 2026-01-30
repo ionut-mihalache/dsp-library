@@ -280,3 +280,4 @@ runBenchmark $@
 # git clone https://github.com/async-profiler/async-profiler.git
 # ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 500 750 1000 1500 2000 2500 3250 4000 5000 6000
 # ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32
+# ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024

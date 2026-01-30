@@ -19,6 +19,7 @@ import javax.xml.transform.stream.StreamSource;
 import org.w3c.dom.Document;
 
 import com.sun.jna.Library;
+import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
@@ -34,7 +35,8 @@ import queues.commons.ConnectResponseInformation;
 interface LibDSP extends Library {
     LibDSP INSTANCE = (LibDSP) Native.load("dsp", LibDSP.class);
 
-    void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version, int p_CallQType);
+    void dspInstall(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo, String p_StrId, String p_Version,
+            int p_CallQType);
 
     void receiveCall(Pointer p_CallData, ServiceCallInfo p_CallInfo);
 
@@ -58,8 +60,21 @@ class ConnectThread extends Thread {
 
             returnInfo.read();
 
-            ConnectResponseInformation responseInfo = new ConnectResponseInformation(
-                    returnInfo.m_ResponseQueue.m_Data.share(0));
+            Pointer nativePtr = returnInfo.m_ResponseQueue.m_Data;
+            if (nativePtr == null) {
+                System.err.println("ConnectThread: m_Data pointer is NULL");
+                continue;
+            }
+
+            int size = new ConnectResponseInformation().size();
+
+            byte[] buf = nativePtr.getByteArray(0, size);
+
+            ConnectResponseInformation responseInfo = new ConnectResponseInformation();
+            responseInfo.getPointer().write(0, buf, 0, size);
+            responseInfo.read();
+            // ConnectResponseInformation responseInfo = new ConnectResponseInformation(
+            // returnInfo.m_ResponseQueue.m_Data.share(0));
 
             int connId = responseInfo.m_Id;
             m_Connections.put(connId, returnInfo);
@@ -103,8 +118,13 @@ class ProcessCallThread extends Thread {
 
             ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.getMetadata().m_ConnId);
 
+            long returnDataSegmentSize = (new SMBReturn()).size();
+            Memory nativeMem = new Memory(returnDataSegmentSize);
+
+            // System.out.println("SMBReturn size: " + returnDataSegmentSize);
+
             Call returnData = switch (serviceReturnInfo.m_Q.m_Type) {
-                case Constants.SMBQ -> new SMBReturn();
+                case Constants.SMBQ -> new SMBReturn(nativeMem);
                 case Constants.EMBQ -> new EMBReturn();
                 case Constants.QMBQ -> new QMBReturn();
                 case Constants.HMBQ -> new HMBReturn();
@@ -128,7 +148,9 @@ class ProcessCallThread extends Thread {
             returnData.getMetadata().m_ConnId = m_CallData.getMetadata().m_ConnId;
 
             returnData.write();
-            LibDSP.INSTANCE.sendReturn(m_Connections.get(m_CallData.getMetadata().m_ConnId), returnData.getPointer());
+            // nativeMem.write(0, returnData.getPointer().getByteArray(0, (int) returnDataSegmentSize), 0,
+            //         (int) returnDataSegmentSize);
+            LibDSP.INSTANCE.sendReturn(m_Connections.get(m_CallData.getMetadata().m_ConnId), nativeMem);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -150,7 +172,8 @@ class ProcessCallThread extends Thread {
 
         System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
+        Transformer transformer = transformerFactory
+                .newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         transformer.transform(new DOMSource(document), new StreamResult(output));
@@ -187,7 +210,8 @@ public class Main {
 
                 callData.read();
 
-                // byte[] iiaData = Arrays.copyOfRange(callData.getCallInfo(), 0, callData.getMetadata().m_Size);
+                // byte[] iiaData = Arrays.copyOfRange(callData.getCallInfo(), 0,
+                // callData.getMetadata().m_Size);
 
                 // Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
                 // byte[] xsltData = Files.readAllBytes(xsltPath);
@@ -196,34 +220,37 @@ public class Main {
 
                 // byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
 
-                // ServiceReturnInfo serviceReturnInfo = connections.get(callData.getMetadata().m_ConnId);
+                // ServiceReturnInfo serviceReturnInfo =
+                // connections.get(callData.getMetadata().m_ConnId);
 
                 // Call returnData = switch (serviceReturnInfo.m_Q.m_Type) {
-                //     case Constants.SMBQ -> new SMBReturn();
-                //     case Constants.EMBQ -> new EMBReturn();
-                //     case Constants.QMBQ -> new QMBReturn();
-                //     case Constants.HMBQ -> new HMBReturn();
-                //     case Constants.MBQ -> new MBReturn();
-                //     case Constants.DMBQ -> new DMBReturn();
-                //     case Constants.HGBQ -> new HGBReturn();
-                //     case Constants.GBQ -> new GBReturn();
-                //     default -> {
-                //         System.err.println("Return queue type not recognized!");
-                //         yield null;
-                //     }
+                // case Constants.SMBQ -> new SMBReturn();
+                // case Constants.EMBQ -> new EMBReturn();
+                // case Constants.QMBQ -> new QMBReturn();
+                // case Constants.HMBQ -> new HMBReturn();
+                // case Constants.MBQ -> new MBReturn();
+                // case Constants.DMBQ -> new DMBReturn();
+                // case Constants.HGBQ -> new HGBReturn();
+                // case Constants.GBQ -> new GBReturn();
+                // default -> {
+                // System.err.println("Return queue type not recognized!");
+                // yield null;
+                // }
                 // };
 
                 // if (returnData == null) {
-                //     System.err.println("Return data type not recognized!");
-                //     return;
+                // System.err.println("Return data type not recognized!");
+                // return;
                 // }
 
-                // System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0, resByteArr.length);
+                // System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0,
+                // resByteArr.length);
                 // returnData.getMetadata().m_Size = resByteArr.length;
                 // returnData.getMetadata().m_ConnId = callData.getMetadata().m_ConnId;
 
                 // returnData.write();
-                // LibDSP.INSTANCE.sendReturn(connections.get(callData.getMetadata().m_ConnId), returnData.getPointer());
+                // LibDSP.INSTANCE.sendReturn(connections.get(callData.getMetadata().m_ConnId),
+                // returnData.getPointer());
 
                 ProcessCallThread processCallThread = new ProcessCallThread(callData, connections);
                 processCallThread.setName("CallThread-" + callData.m_Metadata.m_ConnId);
@@ -250,7 +277,8 @@ public class Main {
 
         System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
         TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory.newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
+        Transformer transformer = transformerFactory
+                .newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
         ByteArrayOutputStream output = new ByteArrayOutputStream();
 
         transformer.transform(new DOMSource(document), new StreamResult(output));
