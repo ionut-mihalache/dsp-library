@@ -29,7 +29,7 @@
 #define HGB (1 << 29)
 #define GB (1 << 30)
 
-#define SMB_Q_MAX_SIZE ((uint32_t)256)
+#define SMB_Q_MAX_SIZE ((uint32_t)1024)
 #define EMB_Q_MAX_SIZE ((uint32_t)16)
 #define QMB_Q_MAX_SIZE ((uint32_t)8)
 #define HMB_Q_MAX_SIZE ((uint32_t)4)
@@ -38,7 +38,7 @@
 #define HGB_Q_MAX_SIZE ((uint32_t)1)
 #define GB_Q_MAX_SIZE ((uint32_t)1)
 
-#define CONNECTQ_MAX_SIZE ((uint32_t)256)
+#define CONNECTQ_MAX_SIZE ((uint32_t)1024)
 #define RETURNQ_MAX_SIZE ((uint32_t)1)
 #define RETURN_RESPONSEQ_MAX_SIZE ((uint32_t)1)
 
