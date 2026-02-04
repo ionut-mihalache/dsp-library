@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -110,9 +111,13 @@ public class Main {
                 Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
 
+                ByteBuffer response = ByteBuffer.allocate(65548);
                 String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
 
-                socket.send(result.getBytes(ZMQ.CHARSET), 0);
+                response.putInt(result.length());
+                response.put(result.getBytes(StandardCharsets.UTF_8));
+
+                socket.send(response.array(), 0);
             }
 
             socket.close();

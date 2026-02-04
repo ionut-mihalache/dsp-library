@@ -31,28 +31,28 @@ def create_combined_client_exec_time_plot2(output_dir, csv_a, csv_b, label_a="AQ
     fig, axs = plt.subplots(len(time_columns), 1, figsize=(10, 10), sharex=True)
 
     for i, col in enumerate(time_columns):
-        # Plot dataset A
+        y_a = df_a[col] / df_a[col].iloc[0]
+        y_b = df_b[col] / df_b[col].iloc[0]
+
         axs[i].plot(
-            df_a["clients_nr"],
-            df_a[col],
+            df_a["clients_nr"], y_a,
             linestyle=line_styles[0],
             marker=markers[0],
             color=colors[0],
             label=f"{col.capitalize()} ({label_a})",
         )
 
-        # Plot dataset B
         axs[i].plot(
-            df_b["clients_nr"],
-            df_b[col],
+            df_b["clients_nr"], y_b,
             linestyle=line_styles[1],
             marker=markers[1],
             color=colors[1],
             label=f"{col.capitalize()} ({label_b})",
         )
 
-        axs[i].set_ylabel("Time (ms)")
-        axs[i].grid(True)
+        # axs[i].set_ylabel("Relative Time (× first value)")
+        axs[i].set_ylabel("Time (ms) - TODO")
+        axs[i].grid(True, linestyle=":")
         axs[i].legend(frameon=False)
 
     axs[-1].set_xlabel("Number of Clients")
@@ -78,10 +78,14 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
     fig, axs = plt.subplots(len(time_columns), 1, figsize=(10, 10), sharex=True)
 
     for i, col in enumerate(time_columns):
+        y_a = df_a[col] / df_a[col].iloc[0]
+        y_b = df_b[col] / df_b[col].iloc[0]
+        y_c = df_c[col] / df_c[col].iloc[0]
+
         # Plot dataset A
         axs[i].plot(
             df_a["clients_nr"],
-            df_a[col],
+            y_a,
             linestyle=line_styles[0],
             marker=markers[0],
             color=colors[0],
@@ -91,7 +95,7 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
         # Plot dataset B
         axs[i].plot(
             df_b["clients_nr"],
-            df_b[col],
+            y_b,
             linestyle=line_styles[1],
             marker=markers[1],
             color=colors[1],
@@ -101,14 +105,15 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
         # Plot dataset C
         axs[i].plot(
             df_c["clients_nr"],
-            df_c[col],
+            y_c,
             linestyle=line_styles[2],
             marker=markers[2],
             color=colors[2],
             label=f"{col.capitalize()} ({label_c})",
         )
 
-        axs[i].set_ylabel("Time (ms)")
+        # axs[i].set_yscale("log", nonpositive="mask")
+        axs[i].set_ylabel("Time (ms) - TODO")
         axs[i].grid(True)
         axs[i].legend(frameon=False)
 
@@ -126,5 +131,7 @@ if __name__ == "__main__":
     # sys.argv[3] = CSV B
     # sys.argv[4] = CSV C
 
-    create_combined_client_exec_time_plot2(sys.argv[1], sys.argv[2], sys.argv[3], "AQUA", "UDS")
-    # create_combined_client_exec_time_plot3(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4])
+    if len(sys.argv) == 4:
+        create_combined_client_exec_time_plot2(sys.argv[1], sys.argv[2], sys.argv[3], "AQUA", "UDS")
+    elif len(sys.argv) == 5:
+        create_combined_client_exec_time_plot3(sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], "AQUA", "UDS", "ZeroMQ")

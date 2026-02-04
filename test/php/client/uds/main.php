@@ -9,6 +9,18 @@ function measureFnExec(callable $p_Fn): float
     $end = microtime(true);
 
     return ($end - $start) * 1_000_000;
+
+    // $start = getrusage();
+    // $p_Fn();
+    // $end = getrusage();
+
+    // $utime = ($end["ru_utime.tv_sec"] - $start["ru_utime.tv_sec"]) * 1_000_000;
+    // $utime += ($end["ru_utime.tv_usec"] - $start["ru_utime.tv_usec"]);
+
+    // $stime = ($end["ru_stime.tv_sec"] - $start["ru_stime.tv_sec"]) * 1_000_000;
+    // $stime += ($end["ru_stime.tv_usec"] - $start["ru_stime.tv_usec"]);
+
+    // return $utime + $stime; // CPU real microseconds
 }
 
 $benchmark = [];

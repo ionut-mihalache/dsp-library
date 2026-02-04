@@ -245,7 +245,7 @@ class ProcessCallThread1 extends Thread {
             // (int) returnDataSegmentSize);
             LibDSP.INSTANCE.sendReturn(m_ServiceReturnInfo, returnData.getPointer());
 
-            m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
+            // m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -290,13 +290,13 @@ public class Main {
         callInfo.read();
 
         // ConnectThread connectThread = new ConnectThread(connectInfo, connections);
-        // DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
+        DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
         // connectThread.setName("ConnectThread");
-        // disconnectThread.setName("DisconnectThread");
+        disconnectThread.setName("DisconnectThread");
 
         // connectThread.start();
-        // disconnectThread.start();
+        disconnectThread.start();
 
         while (!Thread.currentThread().isInterrupted()) {
             try {
