@@ -202,6 +202,8 @@ runBenchmark() {
     shift
     clientAbsolutePath=$1
     shift
+    # timestamp=$1
+    # shift
 
     timestamp=$(date +%s)
 
