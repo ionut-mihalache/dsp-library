@@ -1,10 +1,53 @@
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/dsp-library
+
+cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation
+make clean
+make
+make run &
+aquaPid=$!
+sleep 2
+cd -
+
+./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+
+kill $aquaPid
+
+cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/uds
+make clean
+make
+make run &
+udsPid=$!
+sleep 2
+cd -
+
+cd ./uds
+./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+cd -
+
+kill $udsPid
+
+cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/zeromq
+make clean
+make
+make run &
+zeromqPid=$!
+sleep 2
+cd -
+
+cd ./zeromq
+./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+cd -
+
+kill $zeromqPid
+
+
 lastAQUAbenchmark=$(ls benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
 lastUDSbenchmark=$(ls uds/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
 lastZMQbenchmark=$(ls zeromq/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
 
-echo $lastAQUAbenchmark
-echo $lastUDSbenchmark
-echo $lastZMQbenchmark
+# echo $lastAQUAbenchmark
+# echo $lastUDSbenchmark
+# echo $lastZMQbenchmark
 
 if [ ! -d "metrics2" ]; then
     mkdir -p metrics2
