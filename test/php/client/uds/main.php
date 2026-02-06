@@ -25,7 +25,7 @@ function measureFnExec(callable $p_Fn): float
 
 $benchmark = [];
 
-$socketPath = "/tmp/xslt.sock";
+$socketPath = "/tmp/xslt-uds.sock";
 $timeout = 1;
 
 $fp = false;

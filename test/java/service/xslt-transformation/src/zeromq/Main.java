@@ -39,7 +39,18 @@ class ProcessCallThread extends Thread {
             // socket.connect("tcp://localhost:5555"); // Connect socket within the thread
             socket.connect("inproc://workers");
 
+            System.out.println(getName() + " connected.");
+
             while (!Thread.currentThread().isInterrupted()) {
+                // System.out.println(getName() + " waiting for message.");
+
+                // ZMsg msg = ZMsg.recvMsg(socket);
+                // if (msg == null) {
+                // System.err.println("Breaking");
+                // }
+
+                // System.out.println(getName() + " received " + msg.size() + " frames");
+
                 byte[] reply = socket.recv(0);
 
                 if (reply.length != 65548) {
@@ -54,11 +65,17 @@ class ProcessCallThread extends Thread {
                 byte[] xmlBytes = new byte[xmlLength];
                 buf.get(xmlBytes);
 
+                // String xml = new String(xmlBytes, StandardCharsets.UTF_8);
+
+                // Print the message
+                // System.out.println(
+                //         "Received: [" + new String(xmlBytes, ZMQ.CHARSET) + "]");
+
                 Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
 
                 ByteBuffer response = ByteBuffer.allocate(65548);
-                String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
+                String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
                 response.putInt(result.length());
                 response.put(result.getBytes(StandardCharsets.UTF_8));
@@ -98,7 +115,8 @@ class ProcessCallThread extends Thread {
 
 public class Main {
     public static void main(String args[]) {
-        String ipcPath = "ipc:///tmp/xslt.sock";
+        // String ipcPath = "ipc:///tmp/xslt-zmq.sock";
+        String ipcPath = "tcp://localhost:5557";
 
         try (ZContext context = new ZContext()) {
             ZMQ.Socket frontendSocket = context.createSocket(SocketType.ROUTER);
@@ -107,55 +125,56 @@ public class Main {
             ZMQ.Socket backendSocket = context.createSocket(SocketType.DEALER);
             backendSocket.bind("inproc://workers");
 
-            for (int i = 0; i < 1024; ++i) {
-                new ProcessCallThread(context, i).start();
+            int workersNr = Runtime.getRuntime().availableProcessors();
+            for (int i = 0; i < workersNr; ++i) {
+            new ProcessCallThread(context, i).start();
             }
 
             ZMQ.proxy(frontendSocket, backendSocket, null);
-            // // Socket to talk to clients
+            // Socket to talk to clients
             // ZMQ.Socket socket = context.createSocket(SocketType.REP);
-            // socket.bind("tcp://localhost:5557");
+            // socket.bind(tcpPath);
 
             // while (!Thread.currentThread().isInterrupted()) {
-            // // Block until a message is received
-            // byte[] reply = socket.recv(0);
+            //     // Block until a message is received
+            //     byte[] reply = socket.recv(0);
 
-            // if (reply.length != 65548) {
-            // throw new RuntimeException("Unexpected size: " + reply.length);
-            // }
+            //     if (reply.length != 65548) {
+            //         throw new RuntimeException("Unexpected size: " + reply.length);
+            //     }
 
-            // // Read the first four bytes as a 32-bit big-endian integer
-            // ByteBuffer buf = ByteBuffer.wrap(reply).order(ByteOrder.BIG_ENDIAN);
-            // int xmlLength = buf.getInt();
+            //     // Read the first four bytes as a 32-bit big-endian integer
+            //     ByteBuffer buf = ByteBuffer.wrap(reply).order(ByteOrder.BIG_ENDIAN);
+            //     int xmlLength = buf.getInt();
 
-            // // Extract the XML portion
-            // byte[] xmlBytes = new byte[xmlLength];
-            // buf.get(xmlBytes);
+            //     // Extract the XML portion
+            //     byte[] xmlBytes = new byte[xmlLength];
+            //     buf.get(xmlBytes);
 
-            // // String xml = new String(xmlBytes, StandardCharsets.UTF_8);
+            //     // String xml = new String(xmlBytes, StandardCharsets.UTF_8);
 
-            // // Print the message
-            // // System.out.println(
-            // // "Received: [" + new String(reply, ZMQ.CHARSET) + "]");
+            //     // Print the message
+            //     // System.out.println(
+            //     // "Received: [" + new String(reply, ZMQ.CHARSET) + "]");
 
-            // // Send a response
-            // // ProcessCallThread processCallThread = new ProcessCallThread(reply,
-            // context);
-            // // processCallThread.setName("CallThread");
-            // // processCallThread.start();
-            // // String response = "Hello, world!";
-            // // socket.send(response.getBytes(ZMQ.CHARSET), 0);
+            //     // Send a response
+            //     // ProcessCallThread processCallThread = new ProcessCallThread(reply,
+            //     // context);
+            //     // processCallThread.setName("CallThread");
+            //     // processCallThread.start();
+            //     // String response = "Hello, world!";
+            //     // socket.send(response.getBytes(ZMQ.CHARSET), 0);
 
-            // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
-            // byte[] xsltData = Files.readAllBytes(xsltPath);
+            //     Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
+            //     byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            // ByteBuffer response = ByteBuffer.allocate(65548);
-            // String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
+            //     ByteBuffer response = ByteBuffer.allocate(65548);
+            //     String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
 
-            // response.putInt(result.length());
-            // response.put(result.getBytes(StandardCharsets.UTF_8));
+            //     response.putInt(result.length());
+            //     response.put(result.getBytes(StandardCharsets.UTF_8));
 
-            // socket.send(response.array(), 0);
+            //     socket.send(response.array(), 0);
             // }
 
             // socket.close();

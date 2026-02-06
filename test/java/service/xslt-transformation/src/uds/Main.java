@@ -94,7 +94,7 @@ class ProcessCallThread extends Thread {
 
 public class Main {
     public static void main(String args[]) {
-        Path socketPath = Path.of("/tmp/xslt.sock");
+        Path socketPath = Path.of("/tmp/xslt-uds.sock");
 
         try {
             Files.deleteIfExists(socketPath);

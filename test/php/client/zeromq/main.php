@@ -27,12 +27,12 @@ $benchmark = [];
 
 $context = new ZMQContext();
 $socket = $context->getSocket(ZMQ::SOCKET_REQ);
+// $ipcPath = "ipc:///tmp/xslt-zmq.sock";
+$ipcPath = "tcp://localhost:5557";
+
 
 // Connect to the server
-$benchmark["connect"] = measureFnExec(function () use ($socket) {
-    $socket->connect('tcp://localhost:5557');
-});
-
+$benchmark["connect"] = measureFnExec(fn() => $socket->connect($ipcPath));
 
 // Send a message to the server
 // $requestMessage = "Hello from PHP!";
@@ -48,9 +48,7 @@ $payload = $lenBytes . $iiaData;
 $payload = str_pad($payload, 65548, "\0");
 
 // echo "Sending message: $requestMessage\n";
-$benchmark["call"] = measureFnExec(function () use ($socket, $payload) {
-    $socket->send($payload);
-});
+$benchmark["call"] = measureFnExec(fn() => $socket->send($payload));
 
 // Receive the reply from the server
 $benchmark["return"] = measureFnExec(function () use ($socket) {
@@ -59,9 +57,7 @@ $benchmark["return"] = measureFnExec(function () use ($socket) {
 });
 // echo "Received reply: $responseMessage\n";
 // Disconnect the client (this is optional, as ZeroMQ will disconnect automatically when the socket is closed)
-$benchmark["disconnect"] = measureFnExec(function () use ($socket) {
-    $socket->disconnect('tcp://localhost:5557');
-});
+$benchmark["disconnect"] = measureFnExec(fn() => $socket->disconnect($ipcPath));
 
 $uniqueId = uniqid("", true);
 
