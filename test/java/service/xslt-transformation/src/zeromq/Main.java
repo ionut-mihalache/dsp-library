@@ -23,24 +23,48 @@ import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
 
 class ProcessCallThread extends Thread {
-    private final byte[] m_Data;
+    // private final byte[] m_Data;
     private final ZContext m_Context;
+    private final int m_ThreadIdx;
 
-    ProcessCallThread(byte[] p_Data, ZContext p_Context) {
-        m_Data = p_Data;
+    ProcessCallThread(ZContext p_Context, int p_ThreadIdx) {
+        // m_Data = p_Data;
         m_Context = p_Context;
+        m_ThreadIdx = p_ThreadIdx;
+        setName("CallThread" + m_ThreadIdx);
     }
 
     public void run() {
         try (ZMQ.Socket socket = m_Context.createSocket(SocketType.REP)) {
-            socket.connect("tcp://localhost:5555"); // Connect socket within the thread
+            // socket.connect("tcp://localhost:5555"); // Connect socket within the thread
+            socket.connect("inproc://workers");
 
-            Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
-            byte[] xsltData = Files.readAllBytes(xsltPath);
+            while (!Thread.currentThread().isInterrupted()) {
+                byte[] reply = socket.recv(0);
 
-            String result = mf_GetXmlTransformed(m_Data, xsltData);
+                if (reply.length != 65548) {
+                    throw new RuntimeException("Unexpected size: " + reply.length);
+                }
 
-            socket.send(result.getBytes(ZMQ.CHARSET), 0);
+                // Read the first four bytes as a 32-bit big-endian integer
+                ByteBuffer buf = ByteBuffer.wrap(reply).order(ByteOrder.BIG_ENDIAN);
+                int xmlLength = buf.getInt();
+
+                // Extract the XML portion
+                byte[] xmlBytes = new byte[xmlLength];
+                buf.get(xmlBytes);
+
+                Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
+                byte[] xsltData = Files.readAllBytes(xsltPath);
+
+                ByteBuffer response = ByteBuffer.allocate(65548);
+                String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
+
+                response.putInt(result.length());
+                response.put(result.getBytes(StandardCharsets.UTF_8));
+
+                socket.send(response.array(), 0);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -74,53 +98,67 @@ class ProcessCallThread extends Thread {
 
 public class Main {
     public static void main(String args[]) {
+        String ipcPath = "ipc:///tmp/xslt.sock";
+
         try (ZContext context = new ZContext()) {
-            // Socket to talk to clients
-            ZMQ.Socket socket = context.createSocket(SocketType.REP);
-            socket.bind("tcp://localhost:5557");
+            ZMQ.Socket frontendSocket = context.createSocket(SocketType.ROUTER);
+            frontendSocket.bind(ipcPath);
 
-            while (!Thread.currentThread().isInterrupted()) {
-                // Block until a message is received
-                byte[] reply = socket.recv(0);
+            ZMQ.Socket backendSocket = context.createSocket(SocketType.DEALER);
+            backendSocket.bind("inproc://workers");
 
-                if (reply.length != 65548) {
-                    throw new RuntimeException("Unexpected size: " + reply.length);
-                }
-
-                // Read the first four bytes as a 32-bit big-endian integer
-                ByteBuffer buf = ByteBuffer.wrap(reply).order(ByteOrder.BIG_ENDIAN);
-                int xmlLength = buf.getInt();
-
-                // Extract the XML portion
-                byte[] xmlBytes = new byte[xmlLength];
-                buf.get(xmlBytes);
-
-                // String xml = new String(xmlBytes, StandardCharsets.UTF_8);
-
-                // Print the message
-                // System.out.println(
-                // "Received: [" + new String(reply, ZMQ.CHARSET) + "]");
-
-                // Send a response
-                // ProcessCallThread processCallThread = new ProcessCallThread(reply, context);
-                // processCallThread.setName("CallThread");
-                // processCallThread.start();
-                // String response = "Hello, world!";
-                // socket.send(response.getBytes(ZMQ.CHARSET), 0);
-
-                Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
-                byte[] xsltData = Files.readAllBytes(xsltPath);
-
-                ByteBuffer response = ByteBuffer.allocate(65548);
-                String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
-
-                response.putInt(result.length());
-                response.put(result.getBytes(StandardCharsets.UTF_8));
-
-                socket.send(response.array(), 0);
+            for (int i = 0; i < 1024; ++i) {
+                new ProcessCallThread(context, i).start();
             }
 
-            socket.close();
+            ZMQ.proxy(frontendSocket, backendSocket, null);
+            // // Socket to talk to clients
+            // ZMQ.Socket socket = context.createSocket(SocketType.REP);
+            // socket.bind("tcp://localhost:5557");
+
+            // while (!Thread.currentThread().isInterrupted()) {
+            // // Block until a message is received
+            // byte[] reply = socket.recv(0);
+
+            // if (reply.length != 65548) {
+            // throw new RuntimeException("Unexpected size: " + reply.length);
+            // }
+
+            // // Read the first four bytes as a 32-bit big-endian integer
+            // ByteBuffer buf = ByteBuffer.wrap(reply).order(ByteOrder.BIG_ENDIAN);
+            // int xmlLength = buf.getInt();
+
+            // // Extract the XML portion
+            // byte[] xmlBytes = new byte[xmlLength];
+            // buf.get(xmlBytes);
+
+            // // String xml = new String(xmlBytes, StandardCharsets.UTF_8);
+
+            // // Print the message
+            // // System.out.println(
+            // // "Received: [" + new String(reply, ZMQ.CHARSET) + "]");
+
+            // // Send a response
+            // // ProcessCallThread processCallThread = new ProcessCallThread(reply,
+            // context);
+            // // processCallThread.setName("CallThread");
+            // // processCallThread.start();
+            // // String response = "Hello, world!";
+            // // socket.send(response.getBytes(ZMQ.CHARSET), 0);
+
+            // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
+            // byte[] xsltData = Files.readAllBytes(xsltPath);
+
+            // ByteBuffer response = ByteBuffer.allocate(65548);
+            // String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
+
+            // response.putInt(result.length());
+            // response.put(result.getBytes(StandardCharsets.UTF_8));
+
+            // socket.send(response.array(), 0);
+            // }
+
+            // socket.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
