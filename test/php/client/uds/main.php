@@ -72,7 +72,7 @@ $benchmark["return"] = measureFnExec(function () use ($fp) {
         $read += strlen($partialResponse);
     }
 
-    echo "Received reply: $response\n";
+    // echo "Received reply: $response\n";
 });
 
 $benchmark["disconnect"] = measureFnExec(function () use ($fp) {

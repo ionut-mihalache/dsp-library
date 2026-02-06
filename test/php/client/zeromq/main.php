@@ -53,7 +53,7 @@ $benchmark["call"] = measureFnExec(fn() => $socket->send($payload));
 // Receive the reply from the server
 $benchmark["return"] = measureFnExec(function () use ($socket) {
     $responseMessage = $socket->recv();
-    echo "Received reply: $responseMessage\n";
+    // echo "Received reply: $responseMessage\n";
 });
 // echo "Received reply: $responseMessage\n";
 // Disconnect the client (this is optional, as ZeroMQ will disconnect automatically when the socket is closed)

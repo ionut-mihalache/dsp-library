@@ -323,7 +323,7 @@ for ($i = 0; $i < $returnData->m_Metadata->m_Size; ++$i) {
     $result = $result . chr($returnData->m_CallInfo[$i]);
 }
 
-echo $result . "\n";
+// echo $result . "\n";
 
 $requestInfoPtr = FFI::addr($returnInfo->m_ConnectResponseInformation);
 

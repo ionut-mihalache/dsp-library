@@ -39,18 +39,7 @@ class ProcessCallThread extends Thread {
             // socket.connect("tcp://localhost:5555"); // Connect socket within the thread
             socket.connect("inproc://workers");
 
-            System.out.println(getName() + " connected.");
-
             while (!Thread.currentThread().isInterrupted()) {
-                // System.out.println(getName() + " waiting for message.");
-
-                // ZMsg msg = ZMsg.recvMsg(socket);
-                // if (msg == null) {
-                // System.err.println("Breaking");
-                // }
-
-                // System.out.println(getName() + " received " + msg.size() + " frames");
-
                 byte[] reply = socket.recv(0);
 
                 if (reply.length != 65548) {
@@ -64,12 +53,6 @@ class ProcessCallThread extends Thread {
                 // Extract the XML portion
                 byte[] xmlBytes = new byte[xmlLength];
                 buf.get(xmlBytes);
-
-                // String xml = new String(xmlBytes, StandardCharsets.UTF_8);
-
-                // Print the message
-                // System.out.println(
-                //         "Received: [" + new String(xmlBytes, ZMQ.CHARSET) + "]");
 
                 Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
