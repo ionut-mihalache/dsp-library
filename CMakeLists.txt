@@ -9,88 +9,64 @@ set(CMAKE_C_COMPILER clang)
 # set(CMAKE_C_COMPILER gcc)
 
 set(LIB_VERSION "0.0.2")
+set(LIB_NAME dsp)
 
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib")
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/object")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
+file(MAKE_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/lib")
-set(OBJECT_OUTPUT_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/object")
-
-set(SRC_FILES
-    service/dsp-service.c
-    service/install.c
-    service/call.c
-    service/return.c
-    client/dsp-client.c
-    client/client-connect.c
-    client/client-call.c
-    utils/commons.c
+add_library(${LIB_NAME} SHARED
+        service/dsp-service.c
+        service/install.c
+        service/call.c
+        service/return.c
+        client/dsp-client.c
+        client/client-connect.c
+        client/client-call.c
+        utils/commons.c
 )
 
-set(HEADER_FILES
-    service/include/dsp-service.h
-    service/include/install.h
-    service/include/call.h
-    service/include/return.h
-    client/include/dsp-client.h
-    client/include/client-connect.h
-    client/include/client-call.h
-    utils/commons.h
-    utils/hashmap/hashmap.h
-    utils/macros/macros.h
-    utils/exit/exit_header.h
-    utils/log/log.h
-    include/dsp.h
-    include/protocol.h
+set_target_properties(${LIB_NAME} PROPERTIES
+        VERSION ${LIB_VERSION}
+        SOVERSION ${LIB_VERSION}
+        POSITION_INDEPENDENT_CODE ON
 )
 
-add_library(dsp SHARED
-    ${SRC_FILES}
-    ${HEADER_FILES}
+target_include_directories(${LIB_NAME} PUBLIC
+        utils
+        utils/macros
+        utils/hashmap
+        utils/exit
+        utils/log
+        include
+        service/include
+        client/include
 )
 
-set_target_properties(dsp PROPERTIES
-    VERSION ${LIB_VERSION}
+target_compile_options(${LIB_NAME} PRIVATE
+        -Wall -Wextra -Werror -O3
 )
 
-target_include_directories(dsp PUBLIC
-    utils
-    utils/macros
-    utils/hashmap
-    utils/exit
-    utils/log
-    include
-    service/include
-    client/include
+target_compile_definitions(${LIB_NAME} PRIVATE
+        __COMPILE_MODE_DEBUG__
+        _GNU_SOURCE
 )
 
-target_compile_options(dsp PRIVATE
-    -Wall
-    -Wextra
-    -Werror
-    -O3
-)
-
-target_compile_definitions(dsp PRIVATE
-    __COMPILE_MODE_DEBUG__
-    _GNU_SOURCE
-)
-
-add_custom_command(TARGET dsp POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E create_symlink
-        "${CMAKE_CURRENT_SOURCE_DIR}/lib/$<TARGET_FILE_NAME:dsp>"
-        "${CMAKE_CURRENT_SOURCE_DIR}/$<TARGET_LINKER_FILE_NAME:dsp>"
-)
-
-add_custom_command(TARGET dsp POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E remove
-        "${CMAKE_CURRENT_SOURCE_DIR}/lib/$<TARGET_LINKER_FILE_NAME:dsp>"
-)
-
+# Symlink libdsp.so -> lib/libdsp.so.X.Y.Z în build root
+#add_custom_command(
+#        TARGET ${LIB_NAME}
+#        POST_BUILD
+#        COMMAND ${CMAKE_COMMAND} -E create_symlink
+#        lib/$<TARGET_FILE_NAME:${LIB_NAME}>
+#        ${CMAKE_BINARY_DIR}/libdsp.so
+#        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+#        COMMENT "Creating libdsp.so symlink in build root"
+#)
 add_custom_command(
-    TARGET dsp
-    POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy
-        "${CMAKE_CURRENT_BINARY_DIR}/compile_commands.json"
-        "${CMAKE_CURRENT_SOURCE_DIR}/compile_commands.json"
+        TARGET ${LIB_NAME}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy
+        lib/$<TARGET_FILE_NAME:${LIB_NAME}>
+        ${CMAKE_BINARY_DIR}/libdsp.so
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Creating libdsp.so in build root"
 )
