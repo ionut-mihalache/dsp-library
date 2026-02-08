@@ -8,7 +8,12 @@ aquaPid=$!
 sleep 2
 cd -
 
-./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+for i in $(seq 1 9);
+do
+    ./benchmark.sh false /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+done
+
+./benchmark.sh true /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
 
 kill $aquaPid
 
@@ -21,7 +26,14 @@ sleep 2
 cd -
 
 cd ./uds
-./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+
+for i in $(seq 1 9);
+do
+    ./benchmark.sh false /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+done
+
+./benchmark.sh true /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+
 cd -
 
 kill $udsPid
@@ -35,7 +47,14 @@ sleep 2
 cd -
 
 cd ./zeromq
-./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+
+for i in $(seq 1 9);
+do
+    ./benchmark.sh false /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+done
+
+./benchmark.sh true /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+
 cd -
 
 kill $zeromqPid

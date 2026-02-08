@@ -7,8 +7,9 @@ if [ "$#" -lt 4 ]; then
 fi
 
 runClients() {
-    clientPath=$1
-    clientsNr=$2
+    writeToFile=$1
+    clientPath=$2
+    clientsNr=$3
     echo "Running $clientsNr clients with client path: $clientPath"
 
     running=0
@@ -20,7 +21,7 @@ runClients() {
             echo "Starting batch" ${currentBatchNr}
             ((currentBatchNr++))
         fi
-        php $clientPath/main.php ${clientsNr} > /dev/null &
+        php $clientPath/main.php ${writeToFile} ${clientsNr} > /dev/null &
         ((running++))
 
         if (( running >= maxRunning )); then
@@ -196,6 +197,8 @@ generateLatexTableFromSVGsALLOC() {
 runBenchmark() {
     # generateLatexTableFromSVGsALLOC benchmark_results/1755695703 service_alloc_sampling benchmark_results/1755695703_alloc_sampling_table alloc
     # exit 1
+    writeToFile=$1
+    shift
     flamegraphPath=$1
     shift
     profilerPath=$1
@@ -205,11 +208,13 @@ runBenchmark() {
 
     timestamp=$(date +%s)
 
-    if [ ! -d "benchmark_results/clients/${timestamp}" ]; then
-        mkdir -p benchmark_results/clients/${timestamp}
-    fi
+    if [ $writeToFile == "true" ]; then
+        if [ ! -d "benchmark_results/clients/${timestamp}" ]; then
+            mkdir -p benchmark_results/clients/${timestamp}
+        fi
 
-    echo "clients_nr,connect,call,return,disconnect" > ./benchmark_results/clients/${timestamp}/client_benchmark.csv
+        echo "clients_nr,connect,call,return,disconnect" > ./benchmark_results/clients/${timestamp}/client_benchmark.csv
+    fi
 
     for clientsNr in "$@"; do
         # cpuFlamegraphTitle="service_cpu_sampling"
@@ -226,17 +231,21 @@ runBenchmark() {
         # ${profilerPath}/build/bin/asprof start -e cpu,alloc,nativemem,lock --safemode 2 -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
         # ${profilerPath}/build/bin/asprof start -e cpu,itimer --safemode 2 -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
 
-        if [ ! -d "benchmark_results/clients/${clientsNr}" ]; then
-            mkdir -p benchmark_results/clients/${clientsNr}
+        if [ $writeToFile == "true" ]; then
+            if [ ! -d "benchmark_results/clients/${clientsNr}" ]; then
+                mkdir -p benchmark_results/clients/${clientsNr}
+            fi
         fi
 
-        runClients $clientAbsolutePath $clientsNr
+        runClients $writeToFile $clientAbsolutePath $clientsNr
 
         wait
 
         # cat benchmark_results/clients/${clientsNr}/* | wc -l
-        cat benchmark_results/clients/${clientsNr}/* >> ./benchmark_results/clients/${timestamp}/client_benchmark.csv
-        rm -rf benchmark_results/clients/${clientsNr}
+        if [ $writeToFile == "true" ]; then
+            cat benchmark_results/clients/${clientsNr}/* >> ./benchmark_results/clients/${timestamp}/client_benchmark.csv
+            rm -rf benchmark_results/clients/${clientsNr}
+        fi
 
         # ${profilerPath}/build/bin/asprof stop -o jfr -f ./${timestamp}_${cpuAllocNativeMemLockFlamegraphTitle}.jfr ${servicePID}
 
@@ -263,9 +272,11 @@ runBenchmark() {
     # generateLatexTableFromSVGsCPU benchmark_results/${timestamp} service_cpu_sampling benchmark_results/${timestamp}_cpu_sampling_table cpu
     # generateLatexTableFromSVGsALLOC benchmark_results/${timestamp} service_alloc_sampling benchmark_results/${timestamp}_alloc_sampling_table alloc
 
-    source ../venv/bin/activate
-    python3 create_plots.py ./benchmark_results/clients/${timestamp} benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}_alloc_sampling_table ./benchmark_results/clients/${timestamp}/client_benchmark.csv
-    deactivate
+    if [ $writeToFile == "true" ]; then
+        source ../venv/bin/activate
+        python3 create_plots.py ./benchmark_results/clients/${timestamp} benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}_alloc_sampling_table ./benchmark_results/clients/${timestamp}/client_benchmark.csv
+        deactivate
+    fi
 
     # mv benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}/cpu_sampling_table
     # mv benchmark_results/${timestamp}_alloc_sampling_table benchmark_results/${timestamp}/alloc_sampling_table

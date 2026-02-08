@@ -53,21 +53,33 @@ $benchmark["call"] = measureFnExec(fn() => $socket->send($payload));
 // Receive the reply from the server
 $benchmark["return"] = measureFnExec(function () use ($socket) {
     $responseMessage = $socket->recv();
+
+    $responseMessage = substr($responseMessage, 4, strlen($responseMessage) - 4);
+
     // echo "Received reply: $responseMessage\n";
 });
+
 // echo "Received reply: $responseMessage\n";
 // Disconnect the client (this is optional, as ZeroMQ will disconnect automatically when the socket is closed)
 $benchmark["disconnect"] = measureFnExec(fn() => $socket->disconnect($ipcPath));
 
 $uniqueId = uniqid("", true);
 
-$file = fopen("benchmark_results/clients/" . $argv[1] . "/client_benchmark_" . $uniqueId . ".csv", 'a');
-fputcsv($file, [
-    $argv[1],
-    $benchmark["connect"],
-    $benchmark["call"],
-    $benchmark["return"],
-    $benchmark["disconnect"]
-]);
-fclose($file);
-// print_r($benchmark);
+$writeToFile = false;
+
+if (isset($argv[1]) && $argv[1] == "true") {
+    $writeToFile = true;
+}
+
+if ($writeToFile) {
+    $file = fopen("benchmark_results/clients/" . $argv[2] . "/client_benchmark_" . $uniqueId . ".csv", 'a');
+    fputcsv($file, [
+        $argv[2],
+        $benchmark["connect"],
+        $benchmark["call"],
+        $benchmark["return"],
+        $benchmark["disconnect"]
+    ]);
+    fclose($file);
+    // print_r($benchmark);
+}

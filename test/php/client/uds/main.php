@@ -72,6 +72,8 @@ $benchmark["return"] = measureFnExec(function () use ($fp) {
         $read += strlen($partialResponse);
     }
 
+    // $response = substr($response, 4, strlen($response) - 4);
+
     // echo "Received reply: $response\n";
 });
 
@@ -81,12 +83,20 @@ $benchmark["disconnect"] = measureFnExec(function () use ($fp) {
 
 $uniqueId = uniqid("", true);
 
-$file = fopen("benchmark_results/clients/" . $argv[1] . "/client_benchmark_" . $uniqueId . ".csv", 'a');
-fputcsv($file, [
-    $argv[1],
-    $benchmark["connect"],
-    $benchmark["call"],
-    $benchmark["return"],
-    $benchmark["disconnect"]
-]);
-fclose($file);
+$writeToFile = false;
+
+if (isset($argv[1]) && $argv[1] == "true") {
+    $writeToFile = true;
+}
+
+if ($writeToFile) {
+    $file = fopen("benchmark_results/clients/" . $argv[2] . "/client_benchmark_" . $uniqueId . ".csv", 'a');
+    fputcsv($file, [
+        $argv[2],
+        $benchmark["connect"],
+        $benchmark["call"],
+        $benchmark["return"],
+        $benchmark["disconnect"]
+    ]);
+    fclose($file);
+}
