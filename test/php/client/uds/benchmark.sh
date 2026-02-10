@@ -7,7 +7,7 @@ if [ "$#" -lt 4 ]; then
 fi
 
 runClients() {
-    $writeToFile=$1
+    writeToFile=$1
     clientPath=$2
     clientsNr=$3
     echo "Running $clientsNr clients with client path: $clientPath"
