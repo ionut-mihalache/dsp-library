@@ -70,7 +70,7 @@ def create_combined_client_exec_time_plot2_bar(output_dir, csv_a, csv_b, label_a
 
     clients = df_a["clients_nr"].to_numpy()
     x = np.arange(len(clients))
-    width = 0.35
+    width = 0.28
 
     fig, axs = plt.subplots(len(time_columns), 1, figsize=(10, 10), sharex=True)
 
@@ -78,8 +78,8 @@ def create_combined_client_exec_time_plot2_bar(output_dir, csv_a, csv_b, label_a
         y_a = (df_a[col] / df_b[col]).to_numpy()
         y_b = np.ones_like(y_a)
 
-        axs[i].bar(x - width/2, y_a, width, label=f"{col.capitalize()} ({label_a})")
-        axs[i].bar(x + width/2, y_b, width, label=f"{col.capitalize()} ({label_b})")
+        axs[i].bar(x - width/1.5, y_a, width, label=f"{col.capitalize()} ({label_a})", edgecolor="black", linewidth=0.8, hatch="///", facecolor="white")
+        axs[i].bar(x + width/1.5, y_b, width, label=f"{col.capitalize()} ({label_b})",edgecolor="black", linewidth=0.8, hatch="xxx", facecolor="lightgray")
 
         axs[i].axhline(1, linewidth=1.2)  # Baseline (UDS)
         axs[i].set_ylabel("Relative to UDS")
@@ -166,40 +166,29 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
 def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, label_a="AQUA", label_b="ZeroMQ", label_c="UDS"):
     time_columns = ["connect", "call", "return", "disconnect"]
 
-    # Load and prepare both files
     df_a = load_and_prepare(csv_a, time_columns)
     df_b = load_and_prepare(csv_b, time_columns)
     df_c = load_and_prepare(csv_c, time_columns)
 
-    clients = df_a["clients_nr"].values
+    clients = df_a["clients_nr"].to_numpy()
     x = np.arange(len(clients))
-    width=0.35
+    width = 0.2
 
-    # Line styles and markers
-    # line_styles = ["-", "--", ":"]
-    # markers = ["o", "s", "v"]
-    # colors = ["deepskyblue", "navy", "blue"]
-
-    # Create figure
     fig, axs = plt.subplots(len(time_columns), 1, figsize=(10, 10), sharex=True)
 
     for i, col in enumerate(time_columns):
-        # y_a = df_a[col] / df_b[col]
-        # y_b = df_b[col] / df_b[col]
-        # y_c = df_c[col] / df_b[col]
         y_a = (df_a[col] / df_b[col]).to_numpy()
         y_b = np.ones_like(y_a)
         y_c = (df_c[col] / df_b[col]).to_numpy()
 
-        axs[i].bar(x - width, y_a, width, label=f"{col.capitalize()} ({label_a})")
-        axs[i].bar(x,         y_b, width, label=f"{col.capitalize()} ({label_b})")
-        axs[i].bar(x + width, y_c, width, label=f"{col.capitalize()} ({label_c})")
+        axs[i].bar(x - width*1.05, y_a, width, label=f"{col.capitalize()} ({label_a})", hatch="|||")
+        axs[i].bar(x,             y_b, width, label=f"{col.capitalize()} ({label_b})", hatch="xxx")
+        axs[i].bar(x + width*1.05, y_c, width, label=f"{col.capitalize()} ({label_c})", hatch="...")
 
         axs[i].axhline(1, linewidth=1.2)
         axs[i].set_ylabel("Relative to UDS")
         axs[i].grid(True, linestyle=":", axis="y")
 
-        # Dynamic y-limits
         all_vals = np.concatenate([y_a, y_b, y_c])
         ymin = min(0.9, all_vals.min() * 0.95)
         ymax = all_vals.max() * 1.1
