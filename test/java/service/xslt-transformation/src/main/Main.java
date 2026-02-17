@@ -8,6 +8,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -100,7 +102,8 @@ class ProcessCallThread extends Thread {
     private final ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
     private final ServiceConnectInfo m_ConnectInfo;
 
-    ProcessCallThread(Call p_CallData, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections, ServiceConnectInfo p_ConnectInfo) {
+    ProcessCallThread(Call p_CallData, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections,
+            ServiceConnectInfo p_ConnectInfo) {
         m_CallData = p_CallData;
         m_Connections = p_Connections;
         m_ConnectInfo = p_ConnectInfo;
@@ -186,15 +189,13 @@ class ProcessCallThread extends Thread {
     }
 }
 
-class ProcessCallThread1 extends Thread {
+class ProcessCallThread1 implements Runnable {
     private final Call m_CallData;
     private final ServiceReturnInfo m_ServiceReturnInfo;
-    private final ServiceConnectInfo m_ConnectInfo;
 
-    ProcessCallThread1(Call p_CallData, ServiceReturnInfo p_ServiceReturnInfo, ServiceConnectInfo p_ConnectInfo) {
+    ProcessCallThread1(Call p_CallData, ServiceReturnInfo p_ServiceReturnInfo) {
         m_CallData = p_CallData;
         m_ServiceReturnInfo = p_ServiceReturnInfo;
-        m_ConnectInfo = p_ConnectInfo;
     }
 
     public void run() {
@@ -208,7 +209,8 @@ class ProcessCallThread1 extends Thread {
 
             byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
 
-            // ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.getMetadata().m_ConnId);
+            // ServiceReturnInfo serviceReturnInfo =
+            // m_Connections.get(m_CallData.getMetadata().m_ConnId);
 
             // long returnDataSegmentSize = (new SMBReturn()).size();
             // Memory nativeMem = new Memory(returnDataSegmentSize);
@@ -277,12 +279,112 @@ class ProcessCallThread1 extends Thread {
     }
 }
 
+class ProcessCallThread2 implements Runnable {
+    private final ServiceCallInfo m_CallInfo;
+    private final ServiceReturnInfo m_ServiceReturnInfo;
+
+    ProcessCallThread2(ServiceCallInfo p_CallInfo, ServiceReturnInfo p_ServiceReturnInfo) {
+        m_CallInfo = p_CallInfo;
+        m_ServiceReturnInfo = p_ServiceReturnInfo;
+    }
+
+    public void run() {
+        try {
+            SMBCall callData = new SMBCall();
+
+            LibDSP.INSTANCE.receiveCall(callData.getPointer(), m_CallInfo);
+
+            callData.read();
+
+            byte[] iiaData = Arrays.copyOfRange(callData.getCallInfo(), 0, callData.getMetadata().m_Size);
+
+            Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
+            byte[] xsltData = Files.readAllBytes(xsltPath);
+
+            String result = mf_GetXmlTransformed(iiaData, xsltData);
+
+            byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
+
+            // ServiceReturnInfo serviceReturnInfo =
+            // m_Connections.get(m_CallData.getMetadata().m_ConnId);
+
+            // long returnDataSegmentSize = (new SMBReturn()).size();
+            // Memory nativeMem = new Memory(returnDataSegmentSize);
+
+            // System.out.println("SMBReturn size: " + returnDataSegmentSize);
+
+            Call returnData = switch (m_ServiceReturnInfo.m_Q.m_Type) {
+                case Constants.SMBQ -> new SMBReturn();
+                case Constants.EMBQ -> new EMBReturn();
+                case Constants.QMBQ -> new QMBReturn();
+                case Constants.HMBQ -> new HMBReturn();
+                case Constants.MBQ -> new MBReturn();
+                case Constants.DMBQ -> new DMBReturn();
+                case Constants.HGBQ -> new HGBReturn();
+                case Constants.GBQ -> new GBReturn();
+                default -> {
+                    System.err.println("Return queue type not recognized!");
+                    yield null;
+                }
+            };
+
+            if (returnData == null) {
+                System.err.println("Return data type not recognized!");
+                return;
+            }
+
+            System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0, resByteArr.length);
+            returnData.getMetadata().m_Size = resByteArr.length;
+            returnData.getMetadata().m_ConnId = callData.getMetadata().m_ConnId;
+
+            returnData.write();
+            // nativeMem.write(0, returnData.getPointer().getByteArray(0, (int)
+            // returnDataSegmentSize), 0,
+            // (int) returnDataSegmentSize);
+            LibDSP.INSTANCE.sendReturn(m_ServiceReturnInfo, returnData.getPointer());
+
+            // m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Transform a xml file by means of a xslt file
+     *
+     * @param xmlBytes  The content of the xml file
+     * @param xsltBytes The content of the xslt file
+     * @return A xml useful to compute the hash code
+     */
+    private String mf_GetXmlTransformed(byte[] xmlBytes, byte[] xsltBytes) throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new ByteArrayInputStream(xmlBytes));
+
+        System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory
+                .newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        transformer.transform(new DOMSource(document), new StreamResult(output));
+
+        return output.toString();
+    }
+}
 
 public class Main {
+    private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+
     public static void main(String[] args) {
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
+
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();
-        // ConcurrentHashMap<Integer, ServiceReturnInfo> connections = new ConcurrentHashMap<Integer, ServiceReturnInfo>();
+        // ConcurrentHashMap<Integer, ServiceReturnInfo> connections = new
+        // ConcurrentHashMap<Integer, ServiceReturnInfo>();
 
         LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", Constants.SMBQ);
 
@@ -331,10 +433,14 @@ public class Main {
 
                 callData.read();
 
-                // ProcessCallThread processCallThread = new ProcessCallThread(callData, connections, connectInfo);
-                ProcessCallThread1 processCallThread = new ProcessCallThread1(callData, returnInfo, connectInfo);
-                processCallThread.setName("CallThread-" + callData.m_Metadata.m_ConnId);
-                processCallThread.start();
+                executor.submit(new ProcessCallThread1(callData, returnInfo));
+                // executor.submit(new ProcessCallThread2(callInfo, returnInfo));
+                // ProcessCallThread processCallThread = new ProcessCallThread(callData,
+                // connections, connectInfo);
+                // ProcessCallThread1 processCallThread = new ProcessCallThread1(callData,
+                // returnInfo, connectInfo);
+                // processCallThread.setName("CallThread-" + callData.m_Metadata.m_ConnId);
+                // processCallThread.start();
             } catch (Exception e) {
                 e.printStackTrace();
             }

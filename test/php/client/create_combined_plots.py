@@ -191,7 +191,7 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
 
         all_vals = np.concatenate([y_a, y_b, y_c])
         ymin = min(0.9, all_vals.min() * 0.95)
-        ymax = all_vals.max() * 1.1
+        ymax = all_vals.max() * 1.5
         axs[i].set_ylim(ymin, ymax)
 
         axs[i].legend(frameon=False)

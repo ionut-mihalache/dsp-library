@@ -12,6 +12,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -23,7 +25,7 @@ import javax.xml.transform.stream.StreamSource;
 
 import org.w3c.dom.Document;
 
-class ProcessCallThread extends Thread {
+class ProcessCallThread implements Runnable {
     private SocketChannel m_Client;
     private ByteBuffer m_Buf;
 
@@ -40,7 +42,82 @@ class ProcessCallThread extends Thread {
             byte[] xmlBytes = new byte[xmlLength];
             m_Buf.get(xmlBytes);
 
-            // System.out.println("Received: " + new String(m_Buf.array(), 0, m_Buf.limit()));
+            // System.out.println("Received: " + new String(m_Buf.array(), 0,
+            // m_Buf.limit()));
+
+            Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
+            byte[] xsltData = Files.readAllBytes(xsltPath);
+
+            ByteBuffer response = ByteBuffer.allocate(65548);
+            String result = mf_GetXmlTransformed(xmlBytes, xsltData);
+
+            response.putInt(result.length());
+            response.put(result.getBytes(StandardCharsets.UTF_8));
+
+            while (response.hasRemaining()) {
+                response.put((byte) 0);
+            }
+
+            response.flip();
+            while (response.hasRemaining()) {
+                m_Client.write(response);
+            }
+
+            m_Client.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Transform a xml file by means of a xslt file
+     *
+     * @param xmlBytes  The content of the xml file
+     * @param xsltBytes The content of the xslt file
+     * @return A xml useful to compute the hash code
+     */
+    private String mf_GetXmlTransformed(byte[] xmlBytes, byte[] xsltBytes) throws Exception {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        dbf.setNamespaceAware(true);
+
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document document = db.parse(new ByteArrayInputStream(xmlBytes));
+
+        System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory
+                .newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        transformer.transform(new DOMSource(document), new StreamResult(output));
+
+        return output.toString();
+    }
+}
+
+class ProcessCallThread1 implements Runnable {
+    private SocketChannel m_Client;
+
+    ProcessCallThread1(SocketChannel p_Client) {
+        m_Client = p_Client;
+    }
+
+    public void run() {
+        try {
+            ByteBuffer buf = ByteBuffer.allocate(65548);
+
+            while (buf.hasRemaining()) {
+                m_Client.read(buf);
+            }
+
+            buf.flip();
+
+            int xmlLength = buf.getInt();
+            byte[] xmlBytes = new byte[xmlLength];
+            buf.get(xmlBytes);
+
+            // System.out.println("Received: " + new String(m_Buf.array(), 0,
+            // m_Buf.limit()));
 
             Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
@@ -93,7 +170,10 @@ class ProcessCallThread extends Thread {
 }
 
 public class Main {
+    private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+
     public static void main(String args[]) {
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         Path socketPath = Path.of("/tmp/xslt-uds.sock");
 
         try {
@@ -118,9 +198,11 @@ public class Main {
                     client.read(buf);
                 }
 
-                ProcessCallThread processCallThread = new ProcessCallThread(client, buf);
-                processCallThread.setName("CallThread-" + client.hashCode());
-                processCallThread.start();
+                executor.submit(new ProcessCallThread(client, buf));
+                // executor.submit(new ProcessCallThread1(client));
+                // ProcessCallThread processCallThread = new ProcessCallThread(client, buf);
+                // processCallThread.setName("CallThread-" + client.hashCode());
+                // processCallThread.start();
             }
 
             server.close();
