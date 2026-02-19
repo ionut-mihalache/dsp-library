@@ -129,7 +129,8 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
             connId = queue->m_Data[idx].m_ConnectionIdx;
         } while (0));
 
-    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
 
     rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
                 p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
@@ -151,7 +152,8 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     p_ConnectInfo->m_Connections[connId].m_Connected = false;
 
-    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+    // pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+    pthread_mutex_unlock(p_ConnectInfo->m_ConnectLock);
 
     return rc;
 }
@@ -236,15 +238,15 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     rc = pthread_mutex_init(&p_InstallInfo->m_DisconnectQMutex, &attr);
     DIE(rc != 0, "Could not init disconnect mutex");
 
-    // rc = pthread_mutex_init(&p_InstallInfo->m_ConnectListLock, &attr);
-    // DIE(rc != 0, "Could not init opened connections lock");
+    rc = pthread_mutex_init(&p_InstallInfo->m_ConnectListLock, &attr);
+    DIE(rc != 0, "Could not init opened connections lock");
 
     rc = pthread_mutexattr_destroy(&attr);
     DIE(rc != 0, "Could not destroy mutex attribute");
 
-    rc = pthread_spin_init(&p_InstallInfo->m_ConnectListLock,
-                           PTHREAD_PROCESS_SHARED);
-    DIE(rc != 0, "Could not init opened connections lock");
+    // rc = pthread_spin_init(&p_InstallInfo->m_ConnectListLock,
+    //                        PTHREAD_PROCESS_SHARED);
+    // DIE(rc != 0, "Could not init opened connections lock");
 
     p_ConnectInfo->m_ConnectLock = &p_InstallInfo->m_ConnectListLock;
 

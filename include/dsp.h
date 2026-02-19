@@ -133,7 +133,8 @@ struct InstallInformation {
     pthread_mutex_t m_CallQMutex;
     pthread_mutex_t m_ConnectQMutex;
     pthread_mutex_t m_DisconnectQMutex;
-    pthread_spinlock_t m_ConnectListLock;
+    // pthread_spinlock_t m_ConnectListLock;
+    pthread_mutex_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;

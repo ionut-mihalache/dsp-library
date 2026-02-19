@@ -31,8 +31,8 @@ struct ServiceConnectInfo {
     struct ConnectQueue m_ConnectQ;
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
-    pthread_spinlock_t *m_ConnectLock;
-    // pthread_mutex_t *m_ConnectLock;
+    // pthread_spinlock_t *m_ConnectLock;
+    pthread_mutex_t *m_ConnectLock;
     int32_t (*m_ReceiveConnectRequest)(struct ServiceReturnInfo *,
                                        struct ServiceConnectInfo *);
     int32_t (*m_ReceiveDisconnectRequest)(struct ServiceConnectInfo *);

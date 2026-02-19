@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include <string.h>
 #include <sys/mman.h>
 
@@ -375,14 +376,16 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
      *  send the request to the service with the connection index
      *  WIP: wait for the service to establish the connection on its side
      */
-    pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
     for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
         if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
             p_ConnectInfo->m_Connections[connId].m_Connected = true;
             break;
         }
     }
-    pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+    // pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
+    pthread_mutex_unlock(p_ConnectInfo->m_ConnectLock);
 
     QPUSH(
         queue, CONNECTQ_MAX_SIZE, do {
