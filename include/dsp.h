@@ -30,8 +30,8 @@
 #define GB (1 << 30)
 
 #define SMB_Q_MAX_SIZE ((uint32_t)1024)
-#define EMB_Q_MAX_SIZE ((uint32_t)16)
-#define QMB_Q_MAX_SIZE ((uint32_t)8)
+#define EMB_Q_MAX_SIZE ((uint32_t)1024)
+#define QMB_Q_MAX_SIZE ((uint32_t)1024)
 #define HMB_Q_MAX_SIZE ((uint32_t)4)
 #define MB_Q_MAX_SIZE ((uint32_t)2)
 #define DMB_Q_MAX_SIZE ((uint32_t)1)

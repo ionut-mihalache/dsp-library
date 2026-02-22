@@ -129,9 +129,6 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
             connId = queue->m_Data[idx].m_ConnectionIdx;
         } while (0));
 
-    // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
-
     rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
                 p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
     DIE(rc < 0, "Could not unmap request response queue");
@@ -149,6 +146,9 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
 
     rc = shm_unlink(p_ConnectInfo->m_Connections[connId].m_ReturnQName);
     DIE(rc != 0, "Could no unlink return queue shared memory object");
+
+    // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
+    pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
 
     p_ConnectInfo->m_Connections[connId].m_Connected = false;
 

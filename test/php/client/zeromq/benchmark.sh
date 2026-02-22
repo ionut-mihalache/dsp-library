@@ -13,7 +13,7 @@ runClients() {
     echo "Running $clientsNr clients with client path: $clientPath"
 
     running=0
-    maxRunning=256
+    maxRunning=384
     currentBatchNr=1
 
     for i in $(seq 1 $clientsNr); do

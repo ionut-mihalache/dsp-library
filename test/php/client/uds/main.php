@@ -1,5 +1,16 @@
 <?php
 
+class Constants {
+    public const int SMB = 1 << 16;
+    public const int EMB = 1 << 17;
+    public const int QMB = 1 << 18;
+    public const int HMB = 1 << 19;
+    public const int MB = 1 << 20;
+    public const int DMB = 1 << 21;
+    public const int HGB = 1 << 29;
+    public const int GB = 1 << 30;
+};
+
 function measureFnExec(callable $p_Fn): float
 {
     $start = microtime(true);
@@ -50,12 +61,12 @@ $lenBytes = pack('N', $len);
 
 $payload = $lenBytes . $iiaData;
 
-$payload = str_pad($payload, 65548, "\0");
+$payload = str_pad($payload, Constants::EMB, "\0");
 
 $benchmark["call"] = measureFnExec(function () use ($fp, $payload) {
     $written = 0;
 
-    while ($written < 65548) {
+    while ($written < Constants::EMB) {
         $partialWritten = fwrite($fp, substr($payload, $written));
         $written += $partialWritten;
     }
@@ -65,8 +76,8 @@ $benchmark["return"] = measureFnExec(function () use ($fp) {
     $read = 0;
     $response = '';
 
-    while ($read < 65548) {
-        $partialResponse = fread($fp, 65548 - $read);
+    while ($read < Constants::EMB) {
+        $partialResponse = fread($fp, Constants::EMB - $read);
         $response .= $partialResponse;
 
         $read += strlen($partialResponse);

@@ -2,6 +2,9 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+# from scipy.stats import mstats
+# from scipy.stats import trim_mean
+
 
 def load_and_prepare(csv_path, time_columns):
     df = pd.read_csv(csv_path)
@@ -9,12 +12,133 @@ def load_and_prepare(csv_path, time_columns):
     # Convert microseconds → ms
     df[time_columns] = df[time_columns] / 1000.0
 
+    # def remove_outliers(group, cols):
+    #     Q1 = group[cols].quantile(0.25)
+    #     Q3 = group[cols].quantile(0.75)
+    #     IQR = Q3 - Q1
+
+    #     mask = ~((group[cols] < (Q1 - 1.5 * IQR)) |
+    #             (group[cols] > (Q3 + 1.5 * IQR))).any(axis=1)
+
+    #     return group[mask]
+
+    # df = (
+    #     df.groupby("clients_nr", group_keys=False)
+    #     .apply(lambda g: remove_outliers(g, time_columns))
+    # )
+    # for col in time_columns:
+    #     Q1 = df[col].quantile(0.25)
+    #     Q3 = df[col].quantile(0.75)
+    #     IQR = Q3 - Q1
+    #     lower = Q1 - 1.5 * IQR
+    #     upper = Q3 + 1.5 * IQR
+    #     df = df[(df[col] >= lower) & (df[col] <= upper)]
+
     # Group by number of clients
     df_grouped = df.groupby("clients_nr")[time_columns].mean().reset_index()
     df_grouped = df_grouped.sort_values("clients_nr")
 
+    # print(df_grouped)
+
+    # for col in time_columns:
+    #     q1 = df_grouped[col].quantile(0.25)
+    #     q3 = df_grouped[col].quantile(0.75)
+    #     iqr = q3 - q1
+    #     print(f"\n{col}")
+    #     print("IQR:", iqr)
+    #     print("Lower bound:", q1 - 1.5 * iqr)
+    #     print("Upper bound:", q3 + 1.5 * iqr)
+    #     print("Max value:", df_grouped[col].max())
+
+    # print(df_grouped)
+
     return df_grouped
 
+def load_and_prepare2(csv_path, time_columns, remove_outliers=False):
+    df = pd.read_csv(csv_path)
+
+    # Convert microseconds → ms
+    df[time_columns] = df[time_columns] / 1000.0
+
+    if remove_outliers:
+        for col in time_columns:
+            q1 = df[col].quantile(0.25)
+            q3 = df[col].quantile(0.75)
+            iqr = q3 - q1
+            lower = q1 - 1.5 * iqr
+            upper = q3 + 1.5 * iqr
+
+            df = df[(df[col] >= lower) & (df[col] <= upper)]
+
+    # Group by number of clients
+    df_grouped = (
+        df.groupby("clients_nr")[time_columns]
+          .agg(["median", lambda x: x.quantile(0.95)])
+    )
+
+    # Rename columns cleanly
+    df_grouped.columns = [
+        f"{col}_{stat if stat != '<lambda>' else 'p95'}"
+        for col, stat in df_grouped.columns
+    ]
+
+    df_grouped = df_grouped.reset_index().sort_values("clients_nr")
+
+    return df_grouped
+
+def load_and_prepare3(csv_path, time_columns, remove_outliers=True, iqr_factor=1.5):
+    """
+    Load CSV, convert microseconds → ms, optionally remove outliers per group, and return
+    median per clients_nr.
+    """
+    df = pd.read_csv(csv_path)
+
+    # Convert microseconds → ms
+    df[time_columns] = df[time_columns] / 1000.0
+
+    # if remove_outliers:
+    #     # Eliminare outlier per grup
+    #     def filter_group_outliers(group):
+    #         for col in time_columns:
+    #             q1 = group[col].quantile(0.25)
+    #             q3 = group[col].quantile(0.75)
+    #             iqr = q3 - q1
+    #             lower = q1 - iqr_factor * iqr
+    #             upper = q3 + iqr_factor * iqr
+    #             # Filtrare valori extreme
+    #             group = group[(group[col] >= lower) & (group[col] <= upper)]
+    #         return group
+
+    #     df = df.groupby("clients_nr", group_keys=False, as_index=False).apply(filter_group_outliers)
+
+    for col in time_columns:
+        max_val = df[col].quantile(0.99)
+        # print(max_val)
+        df[col] = df[col].clip(upper=max_val)
+
+    # def stabilize(group):
+    #     for col in time_columns:
+    #         lower = group[col].quantile(0.05)
+    #         upper = group[col].quantile(0.95)
+    #         group[col] = group[col].clip(upper=upper)
+    #     return group
+
+    # df = s
+
+    # Agregare mediană per număr de clienți
+    df_grouped = df.groupby("clients_nr", as_index=False)[time_columns].mean()
+    # df_grouped = df.groupby("clients_nr")[time_columns].agg(
+    #     lambda x: trim_mean(x, 0.1)  # elimină 10% valori extreme din ambele capete
+    # ).reset_index()
+
+    # Optional: afișare statistică pentru verificare
+    # for col in time_columns:
+    #     q1 = df_grouped[col].quantile(0.25)
+    #     q3 = df_grouped[col].quantile(0.75)
+    #     iqr = q3 - q1
+        # print(f"\n{col} | IQR: {iqr:.6f} | Min: {df_grouped[col].min():.6f} | Max: {df_grouped[col].max():.6f}")
+
+    return df_grouped.sort_values("clients_nr")
 
 def create_combined_client_exec_time_plot2(output_dir, csv_a, csv_b, label_a="AQUA", label_b="ZeroMQ"):
     time_columns = ["connect", "call", "return", "disconnect"]
@@ -52,6 +176,8 @@ def create_combined_client_exec_time_plot2(output_dir, csv_a, csv_b, label_a="AQ
         )
 
         # axs[i].set_ylabel("Relative Time (× first value)")
+        if col == "connect" or col == "disconnect":
+            axs[i].set_yscale("log")
         axs[i].set_ylabel("Relative to UDS")
         axs[i].grid(True, linestyle=":")
         axs[i].legend(frameon=False)
@@ -80,6 +206,9 @@ def create_combined_client_exec_time_plot2_bar(output_dir, csv_a, csv_b, label_a
 
         axs[i].bar(x - width/1.5, y_a, width, label=f"{col.capitalize()} ({label_a})", edgecolor="black", linewidth=0.8, hatch="///", facecolor="white")
         axs[i].bar(x + width/1.5, y_b, width, label=f"{col.capitalize()} ({label_b})",edgecolor="black", linewidth=0.8, hatch="xxx", facecolor="lightgray")
+
+        if col == "connect" or col == "disconnect":
+            axs[i].set_yscale("log")
 
         axs[i].axhline(1, linewidth=1.2)  # Baseline (UDS)
         axs[i].set_ylabel("Relative to UDS")
@@ -152,7 +281,8 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
             label=f"{col.capitalize()} ({label_c})",
         )
 
-        # axs[i].set_yscale("log", nonpositive="mask")
+        if col == "connect" or col == "disconnect":
+            axs[i].set_yscale("log")
         axs[i].set_ylabel("Relative to UDS")
         axs[i].grid(True)
         axs[i].legend(frameon=False)
@@ -187,6 +317,8 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
 
         axs[i].axhline(1, linewidth=1.2)
         axs[i].set_ylabel("Relative to UDS")
+        if col == "connect" or col == "disconnect":
+            axs[i].set_yscale("log")
         axs[i].grid(True, linestyle=":", axis="y")
 
         all_vals = np.concatenate([y_a, y_b, y_c])
