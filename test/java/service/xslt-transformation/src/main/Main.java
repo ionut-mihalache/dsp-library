@@ -27,6 +27,7 @@ import com.sun.jna.Pointer;
 import calling.call_package.EMBCall;
 import calling.call_package.SMBCall;
 import calling.call_package.QMBCall;
+import calling.call_package.HMBCall;
 import calling.call_package.ServiceCallInfo;
 import calling.interfaces.Call;
 import calling.return_package.*;
@@ -293,7 +294,9 @@ class ProcessCallThread2 implements Runnable {
     public void run() {
         try {
             // SMBCall callData = new SMBCall();
-            EMBCall callData = new EMBCall();
+            // EMBCall callData = new EMBCall();
+            // QMBCall callData = new QMBCall();
+            HMBCall callData = new HMBCall();
 
             LibDSP.INSTANCE.receiveCall(callData.getPointer(), m_CallInfo);
 
@@ -389,7 +392,7 @@ public class Main {
         // ConcurrentHashMap<Integer, ServiceReturnInfo> connections = new
         // ConcurrentHashMap<Integer, ServiceReturnInfo>();
 
-        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", Constants.EMBQ);
+        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", Constants.HMBQ);
 
         connectInfo.read();
         callInfo.read();
@@ -431,7 +434,9 @@ public class Main {
                 // connections.put(connId, returnInfo);
 
                 // SMBCall callData = new SMBCall();
-                EMBCall callData = new EMBCall();
+                // EMBCall callData = new EMBCall();
+                // QMBCall callData = new QMBCall();
+                HMBCall callData = new HMBCall();
 
                 LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
 

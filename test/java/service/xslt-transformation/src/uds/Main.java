@@ -34,17 +34,6 @@ class Constants {
     public static final int DMB = 1 << 21;
     public static final int HGB = 1 << 29;
     public static final int GB = 1 << 30;
-
-    public static final int RETURNQ_NAME_MAX_SIZE = 256;
-
-    public static final int SMBQ = 0;
-    public static final int EMBQ = 1;
-    public static final int QMBQ = 2;
-    public static final int HMBQ = 3;
-    public static final int MBQ = 4;
-    public static final int DMBQ = 5;
-    public static final int HGBQ = 6;
-    public static final int GBQ = 7;
 }
 
 class ProcessCallThread implements Runnable {
@@ -70,7 +59,7 @@ class ProcessCallThread implements Runnable {
             Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            ByteBuffer response = ByteBuffer.allocate(Constants.EMB);
+            ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
             String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
             response.putInt(result.length());
@@ -126,7 +115,7 @@ class ProcessCallThread1 implements Runnable {
 
     public void run() {
         try {
-            ByteBuffer buf = ByteBuffer.allocate(Constants.EMB);
+            ByteBuffer buf = ByteBuffer.allocate(Constants.HMB);
 
             while (buf.hasRemaining()) {
                 m_Client.read(buf);
@@ -144,7 +133,7 @@ class ProcessCallThread1 implements Runnable {
             Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            ByteBuffer response = ByteBuffer.allocate(Constants.EMB);
+            ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
             String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
             response.putInt(result.length());
@@ -214,7 +203,7 @@ public class Main {
             while (!Thread.currentThread().isInterrupted()) {
                 SocketChannel client = server.accept();
 
-                ByteBuffer buf = ByteBuffer.allocate(Constants.EMB);
+                ByteBuffer buf = ByteBuffer.allocate(Constants.HMB);
 
                 while (buf.hasRemaining()) {
                     client.read(buf);

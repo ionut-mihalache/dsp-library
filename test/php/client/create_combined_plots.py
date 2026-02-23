@@ -176,8 +176,8 @@ def create_combined_client_exec_time_plot2(output_dir, csv_a, csv_b, label_a="AQ
         )
 
         # axs[i].set_ylabel("Relative Time (× first value)")
-        if col == "connect" or col == "disconnect":
-            axs[i].set_yscale("log")
+        # if col == "connect" or col == "disconnect":
+        axs[i].set_yscale("log")
         axs[i].set_ylabel("Relative to UDS")
         axs[i].grid(True, linestyle=":")
         axs[i].legend(frameon=False)
@@ -207,8 +207,8 @@ def create_combined_client_exec_time_plot2_bar(output_dir, csv_a, csv_b, label_a
         axs[i].bar(x - width/1.5, y_a, width, label=f"{col.capitalize()} ({label_a})", edgecolor="black", linewidth=0.8, hatch="///", facecolor="white")
         axs[i].bar(x + width/1.5, y_b, width, label=f"{col.capitalize()} ({label_b})",edgecolor="black", linewidth=0.8, hatch="xxx", facecolor="lightgray")
 
-        if col == "connect" or col == "disconnect":
-            axs[i].set_yscale("log")
+        # if col == "connect" or col == "disconnect":
+        axs[i].set_yscale("log")
 
         axs[i].axhline(1, linewidth=1.2)  # Baseline (UDS)
         axs[i].set_ylabel("Relative to UDS")
@@ -217,7 +217,7 @@ def create_combined_client_exec_time_plot2_bar(output_dir, csv_a, csv_b, label_a
         # Dynamic y-limits centered around baseline
         all_vals = np.concatenate([y_a, y_b])
         ymin = min(0.9, all_vals.min() * 0.95)
-        ymax = all_vals.max() * 1.1
+        ymax = all_vals.max() * 1.5
         axs[i].set_ylim(ymin, ymax)
 
         axs[i].legend(frameon=False)
@@ -281,8 +281,8 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
             label=f"{col.capitalize()} ({label_c})",
         )
 
-        if col == "connect" or col == "disconnect":
-            axs[i].set_yscale("log")
+        # if col == "connect" or col == "disconnect":
+        axs[i].set_yscale("log")
         axs[i].set_ylabel("Relative to UDS")
         axs[i].grid(True)
         axs[i].legend(frameon=False)
@@ -317,8 +317,8 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
 
         axs[i].axhline(1, linewidth=1.2)
         axs[i].set_ylabel("Relative to UDS")
-        if col == "connect" or col == "disconnect":
-            axs[i].set_yscale("log")
+        # if col == "connect" or col == "disconnect":
+        axs[i].set_yscale("log")
         axs[i].grid(True, linestyle=":", axis="y")
 
         all_vals = np.concatenate([y_a, y_b, y_c])

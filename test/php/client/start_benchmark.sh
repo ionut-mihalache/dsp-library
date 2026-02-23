@@ -1,3 +1,5 @@
+rm /dev/shm/*
+
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/dsp-library
 
 cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation
@@ -68,16 +70,19 @@ lastZMQbenchmark=$(ls zeromq/benchmark_results/clients/ | grep -o "[0-9]\+" | so
 # echo $lastUDSbenchmark
 # echo $lastZMQbenchmark
 
-if [ ! -d "metrics2" ]; then
-    mkdir -p metrics2
+metrics2Path=$1
+metrics3Path=$2
+
+if [ ! -d ${metrics2Path} ]; then
+    mkdir -p ${metrics2Path}
 fi
-if [ ! -d "metrics3" ]; then
-    mkdir -p metrics3
+if [ ! -d ${metrics3Path} ]; then
+    mkdir -p ${metrics3Path}
 fi
 
 source venv/bin/activate
-python3 create_combined_plots.py ./metrics2 benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv
-python3 create_combined_plots.py ./metrics3 benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv
+python3 create_combined_plots.py ${metrics2Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv
+python3 create_combined_plots.py ${metrics3Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv
 deactivate
 
 # ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) $(date +%s) 128 256 384 512 640 758 886 1024

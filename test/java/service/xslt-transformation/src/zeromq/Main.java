@@ -31,17 +31,6 @@ class Constants {
     public static final int DMB = 1 << 21;
     public static final int HGB = 1 << 29;
     public static final int GB = 1 << 30;
-
-    public static final int RETURNQ_NAME_MAX_SIZE = 256;
-
-    public static final int SMBQ = 0;
-    public static final int EMBQ = 1;
-    public static final int QMBQ = 2;
-    public static final int HMBQ = 3;
-    public static final int MBQ = 4;
-    public static final int DMBQ = 5;
-    public static final int HGBQ = 6;
-    public static final int GBQ = 7;
 }
 
 class ProcessCallThread extends Thread {
@@ -64,7 +53,7 @@ class ProcessCallThread extends Thread {
             while (!Thread.currentThread().isInterrupted()) {
                 byte[] reply = socket.recv(0);
 
-                if (reply.length != Constants.EMB) {
+                if (reply.length != Constants.HMB) {
                     throw new RuntimeException("Unexpected size: " + reply.length);
                 }
 
@@ -79,7 +68,7 @@ class ProcessCallThread extends Thread {
                 Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
 
-                ByteBuffer response = ByteBuffer.allocate(Constants.EMB);
+                ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
                 String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
                 response.putInt(result.length());
@@ -145,7 +134,7 @@ public class Main {
             // // Block until a message is received
             // byte[] reply = socket.recv(0);
 
-            // if (reply.length != Constants.EMB) {
+            // if (reply.length != Constants.HMB) {
             // throw new RuntimeException("Unexpected size: " + reply.length);
             // }
 
@@ -174,7 +163,7 @@ public class Main {
             // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             // byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            // ByteBuffer response = ByteBuffer.allocate(Constants.EMB);
+            // ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
             // String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
 
             // response.putInt(result.length());

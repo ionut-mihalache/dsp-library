@@ -284,7 +284,7 @@ $responseQName = "response-q-" . $uniqueId;
 FFI::memset($requestInfo->m_RequestResponseQName, 0, 256);
 FFI::memcpy($requestInfo->m_RequestResponseQName, $responseQName, strlen($responseQName));
 $requestInfo->m_ResponseQSize = 1;
-$requestInfo->m_QType = QType::EMBQ->value;
+$requestInfo->m_QType = QType::HMBQ->value;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
@@ -305,7 +305,7 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
     $iiaDataBuffer[$i] = ord($iiaData[$i]);
 }
 
-setCallData($ffi, QType::EMBQ->value, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
+setCallData($ffi, QType::HMBQ->value, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
 $benchmark["call"] = measureFnExec(function () use ($ffi, $callInfoPtr, $callDataPtr) {
     callFn($ffi, $callInfoPtr, $callDataPtr);

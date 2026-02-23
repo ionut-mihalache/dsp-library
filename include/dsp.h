@@ -32,7 +32,7 @@
 #define SMB_Q_MAX_SIZE ((uint32_t)1024)
 #define EMB_Q_MAX_SIZE ((uint32_t)1024)
 #define QMB_Q_MAX_SIZE ((uint32_t)1024)
-#define HMB_Q_MAX_SIZE ((uint32_t)4)
+#define HMB_Q_MAX_SIZE ((uint32_t)1024)
 #define MB_Q_MAX_SIZE ((uint32_t)2)
 #define DMB_Q_MAX_SIZE ((uint32_t)1)
 #define HGB_Q_MAX_SIZE ((uint32_t)1)
