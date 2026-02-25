@@ -2,6 +2,7 @@ import sys
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.ticker import LogLocator, LogFormatter
 # from scipy.stats import mstats
 # from scipy.stats import trim_mean
 
@@ -204,14 +205,35 @@ def create_combined_client_exec_time_plot2_bar(output_dir, csv_a, csv_b, label_a
         y_a = (df_a[col] / df_b[col]).to_numpy()
         y_b = np.ones_like(y_a)
 
-        axs[i].bar(x - width/1.5, y_a, width, label=f"{col.capitalize()} ({label_a})", edgecolor="black", linewidth=0.8, hatch="///", facecolor="white")
-        axs[i].bar(x + width/1.5, y_b, width, label=f"{col.capitalize()} ({label_b})",edgecolor="black", linewidth=0.8, hatch="xxx", facecolor="lightgray")
+        # axs[i].bar(x - width/1.5, y_a, width, label=f"{col.capitalize()} ({label_a})", edgecolor="black", linewidth=0.8, hatch="///", facecolor="white")
+        # axs[i].bar(x + width/1.5, y_b, width, label=f"{col.capitalize()} ({label_b})",edgecolor="black", linewidth=0.8, hatch="xxx", facecolor="lightgray")
+        axs[i].bar(
+            x - width/1.5,
+            y_a,
+            width,
+            label=f"{label_a}",
+            edgecolor="black",
+            linewidth=0.8,
+            hatch="///",
+            facecolor="white"
+        )
+        axs[i].bar(
+            x + width/1.5,
+            y_b,
+            width,
+            label=f"{label_b}",
+            edgecolor="black",
+            linewidth=0.8,
+            hatch="xxx",
+            facecolor="lightgray"
+        )
 
         # if col == "connect" or col == "disconnect":
         axs[i].set_yscale("log")
 
         axs[i].axhline(1, linewidth=1.2)  # Baseline (UDS)
         axs[i].set_ylabel("Relative to UDS")
+        # axs[i].set_ylabel(col.capitalize())
         axs[i].grid(True, linestyle=":", axis="y")
 
         # Dynamic y-limits centered around baseline
@@ -283,6 +305,15 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
 
         # if col == "connect" or col == "disconnect":
         axs[i].set_yscale("log")
+
+        axs[i].yaxis.set_major_locator(LogLocator(base=10))
+        axs[i].yaxis.set_minor_locator(LogLocator(base=10.0, subs=np.arange(2, 10) * 0.1))
+
+        axs[i].yaxis.set_minor_formatter(LogFormatter(base=10.0))
+
+        # axs[i].grid(True, which="major", linestyle="-", alpha=0.6)
+        # axs[i].grid(True, which="minor", linestyle=":", alpha=0.3)
+
         axs[i].set_ylabel("Relative to UDS")
         axs[i].grid(True)
         axs[i].legend(frameon=False)
@@ -309,31 +340,88 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
     for i, col in enumerate(time_columns):
         y_a = (df_a[col] / df_b[col]).to_numpy()
         y_b = np.ones_like(y_a)
+        # y_b = (df_b[col] / df_b[col]).to_numpy()
         y_c = (df_c[col] / df_b[col]).to_numpy()
 
-        axs[i].bar(x - width*1.05, y_a, width, label=f"{col.capitalize()} ({label_a})", hatch="|||")
-        axs[i].bar(x,             y_b, width, label=f"{col.capitalize()} ({label_b})", hatch="xxx")
-        axs[i].bar(x + width*1.05, y_c, width, label=f"{col.capitalize()} ({label_c})", hatch="...")
+        # axs[i].bar(x - width*1.05, y_a, width, label=f"{col.capitalize()} ({label_a})", hatch="|||")
+        # axs[i].bar(x,             y_b, width, label=f"{col.capitalize()} ({label_b})", hatch="xxx")
+        # axs[i].bar(x + width*1.05, y_c, width, label=f"{col.capitalize()} ({label_c})", hatch="...")
+        axs[i].bar(
+            x - width * 1.05,
+            y_a,
+            width,
+            label=f"{label_a}",
+            hatch="|||"
+        )
+        axs[i].bar(
+            x,
+            y_b,
+            width,
+            label=f"{label_b}",
+            hatch="xxx"
+        )
+        axs[i].bar(
+            x + width * 1.05,
+            y_c,
+            width,
+            label=f"{label_c}",
+            hatch="..."
+        )
 
-        axs[i].axhline(1, linewidth=1.2)
-        axs[i].set_ylabel("Relative to UDS")
-        # if col == "connect" or col == "disconnect":
-        axs[i].set_yscale("log")
-        axs[i].grid(True, linestyle=":", axis="y")
+        axs[i].axhline(1, linewidth=1.1)
+        # axs[i].set_ylabel("Relative to UDS")
+        axs[i].set_ylabel(col.capitalize())
 
         all_vals = np.concatenate([y_a, y_b, y_c])
-        ymin = min(0.9, all_vals.min() * 0.95)
-        ymax = all_vals.max() * 1.5
-        axs[i].set_ylim(ymin, ymax)
+        all_vals = all_vals[np.isfinite(all_vals)]
 
-        axs[i].legend(frameon=False)
+        min_val = all_vals.min()
+        max_val = all_vals.max()
+
+        ratio = max_val / max(min_val, 1e-9)
+
+        # dacă diferența e foarte mare -> log scale
+        if ratio > 25:
+            axs[i].set_yscale("log")
+
+        # if col == "connect" or col == "disconnect":
+        # if y_a // y_b > 10 or y_c // y_b > 10:
+        #     axs[i].set_yscale("log")
+
+        # axs[i].yaxis.set_major_locator(LogLocator(base=10))
+        # axs[i].yaxis.set_minor_locator(LogLocator(base=10, subs='auto'))
+
+        axs[i].grid(True, linestyle=":", axis="y")
+
+        handles, labels = axs[0].get_legend_handles_labels()
+        fig.legend(
+            handles,
+            labels,
+            loc="upper center",
+            ncol=3,
+            frameon=False,
+            bbox_to_anchor=(0.5, 0.96)   # ← mai jos decât înainte
+        )
+
+        # all_vals = np.concatenate([y_a, y_b, y_c])
+        # ymin = min(0.9, all_vals.min() * 0.95)
+        # ymax = all_vals.max() * 2.5
+        # axs[i].set_ylim(ymin, ymax)
+
+        # axs[i].legend(frameon=False)
 
     axs[-1].set_xlabel("Number of Clients")
     axs[-1].set_xticks(x)
     axs[-1].set_xticklabels(clients)
 
-    plt.suptitle("Client Metrics vs Number of Clients (Three Datasets, Averaged, ms)", fontsize=14)
-    plt.tight_layout()
+    # Ridicăm titlul puțin mai sus
+    fig.suptitle(
+        "Client Metrics vs Number of Clients (Three Datasets, Averaged, ms)",
+        fontsize=14,
+        y=0.995
+    )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(f"{output_dir}/combined_client_metrics_time_per_clients3_bar.pdf", format="pdf")
 
 if __name__ == "__main__":
