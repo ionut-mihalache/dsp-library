@@ -380,16 +380,8 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
 
         ratio = max_val / max(min_val, 1e-9)
 
-        # dacă diferența e foarte mare -> log scale
-        if ratio > 25:
+        if ratio > 20:
             axs[i].set_yscale("log")
-
-        # if col == "connect" or col == "disconnect":
-        # if y_a // y_b > 10 or y_c // y_b > 10:
-        #     axs[i].set_yscale("log")
-
-        # axs[i].yaxis.set_major_locator(LogLocator(base=10))
-        # axs[i].yaxis.set_minor_locator(LogLocator(base=10, subs='auto'))
 
         axs[i].grid(True, linestyle=":", axis="y")
 
