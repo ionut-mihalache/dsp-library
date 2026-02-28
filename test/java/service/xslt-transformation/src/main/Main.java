@@ -295,8 +295,8 @@ class ProcessCallThread2 implements Runnable {
         try {
             // SMBCall callData = new SMBCall();
             // EMBCall callData = new EMBCall();
-            // QMBCall callData = new QMBCall();
-            HMBCall callData = new HMBCall();
+            QMBCall callData = new QMBCall();
+            // HMBCall callData = new HMBCall();
 
             LibDSP.INSTANCE.receiveCall(callData.getPointer(), m_CallInfo);
 
@@ -392,7 +392,7 @@ public class Main {
         // ConcurrentHashMap<Integer, ServiceReturnInfo> connections = new
         // ConcurrentHashMap<Integer, ServiceReturnInfo>();
 
-        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", Constants.HMBQ);
+        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", Constants.QMBQ);
 
         connectInfo.read();
         callInfo.read();
@@ -435,8 +435,8 @@ public class Main {
 
                 // SMBCall callData = new SMBCall();
                 // EMBCall callData = new EMBCall();
-                // QMBCall callData = new QMBCall();
-                HMBCall callData = new HMBCall();
+                QMBCall callData = new QMBCall();
+                // HMBCall callData = new HMBCall();
 
                 LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
 

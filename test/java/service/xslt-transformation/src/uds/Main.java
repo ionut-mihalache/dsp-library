@@ -59,7 +59,7 @@ class ProcessCallThread implements Runnable {
             Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
+            ByteBuffer response = ByteBuffer.allocate(Constants.QMB);
             String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
             response.putInt(result.length());
@@ -115,7 +115,7 @@ class ProcessCallThread1 implements Runnable {
 
     public void run() {
         try {
-            ByteBuffer buf = ByteBuffer.allocate(Constants.HMB);
+            ByteBuffer buf = ByteBuffer.allocate(Constants.QMB);
 
             while (buf.hasRemaining()) {
                 m_Client.read(buf);
@@ -133,7 +133,7 @@ class ProcessCallThread1 implements Runnable {
             Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
+            ByteBuffer response = ByteBuffer.allocate(Constants.QMB);
             String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
             response.putInt(result.length());
@@ -203,7 +203,7 @@ public class Main {
             while (!Thread.currentThread().isInterrupted()) {
                 SocketChannel client = server.accept();
 
-                ByteBuffer buf = ByteBuffer.allocate(Constants.HMB);
+                ByteBuffer buf = ByteBuffer.allocate(Constants.QMB);
 
                 while (buf.hasRemaining()) {
                     client.read(buf);

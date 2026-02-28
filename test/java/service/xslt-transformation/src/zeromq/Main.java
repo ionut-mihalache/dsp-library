@@ -53,7 +53,7 @@ class ProcessCallThread extends Thread {
             while (!Thread.currentThread().isInterrupted()) {
                 byte[] reply = socket.recv(0);
 
-                if (reply.length != Constants.HMB) {
+                if (reply.length != Constants.QMB) {
                     throw new RuntimeException("Unexpected size: " + reply.length);
                 }
 
@@ -68,7 +68,7 @@ class ProcessCallThread extends Thread {
                 Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
 
-                ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
+                ByteBuffer response = ByteBuffer.allocate(Constants.QMB);
                 String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
                 response.putInt(result.length());
@@ -134,7 +134,7 @@ public class Main {
             // // Block until a message is received
             // byte[] reply = socket.recv(0);
 
-            // if (reply.length != Constants.HMB) {
+            // if (reply.length != Constants.QMB) {
             // throw new RuntimeException("Unexpected size: " + reply.length);
             // }
 
@@ -163,7 +163,7 @@ public class Main {
             // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             // byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            // ByteBuffer response = ByteBuffer.allocate(Constants.HMB);
+            // ByteBuffer response = ByteBuffer.allocate(Constants.QMB);
             // String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
 
             // response.putInt(result.length());

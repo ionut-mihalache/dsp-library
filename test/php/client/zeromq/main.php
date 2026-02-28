@@ -56,7 +56,7 @@ $lenBytes = pack('N', $len);
 
 $payload = $lenBytes . $iiaData;
 
-$payload = str_pad($payload, Constants::HMB, "\0");
+$payload = str_pad($payload, Constants::QMB, "\0");
 
 // echo "Sending message: $requestMessage\n";
 $benchmark["call"] = measureFnExec(fn() => $socket->send($payload));
