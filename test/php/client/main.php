@@ -165,31 +165,31 @@ function sendConnectRequest($p_Ffi, $returnInfoPtr, $connectInfoPtr, $requestInf
 
 function setCallData($p_Ffi, $p_Type, $p_CallDataPtr, $p_DataBuffer, $p_Size)
 {
-    echo "Prepare call information\n";
+    // echo "Prepare call information\n";
     return $p_Ffi->setCallData($p_Type, $p_CallDataPtr, $p_DataBuffer, $p_Size);
 }
 
 function callFn($p_Ffi, $p_CallInfoPtr, $p_CallDataPtr)
 {
-    echo "Send call request\n";
+    // echo "Send call request\n";
     $p_Ffi->callFn($p_CallInfoPtr, $p_CallDataPtr);
 }
 
 function returnQMB($p_Ffi, $returnDataPtr, $returnInfoPtr)
 {
-    echo "Receive call request\n";
+    // echo "Receive call request\n";
     $p_Ffi->returnQMB($returnDataPtr, $returnInfoPtr);
 }
 
 function returnFn($p_Ffi, $p_ReturnDataPtr, $p_ReturnInfoPtr)
 {
-    echo "Returned data\n";
+    // echo "Returned data\n";
     $p_Ffi->returnFn($p_ReturnDataPtr, $p_ReturnInfoPtr);
 }
 
 function sendDisconnectRequest($p_Ffi, $connectInfoPtr, $requestInfoPtr)
 {
-    echo "Send disconnect request\n";
+    // echo "Send disconnect request\n";
     $p_Ffi->sendDisconnectRequest($connectInfoPtr, $requestInfoPtr);
 }
 
@@ -216,46 +216,51 @@ function measureFnExec($p_Fn): float
     // return $utime + $stime; // CPU real microseconds
 }
 
-function getCallDataPtr($p_Ffi, $p_CallInfo)
-{
-    $callData = null;
-    switch ($p_CallInfo->m_Q->m_Type) {
+function getDataPtr($p_Ffi, $p_Type) {
+    $data = null;
+
+    switch ($p_Type) {
         case QType::SMBQ->value:
-            $callData = $p_Ffi->new("struct SMBCall");
+            $data = $p_Ffi->new("struct SMBCall");
             break;
         case QType::EMBQ->value:
-            $callData = $p_Ffi->new("struct EMBCall");
+            $data = $p_Ffi->new("struct EMBCall");
             break;
         case QType::QMBQ->value:
-            $callData = $p_Ffi->new("struct QMBCall");
+            $data = $p_Ffi->new("struct QMBCall");
             break;
         case QType::HMBQ->value:
-            $callData = $p_Ffi->new("struct HMBCall");
+            $data = $p_Ffi->new("struct HMBCall");
             break;
         case QType::MBQ->value:
-            $callData = $p_Ffi->new("struct MBCall");
+            $data = $p_Ffi->new("struct MBCall");
             break;
         case QType::DMBQ->value:
-            $callData = $p_Ffi->new("struct DMBCall");
+            $data = $p_Ffi->new("struct DMBCall");
             break;
         case QType::HGBQ->value:
-            $callData = $p_Ffi->new("struct HGBCall");
+            $data = $p_Ffi->new("struct HGBCall");
             break;
         case QType::GBQ->value:
-            $callData = $p_Ffi->new("struct GBCall");
+            $data = $p_Ffi->new("struct GBCall");
             break;
         default:
             echo "Call queue type not recognized.\n";
-            $callData = null;
+            $data = null;
     }
 
-    if ($callData) {
-        $callDataPtr = FFI::addr($callData);
+    if ($data) {
+        $dataPtr = FFI::addr($data);
 
-        return [$callData, $callDataPtr];
+        return [$data, $dataPtr];
     }
 
     return [null, null];
+}
+
+function getCallDataPtr($p_Ffi, $p_CallInfo)
+{
+    return getDataPtr($p_Ffi, $p_CallInfo->m_Q->m_Type);
 }
 
 $benchmark = [];
@@ -284,7 +289,7 @@ $responseQName = "response-q-" . $uniqueId;
 FFI::memset($requestInfo->m_RequestResponseQName, 0, 256);
 FFI::memcpy($requestInfo->m_RequestResponseQName, $responseQName, strlen($responseQName));
 $requestInfo->m_ResponseQSize = 1;
-$requestInfo->m_QType = QType::QMBQ->value;
+$requestInfo->m_QType = QType::SMBQ->value;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
@@ -305,14 +310,13 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
     $iiaDataBuffer[$i] = ord($iiaData[$i]);
 }
 
-setCallData($ffi, QType::QMBQ->value, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
+setCallData($ffi, QType::SMBQ->value, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
 $benchmark["call"] = measureFnExec(function () use ($ffi, $callInfoPtr, $callDataPtr) {
     callFn($ffi, $callInfoPtr, $callDataPtr);
 });
 
-$returnData = $ffi->new("struct SMBCall");
-$returnDataPtr = FFI::addr($returnData);
+[$returnData, $returnDataPtr] = getDataPtr($ffi, QType::SMBQ->value);
 
 $benchmark["return"] = measureFnExec(function () use ($ffi, $returnDataPtr, $returnInfoPtr) {
     returnFn($ffi, $returnDataPtr, $returnInfoPtr);

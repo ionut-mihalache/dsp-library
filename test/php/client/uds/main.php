@@ -61,12 +61,12 @@ $lenBytes = pack('N', $len);
 
 $payload = $lenBytes . $iiaData;
 
-$payload = str_pad($payload, Constants::QMB, "\0");
+$payload = str_pad($payload, Constants::SMB, "\0");
 
 $benchmark["call"] = measureFnExec(function () use ($fp, $payload) {
     $written = 0;
 
-    while ($written < Constants::QMB) {
+    while ($written < Constants::SMB) {
         $partialWritten = fwrite($fp, substr($payload, $written));
         $written += $partialWritten;
     }
@@ -76,8 +76,8 @@ $benchmark["return"] = measureFnExec(function () use ($fp) {
     $read = 0;
     $response = '';
 
-    while ($read < Constants::QMB) {
-        $partialResponse = fread($fp, Constants::QMB - $read);
+    while ($read < Constants::SMB) {
+        $partialResponse = fread($fp, Constants::SMB - $read);
         $response .= $partialResponse;
 
         $read += strlen($partialResponse);
