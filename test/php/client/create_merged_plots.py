@@ -253,7 +253,7 @@ def create_bar_plot3(
 
     plt.tight_layout(rect=[0, 0, 1, 0.96])
     plt.savefig(
-        f"{outdir}/combined_client_metrics_time_per_clients2_bar.pdf", format="pdf"
+        f"{outdir}/combined_client_metrics_time_per_clients3_bar.pdf", format="pdf"
     )
     plt.close()
 
@@ -288,48 +288,57 @@ def create_bar_plot3(
 
 
 if __name__ == "__main__":
-    create_bar_plot3(
+    create_bar_plot2(
         {
             "64KB": (
-                "benchmark_results/clients/1772287597/client_benchmark.csv",
-                "uds/benchmark_results/clients/1772287759/client_benchmark.csv",
-                "zeromq/benchmark_results/clients/1772287928/client_benchmark.csv",
+                "metrics2_64KB/aqua_client_benchmark.csv",
+                "metrics2_64KB/uds_client_benchmark.csv",
             ),
             "128KB": (
-                "benchmark_results/clients/1772286859/client_benchmark.csv",
-                "uds/benchmark_results/clients/1772287026/client_benchmark.csv",
-                "zeromq/benchmark_results/clients/1772287197/client_benchmark.csv",
+                "metrics2_128KB/aqua_client_benchmark.csv",
+                "metrics2_128KB/uds_client_benchmark.csv",
             ),
             "256KB": (
-                "benchmark_results/clients/1772288952/client_benchmark.csv",
-                "uds/benchmark_results/clients/1772289126/client_benchmark.csv",
-                "zeromq/benchmark_results/clients/1772289301/client_benchmark.csv",
+                "metrics2_256KB/aqua_client_benchmark.csv",
+                "metrics2_256KB/uds_client_benchmark.csv",
             ),
             "512KB": (
-                "benchmark_results/clients/1772200354/client_benchmark.csv",
-                "uds/benchmark_results/clients/1772200525/client_benchmark.csv",
-                "zeromq/benchmark_results/clients/1772200735/client_benchmark.csv",
+                "metrics2_512KB/aqua_client_benchmark.csv",
+                "metrics2_512KB/uds_client_benchmark.csv",
+            ),
+            "1MB": (
+                "metrics2_1MB/aqua_client_benchmark.csv",
+                "metrics2_1MB/uds_client_benchmark.csv",
             ),
         }
     )
 
-    # create_bar_plot2(
-    #     {
-    #         "64KB": (
-    #             "benchmark_results/clients/1772287597/client_benchmark.csv",
-    #             "uds/benchmark_results/clients/1772287759/client_benchmark.csv",
-    #         ),
-    #         "128KB": (
-    #             "benchmark_results/clients/1772286859/client_benchmark.csv",
-    #             "uds/benchmark_results/clients/1772287026/client_benchmark.csv",
-    #         ),
-    #         "256KB": (
-    #             "benchmark_results/clients/1772288952/client_benchmark.csv",
-    #             "uds/benchmark_results/clients/1772289126/client_benchmark.csv",
-    #         ),
-    #         "512KB": (
-    #             "benchmark_results/clients/1772200354/client_benchmark.csv",
-    #             "uds/benchmark_results/clients/1772200525/client_benchmark.csv",
-    #         ),
-    #     }
-    # )
+    create_bar_plot3(
+        {
+            "64KB": (
+                "metrics3_64KB/aqua_client_benchmark.csv",
+                "metrics3_64KB/uds_client_benchmark.csv",
+                "metrics3_64KB/zeromq_client_benchmark.csv",
+            ),
+            "128KB": (
+                "metrics3_128KB/aqua_client_benchmark.csv",
+                "metrics3_128KB/uds_client_benchmark.csv",
+                "metrics3_128KB/zeromq_client_benchmark.csv",
+            ),
+            "256KB": (
+                "metrics3_256KB/aqua_client_benchmark.csv",
+                "metrics3_256KB/uds_client_benchmark.csv",
+                "metrics3_256KB/zeromq_client_benchmark.csv",
+            ),
+            "512KB": (
+                "metrics3_512KB/aqua_client_benchmark.csv",
+                "metrics3_512KB/uds_client_benchmark.csv",
+                "metrics3_512KB/zeromq_client_benchmark.csv",
+            ),
+            "1MB": (
+                "metrics3_1MB/aqua_client_benchmark.csv",
+                "metrics3_1MB/uds_client_benchmark.csv",
+                "metrics3_1MB/zeromq_client_benchmark.csv",
+            ),
+        }
+    )
