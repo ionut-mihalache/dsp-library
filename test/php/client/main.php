@@ -12,6 +12,20 @@ enum QType: int
     case GBQ = 7;
 };
 
+$arg = $argv[3] ?? "SMB";
+
+$qType = match (strtoupper($arg)) {
+    "SMB" => QType::SMBQ->value,
+    "EMB" => QType::EMBQ->value,
+    "QMB" => QType::QMBQ->value,
+    "HMB" => QType::HMBQ->value,
+    "MB"  => QType::MBQ->value,
+    "DMB" => QType::DMBQ->value,
+    "HGB" => QType::HGBQ->value,
+    "GB"  => QType::GBQ->value,
+    default => throw new InvalidArgumentException("Unknown queue type: $arg"),
+};
+
 $ffi = FFI::cdef(
     "
     struct CallMetadata {
@@ -216,7 +230,8 @@ function measureFnExec($p_Fn): float
     // return $utime + $stime; // CPU real microseconds
 }
 
-function getDataPtr($p_Ffi, $p_Type) {
+function getDataPtr($p_Ffi, $p_Type)
+{
     $data = null;
 
     switch ($p_Type) {
@@ -289,7 +304,7 @@ $responseQName = "response-q-" . $uniqueId;
 FFI::memset($requestInfo->m_RequestResponseQName, 0, 256);
 FFI::memcpy($requestInfo->m_RequestResponseQName, $responseQName, strlen($responseQName));
 $requestInfo->m_ResponseQSize = 1;
-$requestInfo->m_QType = QType::SMBQ->value;
+$requestInfo->m_QType = $qType;
 
 $requestInfoPtr = FFI::addr($requestInfo);
 
@@ -310,13 +325,14 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
     $iiaDataBuffer[$i] = ord($iiaData[$i]);
 }
 
-setCallData($ffi, QType::SMBQ->value, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
+setCallData($ffi, $qType, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
+// for ($j = 0; $j < 2; ++$j) {
 $benchmark["call"] = measureFnExec(function () use ($ffi, $callInfoPtr, $callDataPtr) {
     callFn($ffi, $callInfoPtr, $callDataPtr);
 });
 
-[$returnData, $returnDataPtr] = getDataPtr($ffi, QType::SMBQ->value);
+[$returnData, $returnDataPtr] = getDataPtr($ffi, $qType);
 
 $benchmark["return"] = measureFnExec(function () use ($ffi, $returnDataPtr, $returnInfoPtr) {
     returnFn($ffi, $returnDataPtr, $returnInfoPtr);
@@ -328,6 +344,7 @@ for ($i = 0; $i < $returnData->m_Metadata->m_Size; ++$i) {
 }
 
 // echo $result . "\n";
+// }
 
 $requestInfoPtr = FFI::addr($returnInfo->m_ConnectResponseInformation);
 

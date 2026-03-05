@@ -53,7 +53,7 @@ class ProcessCallThread extends Thread {
             while (!Thread.currentThread().isInterrupted()) {
                 byte[] reply = socket.recv(0);
 
-                if (reply.length != Constants.SMB) {
+                if (reply.length != Main.PAYLOAD_SIZE) {
                     throw new RuntimeException("Unexpected size: " + reply.length);
                 }
 
@@ -68,7 +68,7 @@ class ProcessCallThread extends Thread {
                 Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
                 byte[] xsltData = Files.readAllBytes(xsltPath);
 
-                ByteBuffer response = ByteBuffer.allocate(Constants.SMB);
+                ByteBuffer response = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
                 String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
                 response.putInt(result.length());
@@ -109,8 +109,38 @@ class ProcessCallThread extends Thread {
 
 public class Main {
     private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+    public static int PAYLOAD_SIZE;
+
+    private static int sm_GetPayloadSize(String p_Arg) {
+        switch (p_Arg.toUpperCase()) {
+            case "SMB":
+                return Constants.SMB;
+            case "EMB":
+                return Constants.EMB;
+            case "QMB":
+                return Constants.QMB;
+            case "HMB":
+                return Constants.HMB;
+            case "MB":
+                return Constants.MB;
+            case "DMB":
+                return Constants.DMB;
+            case "HGB":
+                return Constants.HGB;
+            case "GB":
+                return Constants.GB;
+            default:
+                throw new IllegalArgumentException("Unknown payload size: " + p_Arg);
+        }
+    }
 
     public static void main(String args[]) {
+        if (args.length == 0) {
+            PAYLOAD_SIZE = Constants.SMB;
+        } else {
+            PAYLOAD_SIZE = sm_GetPayloadSize(args[0]);
+        }
+
         // String ipcPath = "ipc:///tmp/xslt-zmq.sock";
         String ipcPath = "tcp://localhost:5557";
 
@@ -134,7 +164,7 @@ public class Main {
             // // Block until a message is received
             // byte[] reply = socket.recv(0);
 
-            // if (reply.length != Constants.SMB) {
+            // if (reply.length != Main.PAYLOAD_SIZE) {
             // throw new RuntimeException("Unexpected size: " + reply.length);
             // }
 
@@ -163,7 +193,7 @@ public class Main {
             // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             // byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            // ByteBuffer response = ByteBuffer.allocate(Constants.SMB);
+            // ByteBuffer response = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
             // String result = Main.mf_GetXmlTransformed(xmlBytes, xsltData);
 
             // response.putInt(result.length());

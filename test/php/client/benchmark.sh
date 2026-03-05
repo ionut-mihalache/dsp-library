@@ -10,6 +10,7 @@ runClients() {
     writeToFile=$1
     clientPath=$2
     clientsNr=$3
+    qType=$4
     echo "Running $clientsNr clients with client path: $clientPath"
 
     running=0
@@ -21,11 +22,11 @@ runClients() {
             echo "Starting batch" ${currentBatchNr}
             ((currentBatchNr++))
         fi
-        php $clientPath/main.php ${writeToFile} ${clientsNr} > /dev/null &
+        php $clientPath/main.php ${writeToFile} ${clientsNr} ${qType} > /dev/null &
         ((running++))
 
         if (( running >= maxRunning )); then
-            sleep 1
+            sleep 0.5
             running=0
         fi
     done
@@ -199,6 +200,8 @@ runBenchmark() {
     # exit 1
     writeToFile=$1
     shift
+    qType=$1
+    shift
     flamegraphPath=$1
     shift
     profilerPath=$1
@@ -237,7 +240,7 @@ runBenchmark() {
             fi
         fi
 
-        runClients $writeToFile $clientAbsolutePath $clientsNr
+        runClients $writeToFile $clientAbsolutePath $clientsNr $qType
 
         wait
 

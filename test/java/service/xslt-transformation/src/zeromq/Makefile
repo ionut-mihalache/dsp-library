@@ -6,7 +6,7 @@ build:
 	javac -cp $(CLASSPATH) -d . Main.java
 
 run:
-	exec java -cp ".:$(CLASSPATH)" zeromq.Main
+	exec java -cp ".:$(CLASSPATH)" zeromq.Main $(PAYLOAD_TYPE)
 
 clean:
 	rm zeromq/*.class

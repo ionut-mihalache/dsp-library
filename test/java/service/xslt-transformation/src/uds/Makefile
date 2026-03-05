@@ -6,7 +6,7 @@ build:
 	javac -cp $(CLASSPATH) -d . Main.java
 
 run:
-	exec java -cp ".:$(CLASSPATH)" uds.Main
+	exec java -cp ".:$(CLASSPATH)" uds.Main $(PAYLOAD_TYPE)
 
 clean:
 	rm uds/*.class

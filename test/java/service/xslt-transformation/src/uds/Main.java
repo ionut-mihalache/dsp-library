@@ -59,7 +59,7 @@ class ProcessCallThread implements Runnable {
             Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            ByteBuffer response = ByteBuffer.allocate(Constants.SMB);
+            ByteBuffer response = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
             String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
             response.putInt(result.length());
@@ -115,7 +115,7 @@ class ProcessCallThread1 implements Runnable {
 
     public void run() {
         try {
-            ByteBuffer buf = ByteBuffer.allocate(Constants.SMB);
+            ByteBuffer buf = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
 
             while (buf.hasRemaining()) {
                 m_Client.read(buf);
@@ -133,7 +133,7 @@ class ProcessCallThread1 implements Runnable {
             Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
             byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            ByteBuffer response = ByteBuffer.allocate(Constants.SMB);
+            ByteBuffer response = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
             String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
             response.putInt(result.length());
@@ -182,8 +182,38 @@ class ProcessCallThread1 implements Runnable {
 
 public class Main {
     private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+    public static int PAYLOAD_SIZE;
+
+    private static int sm_GetPayloadSize(String p_Arg) {
+        switch (p_Arg.toUpperCase()) {
+            case "SMB":
+                return Constants.SMB;
+            case "EMB":
+                return Constants.EMB;
+            case "QMB":
+                return Constants.QMB;
+            case "HMB":
+                return Constants.HMB;
+            case "MB":
+                return Constants.MB;
+            case "DMB":
+                return Constants.DMB;
+            case "HGB":
+                return Constants.HGB;
+            case "GB":
+                return Constants.GB;
+            default:
+                throw new IllegalArgumentException("Unknown payload size: " + p_Arg);
+        }
+    }
 
     public static void main(String args[]) {
+        if (args.length == 0) {
+            PAYLOAD_SIZE = Constants.SMB;
+        } else {
+            PAYLOAD_SIZE = sm_GetPayloadSize(args[0]);
+        }
+
         ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
         Path socketPath = Path.of("/tmp/xslt-uds.sock");
 
@@ -203,7 +233,7 @@ public class Main {
             while (!Thread.currentThread().isInterrupted()) {
                 SocketChannel client = server.accept();
 
-                ByteBuffer buf = ByteBuffer.allocate(Constants.SMB);
+                ByteBuffer buf = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
 
                 while (buf.hasRemaining()) {
                     client.read(buf);

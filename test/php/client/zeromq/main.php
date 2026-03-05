@@ -1,5 +1,19 @@
 <?php
 
+$arg = $argv[3] ?? "SMB";
+
+$payloadSize = match (strtoupper($arg)) {
+    "SMB" => Constants::SMB,
+    "EMB" => Constants::EMB,
+    "QMB" => Constants::QMB,
+    "HMB" => Constants::HMB,
+    "MB"  => Constants::MB,
+    "DMB" => Constants::DMB,
+    "HGB" => Constants::HGB,
+    "GB"  => Constants::GB,
+    default => throw new InvalidArgumentException("Unknown payload type: $arg"),
+};
+
 class Constants {
     public const int SMB = 1 << 16;
     public const int EMB = 1 << 17;
@@ -56,7 +70,7 @@ $lenBytes = pack('N', $len);
 
 $payload = $lenBytes . $iiaData;
 
-$payload = str_pad($payload, Constants::SMB, "\0");
+$payload = str_pad($payload, $payloadSize, "\0");
 
 // echo "Sending message: $requestMessage\n";
 $benchmark["call"] = measureFnExec(fn() => $socket->send($payload));

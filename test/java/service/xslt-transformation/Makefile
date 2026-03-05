@@ -18,7 +18,7 @@ build:
 
 run:
 	cd $(OBJECTS_DIR)
-	java -cp $(CLASSPATH) $(OPTIONS) $(MAIN_PACKAGE)/Main
+	java -cp $(CLASSPATH) $(OPTIONS) $(MAIN_PACKAGE)/Main $(PAYLOAD_TYPE)
 
 clean:
 	rm -rf $(OBJECTS_DIR)

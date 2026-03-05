@@ -24,7 +24,10 @@ import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
+import calling.call_package.DMBCall;
 import calling.call_package.EMBCall;
+import calling.call_package.GBCall;
+import calling.call_package.HGBCall;
 import calling.call_package.SMBCall;
 import calling.call_package.QMBCall;
 import calling.call_package.HMBCall;
@@ -96,21 +99,20 @@ class DisconnectThread extends Thread {
 
     public void run() {
         while (!Thread.currentThread().isInterrupted()) {
+            // synchronized (Main.CONNECT_LOCK) {
             m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
+            // }
         }
     }
 }
 
-class ProcessCallThread extends Thread {
+class ProcessCallThread implements Runnable {
     private final Call m_CallData;
     private final ConcurrentHashMap<Integer, ServiceReturnInfo> m_Connections;
-    private final ServiceConnectInfo m_ConnectInfo;
 
-    ProcessCallThread(Call p_CallData, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections,
-            ServiceConnectInfo p_ConnectInfo) {
+    ProcessCallThread(Call p_CallData, ConcurrentHashMap<Integer, ServiceReturnInfo> p_Connections) {
         m_CallData = p_CallData;
         m_Connections = p_Connections;
-        m_ConnectInfo = p_ConnectInfo;
     }
 
     public void run() {
@@ -124,7 +126,19 @@ class ProcessCallThread extends Thread {
 
             byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
 
+            // System.out.println(m_Connections.keySet());
+
+            // ServiceReturnInfo serviceReturnInfo =
+            // m_Connections.get(m_CallData.getMetadata().m_ConnId);
+
             ServiceReturnInfo serviceReturnInfo = m_Connections.get(m_CallData.getMetadata().m_ConnId);
+            while (serviceReturnInfo == null) {
+                serviceReturnInfo = m_Connections.get(m_CallData.getMetadata().m_ConnId);
+
+                if (serviceReturnInfo == null) {
+                    Thread.onSpinWait(); // foarte ieftin
+                }
+            }
 
             // long returnDataSegmentSize = (new SMBReturn()).size();
             // Memory nativeMem = new Memory(returnDataSegmentSize);
@@ -159,9 +173,10 @@ class ProcessCallThread extends Thread {
             // nativeMem.write(0, returnData.getPointer().getByteArray(0, (int)
             // returnDataSegmentSize), 0,
             // (int) returnDataSegmentSize);
+
             LibDSP.INSTANCE.sendReturn(serviceReturnInfo, returnData.getPointer());
 
-            m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
+            // m_Connections.remove(m_CallData.getMetadata().m_ConnId);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -294,11 +309,20 @@ class ProcessCallThread2 implements Runnable {
 
     public void run() {
         try {
-            SMBCall callData = new SMBCall();
-            // EMBCall callData = new EMBCall();
-            // QMBCall callData = new QMBCall();
-            // HMBCall callData = new HMBCall();
-            // MBCall callData = new MBCall();
+            Call callData = switch (Main.QTYPE) {
+                case Constants.SMBQ -> new SMBCall();
+                case Constants.EMBQ -> new EMBCall();
+                case Constants.QMBQ -> new QMBCall();
+                case Constants.HMBQ -> new HMBCall();
+                case Constants.MBQ -> new MBCall();
+                case Constants.DMBQ -> new DMBCall();
+                case Constants.HGBQ -> new HGBCall();
+                case Constants.GBQ -> new GBCall();
+                default -> {
+                    System.err.println("Return queue type not recognized!");
+                    yield null;
+                }
+            };
 
             LibDSP.INSTANCE.receiveCall(callData.getPointer(), m_CallInfo);
 
@@ -349,7 +373,9 @@ class ProcessCallThread2 implements Runnable {
             // nativeMem.write(0, returnData.getPointer().getByteArray(0, (int)
             // returnDataSegmentSize), 0,
             // (int) returnDataSegmentSize);
+            // synchronized (Main.RETURN_LOCK) {
             LibDSP.INSTANCE.sendReturn(m_ServiceReturnInfo, returnData.getPointer());
+            // }
 
             // m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
         } catch (Exception e) {
@@ -385,8 +411,64 @@ class ProcessCallThread2 implements Runnable {
 
 public class Main {
     private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
+    public static int PAYLOAD_SIZE;
+    public static int QTYPE;
+
+    private static int sm_GetQType(String p_Arg) {
+        switch (p_Arg.toUpperCase()) {
+            case "SMB":
+                return Constants.SMBQ;
+            case "EMB":
+                return Constants.EMBQ;
+            case "QMB":
+                return Constants.QMBQ;
+            case "HMB":
+                return Constants.HMBQ;
+            case "MB":
+                return Constants.MBQ;
+            case "DMB":
+                return Constants.DMBQ;
+            case "HGB":
+                return Constants.HGBQ;
+            case "GB":
+                return Constants.GBQ;
+            default:
+                throw new IllegalArgumentException("Unknown queue type: " + p_Arg);
+        }
+    }
+
+    private static int sm_GetPayloadSize(String p_Arg) {
+        switch (p_Arg.toUpperCase()) {
+            case "SMB":
+                return Constants.SMB;
+            case "EMB":
+                return Constants.EMB;
+            case "QMB":
+                return Constants.QMB;
+            case "HMB":
+                return Constants.HMB;
+            case "MB":
+                return Constants.MB;
+            case "DMB":
+                return Constants.DMB;
+            case "HGB":
+                return Constants.HGB;
+            case "GB":
+                return Constants.GB;
+            default:
+                throw new IllegalArgumentException("Unknown payload type: " + p_Arg);
+        }
+    }
 
     public static void main(String[] args) {
+        if (args.length == 0) {
+            PAYLOAD_SIZE = Constants.SMB;
+            QTYPE = Constants.SMBQ;
+        } else {
+            PAYLOAD_SIZE = sm_GetPayloadSize(args[0]);
+            QTYPE = sm_GetQType(args[0]);
+        }
+
         ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
@@ -394,7 +476,7 @@ public class Main {
         // ConcurrentHashMap<Integer, ServiceReturnInfo> connections = new
         // ConcurrentHashMap<Integer, ServiceReturnInfo>();
 
-        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", Constants.SMBQ);
+        LibDSP.INSTANCE.dspInstall(connectInfo, callInfo, "xslt-transformation", "v0.0.2", QTYPE);
 
         connectInfo.read();
         callInfo.read();
@@ -416,35 +498,56 @@ public class Main {
 
                 returnInfo.read();
 
-                Pointer nativePtr = returnInfo.m_ResponseQueue.m_Data;
-                if (nativePtr == null) {
-                    System.err.println("ConnectThread: m_Data pointer is NULL");
-                    continue;
-                }
+                // Pointer nativePtr = returnInfo.m_ResponseQueue.m_Data;
+                // if (nativePtr == null) {
+                // System.err.println("ConnectThread: m_Data pointer is NULL");
+                // continue;
+                // }
 
-                int size = new ConnectResponseInformation().size();
+                // int size = new ConnectResponseInformation().size();
 
-                byte[] buf = nativePtr.getByteArray(0, size);
+                // byte[] buf = nativePtr.getByteArray(0, size);
 
-                ConnectResponseInformation responseInfo = new ConnectResponseInformation();
-                responseInfo.getPointer().write(0, buf, 0, size);
-                responseInfo.read();
+                // ConnectResponseInformation responseInfo = new ConnectResponseInformation();
+                // responseInfo.getPointer().write(0, buf, 0, size);
+                // responseInfo.read();
                 // ConnectResponseInformation responseInfo = new ConnectResponseInformation(
                 // returnInfo.m_ResponseQueue.m_Data.share(0));
 
                 // int connId = responseInfo.m_Id;
                 // connections.put(connId, returnInfo);
+                // if (oldReturnInfo != null) {
+                // System.err.println("Why is this the case?!");
+                // }
 
-                SMBCall callData = new SMBCall();
+                // SMBCall callData = new SMBCall();
                 // EMBCall callData = new EMBCall();
                 // QMBCall callData = new QMBCall();
                 // HMBCall callData = new HMBCall();
                 // MBCall callData = new MBCall();
 
+                Call callData = switch (QTYPE) {
+                    case Constants.SMBQ -> new SMBCall();
+                    case Constants.EMBQ -> new EMBCall();
+                    case Constants.QMBQ -> new QMBCall();
+                    case Constants.HMBQ -> new HMBCall();
+                    case Constants.MBQ -> new MBCall();
+                    case Constants.DMBQ -> new DMBCall();
+                    case Constants.HGBQ -> new HGBCall();
+                    case Constants.GBQ -> new GBCall();
+                    default -> {
+                        System.err.println("Return queue type not recognized!");
+                        yield null;
+                    }
+                };
+
+                // synchronized (Main.DSP_LOCK) {
                 LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
+                // }
 
                 callData.read();
 
+                // executor.submit(new ProcessCallThread(callData, connections));
                 executor.submit(new ProcessCallThread1(callData, returnInfo));
                 // executor.submit(new ProcessCallThread2(callInfo, returnInfo));
                 // ProcessCallThread processCallThread = new ProcessCallThread(callData,

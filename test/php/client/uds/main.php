@@ -1,6 +1,7 @@
 <?php
 
-class Constants {
+class Constants
+{
     public const int SMB = 1 << 16;
     public const int EMB = 1 << 17;
     public const int QMB = 1 << 18;
@@ -9,6 +10,20 @@ class Constants {
     public const int DMB = 1 << 21;
     public const int HGB = 1 << 29;
     public const int GB = 1 << 30;
+};
+
+$arg = $argv[3] ?? "SMB";
+
+$payloadSize = match (strtoupper($arg)) {
+    "SMB" => Constants::SMB,
+    "EMB" => Constants::EMB,
+    "QMB" => Constants::QMB,
+    "HMB" => Constants::HMB,
+    "MB"  => Constants::MB,
+    "DMB" => Constants::DMB,
+    "HGB" => Constants::HGB,
+    "GB"  => Constants::GB,
+    default => throw new InvalidArgumentException("Unknown payload type: $arg"),
 };
 
 function measureFnExec(callable $p_Fn): float
@@ -61,23 +76,23 @@ $lenBytes = pack('N', $len);
 
 $payload = $lenBytes . $iiaData;
 
-$payload = str_pad($payload, Constants::SMB, "\0");
+$payload = str_pad($payload, $payloadSize, "\0");
 
-$benchmark["call"] = measureFnExec(function () use ($fp, $payload) {
+$benchmark["call"] = measureFnExec(function () use ($fp, $payload, $payloadSize) {
     $written = 0;
 
-    while ($written < Constants::SMB) {
+    while ($written < $payloadSize) {
         $partialWritten = fwrite($fp, substr($payload, $written));
         $written += $partialWritten;
     }
 });
 
-$benchmark["return"] = measureFnExec(function () use ($fp) {
+$benchmark["return"] = measureFnExec(function () use ($fp, $payloadSize) {
     $read = 0;
     $response = '';
 
-    while ($read < Constants::SMB) {
-        $partialResponse = fread($fp, Constants::SMB - $read);
+    while ($read < $payloadSize) {
+        $partialResponse = fread($fp, $payloadSize - $read);
         $response .= $partialResponse;
 
         $read += strlen($partialResponse);
@@ -88,7 +103,7 @@ $benchmark["return"] = measureFnExec(function () use ($fp) {
     // echo "Received reply: $response\n";
 });
 
-$benchmark["disconnect"] = measureFnExec(function () use ($fp) {
+$benchmark["disconnect"] = measureFnExec(function () use ($fp, $payloadSize) {
     fclose($fp);
 });
 
