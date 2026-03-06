@@ -219,12 +219,12 @@ class ProcessCallThread1 implements Runnable {
         try {
             byte[] iiaData = Arrays.copyOfRange(m_CallData.getCallInfo(), 0, m_CallData.getMetadata().m_Size);
 
-            Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
-            byte[] xsltData = Files.readAllBytes(xsltPath);
+            // Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
+            // byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            String result = mf_GetXmlTransformed(iiaData, xsltData);
+            // String result = mf_GetXmlTransformed(iiaData, xsltData);
 
-            byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
+            // byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
 
             // ServiceReturnInfo serviceReturnInfo =
             // m_Connections.get(m_CallData.getMetadata().m_ConnId);
@@ -254,8 +254,9 @@ class ProcessCallThread1 implements Runnable {
                 return;
             }
 
-            System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0, resByteArr.length);
-            returnData.getMetadata().m_Size = resByteArr.length;
+            // System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0, resByteArr.length);
+            // returnData.getMetadata().m_Size = resByteArr.length;
+            System.arraycopy(iiaData, 0, returnData.getCallInfo(), 0, m_CallData.getMetadata().m_Size);
             returnData.getMetadata().m_ConnId = m_CallData.getMetadata().m_ConnId;
 
             returnData.write();
@@ -402,124 +403,10 @@ class ProcessCallThread2 implements Runnable {
     }
 }
 
-class ProcessCallThread3 implements Runnable {
-    private final ServiceConnectInfo m_ConnectInfo;
-    private final ServiceCallInfo m_CallInfo;
-    private final ServiceReturnInfo m_ServiceReturnInfo;
-
-    ProcessCallThread3(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo,
-            ServiceReturnInfo p_ServiceReturnInfo) {
-        m_ConnectInfo = p_ConnectInfo;
-        m_CallInfo = p_CallInfo;
-        m_ServiceReturnInfo = p_ServiceReturnInfo;
-    }
-
-    public void run() {
-        int cnt = 0;
-        while (!Thread.currentThread().isInterrupted()) {
-            if (cnt == Main.MSG_NUMBER) {
-                break;
-            }
-            try {
-                Call callData = switch (Main.QTYPE) {
-                    case Constants.SMBQ -> new SMBCall();
-                    case Constants.EMBQ -> new EMBCall();
-                    case Constants.QMBQ -> new QMBCall();
-                    case Constants.HMBQ -> new HMBCall();
-                    case Constants.MBQ -> new MBCall();
-                    case Constants.DMBQ -> new DMBCall();
-                    case Constants.HGBQ -> new HGBCall();
-                    case Constants.GBQ -> new GBCall();
-                    default -> {
-                        System.err.println("Return queue type not recognized!");
-                        yield null;
-                    }
-                };
-
-                LibDSP.INSTANCE.receiveCall(callData.getPointer(), m_CallInfo);
-
-                callData.read();
-
-                byte[] iiaData = Arrays.copyOfRange(callData.getCallInfo(), 0, callData.getMetadata().m_Size);
-
-                // Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
-                // byte[] xsltData = Files.readAllBytes(xsltPath);
-
-                // String result = mf_GetXmlTransformed(iiaData, xsltData);
-
-                // byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
-
-                Call returnData = switch (m_ServiceReturnInfo.m_Q.m_Type) {
-                    case Constants.SMBQ -> new SMBReturn();
-                    case Constants.EMBQ -> new EMBReturn();
-                    case Constants.QMBQ -> new QMBReturn();
-                    case Constants.HMBQ -> new HMBReturn();
-                    case Constants.MBQ -> new MBReturn();
-                    case Constants.DMBQ -> new DMBReturn();
-                    case Constants.HGBQ -> new HGBReturn();
-                    case Constants.GBQ -> new GBReturn();
-                    default -> {
-                        System.err.println("Return queue type not recognized!");
-                        yield null;
-                    }
-                };
-
-                if (returnData == null) {
-                    System.err.println("Return data type not recognized!");
-                    return;
-                }
-
-                // System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0,
-                // resByteArr.length);
-                // returnData.getMetadata().m_Size = resByteArr.length;
-                System.arraycopy(iiaData, 0, returnData.getCallInfo(), 0, callData.getMetadata().m_Size);
-                returnData.getMetadata().m_Size = callData.getMetadata().m_Size;
-                returnData.getMetadata().m_ConnId = callData.getMetadata().m_ConnId;
-
-                returnData.write();
-
-                LibDSP.INSTANCE.sendReturn(m_ServiceReturnInfo, returnData.getPointer());
-
-                cnt++;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
-    }
-
-    /**
-     * Transform a xml file by means of a xslt file
-     *
-     * @param xmlBytes  The content of the xml file
-     * @param xsltBytes The content of the xslt file
-     * @return A xml useful to compute the hash code
-     */
-    private String mf_GetXmlTransformed(byte[] xmlBytes, byte[] xsltBytes) throws Exception {
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        dbf.setNamespaceAware(true);
-
-        DocumentBuilder db = dbf.newDocumentBuilder();
-        Document document = db.parse(new ByteArrayInputStream(xmlBytes));
-
-        System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl");
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        Transformer transformer = transformerFactory
-                .newTransformer(new StreamSource(new ByteArrayInputStream(xsltBytes)));
-        ByteArrayOutputStream output = new ByteArrayOutputStream();
-
-        transformer.transform(new DOMSource(document), new StreamResult(output));
-
-        return output.toString();
-    }
-}
-
 public class Main {
     private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
     public static int PAYLOAD_SIZE;
     public static int QTYPE;
-    public static int MSG_NUMBER;
 
     private static int sm_GetQType(String p_Arg) {
         switch (p_Arg.toUpperCase()) {
@@ -571,11 +458,9 @@ public class Main {
         if (args.length == 0) {
             PAYLOAD_SIZE = Constants.SMB;
             QTYPE = Constants.SMBQ;
-            MSG_NUMBER = 1000;
         } else {
             PAYLOAD_SIZE = sm_GetPayloadSize(args[0]);
             QTYPE = sm_GetQType(args[0]);
-            MSG_NUMBER = Integer.parseInt(args[1]);
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(2 * THREAD_POOL_SIZE);
@@ -591,13 +476,13 @@ public class Main {
         callInfo.read();
 
         // ConnectThread connectThread = new ConnectThread(connectInfo, connections);
-        // DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
+        DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
         // connectThread.setName("ConnectThread");
-        // disconnectThread.setName("DisconnectThread");
+        disconnectThread.setName("DisconnectThread");
 
         // connectThread.start();
-        // disconnectThread.start();
+        disconnectThread.start();
 
         while (!Thread.currentThread().isInterrupted()) {
             try {
@@ -629,29 +514,29 @@ public class Main {
                 // System.err.println("Why is this the case?!");
                 // }
 
-                // Call callData = switch (QTYPE) {
-                // case Constants.SMBQ -> new SMBCall();
-                // case Constants.EMBQ -> new EMBCall();
-                // case Constants.QMBQ -> new QMBCall();
-                // case Constants.HMBQ -> new HMBCall();
-                // case Constants.MBQ -> new MBCall();
-                // case Constants.DMBQ -> new DMBCall();
-                // case Constants.HGBQ -> new HGBCall();
-                // case Constants.GBQ -> new GBCall();
-                // default -> {
-                // System.err.println("Return queue type not recognized!");
-                // yield null;
-                // }
-                // };
+                Call callData = switch (QTYPE) {
+                    case Constants.SMBQ -> new SMBCall();
+                    case Constants.EMBQ -> new EMBCall();
+                    case Constants.QMBQ -> new QMBCall();
+                    case Constants.HMBQ -> new HMBCall();
+                    case Constants.MBQ -> new MBCall();
+                    case Constants.DMBQ -> new DMBCall();
+                    case Constants.HGBQ -> new HGBCall();
+                    case Constants.GBQ -> new GBCall();
+                    default -> {
+                        System.err.println("Return queue type not recognized!");
+                        yield null;
+                    }
+                };
 
-                // LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
+                LibDSP.INSTANCE.receiveCall(callData.getPointer(), callInfo);
 
-                // callData.read();
+                callData.read();
 
                 // executor.submit(new ProcessCallThread(callData, connections));
-                // executor.submit(new ProcessCallThread1(callData, returnInfo));
+                executor.submit(new ProcessCallThread1(callData, returnInfo));
                 // executor.submit(new ProcessCallThread2(callInfo, returnInfo));
-                executor.submit(new ProcessCallThread3(connectInfo, callInfo, returnInfo));
+                // executor.submit(new ProcessCallThread3(connectInfo, callInfo, returnInfo));
                 // ProcessCallThread processCallThread = new ProcessCallThread(callData,
                 // connections, connectInfo);
                 // ProcessCallThread1 processCallThread = new ProcessCallThread1(callData,

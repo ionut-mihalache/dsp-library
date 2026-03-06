@@ -56,14 +56,16 @@ class ProcessCallThread implements Runnable {
             // System.out.println("Received: " + new String(m_Buf.array(), 0,
             // m_Buf.limit()));
 
-            Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
-            byte[] xsltData = Files.readAllBytes(xsltPath);
+            // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
+            // byte[] xsltData = Files.readAllBytes(xsltPath);
 
             ByteBuffer response = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
-            String result = mf_GetXmlTransformed(xmlBytes, xsltData);
+            // String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
-            response.putInt(result.length());
-            response.put(result.getBytes(StandardCharsets.UTF_8));
+            // response.putInt(result.length());
+            response.putInt(xmlLength);
+            // response.put(result.getBytes(StandardCharsets.UTF_8));
+            response.put(xmlBytes);
 
             while (response.hasRemaining()) {
                 response.put((byte) 0);

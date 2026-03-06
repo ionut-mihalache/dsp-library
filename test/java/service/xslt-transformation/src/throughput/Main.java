@@ -571,11 +571,11 @@ public class Main {
         if (args.length == 0) {
             PAYLOAD_SIZE = Constants.SMB;
             QTYPE = Constants.SMBQ;
-            MSG_NUMBER = 1000;
+            // MSG_NUMBER = 1000;
         } else {
             PAYLOAD_SIZE = sm_GetPayloadSize(args[0]);
             QTYPE = sm_GetQType(args[0]);
-            MSG_NUMBER = Integer.parseInt(args[1]);
+            // MSG_NUMBER = Integer.parseInt(args[1]);
         }
 
         ExecutorService executor = Executors.newFixedThreadPool(2 * THREAD_POOL_SIZE);

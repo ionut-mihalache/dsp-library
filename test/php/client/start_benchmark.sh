@@ -1,4 +1,6 @@
 runAQUAClientBenchmark() {
+    qType=$1
+
     rm /dev/shm/*
 
     export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/dsp-library
@@ -60,6 +62,8 @@ runAQUAThroughputBenchmark() {
 }
 
 runUDSClientBenchmark() {
+    qType=$1
+
     cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/uds
     make clean
     make
@@ -83,6 +87,8 @@ runUDSClientBenchmark() {
 }
 
 runZeroMQClientBenchmark() {
+    qType=$1
+
     cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/zeromq
     make clean
     make
@@ -106,16 +112,16 @@ runZeroMQClientBenchmark() {
 }
 
 runClientBenchmark() {
-    runAQUAClientBenchmark
-    runUDSClientBenchmark
-    runZeroMQClientBenchmark
+    runAQUAClientBenchmark HMB
+    runUDSClientBenchmark HMB
+    runZeroMQClientBenchmark HMB
 
     lastAQUAbenchmark=$(ls benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
     lastUDSbenchmark=$(ls uds/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
     lastZMQbenchmark=$(ls zeromq/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
 
-    metrics2Path=$2
-    metrics3Path=$3
+    metrics2Path="metrics2_hmb"
+    metrics3Path="metrics3_hmb"
 
     if [ ! -d ${metrics2Path} ]; then
         mkdir -p ${metrics2Path}
@@ -144,6 +150,9 @@ runClientBenchmark() {
 #     runAQUAThroughputBenchmark $qType
 # done
 
-runAQUAClientBenchmark SMB
+# runAQUAClientBenchmark SMB
+# runAQUAThroughputBenchmark SMB
+
+runClientBenchmark
 
 # ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) $(date +%s) 128 256 384 512 640 758 886 1024
