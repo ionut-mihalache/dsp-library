@@ -1,4 +1,4 @@
-package main;
+package throughput;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -417,9 +417,9 @@ class ProcessCallThread3 implements Runnable {
     public void run() {
         int cnt = 0;
         while (!Thread.currentThread().isInterrupted()) {
-            if (cnt == Main.MSG_NUMBER) {
-                break;
-            }
+            // if (cnt == Main.MSG_NUMBER) {
+            //     break;
+            // }
             try {
                 Call callData = switch (Main.QTYPE) {
                     case Constants.SMBQ -> new SMBCall();
@@ -486,7 +486,7 @@ class ProcessCallThread3 implements Runnable {
             }
         }
 
-        m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
+        // m_ConnectInfo.m_ReceiveDisconnectRequest.receiveDisconnectRequest(m_ConnectInfo);
     }
 
     /**
@@ -591,13 +591,13 @@ public class Main {
         callInfo.read();
 
         // ConnectThread connectThread = new ConnectThread(connectInfo, connections);
-        // DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
+        DisconnectThread disconnectThread = new DisconnectThread(connectInfo);
 
         // connectThread.setName("ConnectThread");
-        // disconnectThread.setName("DisconnectThread");
+        disconnectThread.setName("DisconnectThread");
 
         // connectThread.start();
-        // disconnectThread.start();
+        disconnectThread.start();
 
         while (!Thread.currentThread().isInterrupted()) {
             try {

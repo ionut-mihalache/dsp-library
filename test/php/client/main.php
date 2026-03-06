@@ -13,6 +13,7 @@ enum QType: int
 };
 
 $arg = $argv[3] ?? "SMB";
+$msgNr = $argv[4] ?? 1000;
 
 $qType = match (strtoupper($arg)) {
     "SMB" => QType::SMBQ->value,
@@ -327,7 +328,6 @@ for ($i = 0; $i < strlen($iiaData); ++$i) {
 
 setCallData($ffi, $qType, $callDataPtr, $iiaDataBuffer, strlen($iiaData));
 
-// for ($j = 0; $j < 2; ++$j) {
 $benchmark["call"] = measureFnExec(function () use ($ffi, $callInfoPtr, $callDataPtr) {
     callFn($ffi, $callInfoPtr, $callDataPtr);
 });
@@ -338,13 +338,12 @@ $benchmark["return"] = measureFnExec(function () use ($ffi, $returnDataPtr, $ret
     returnFn($ffi, $returnDataPtr, $returnInfoPtr);
 });
 
-$result = "";
-for ($i = 0; $i < $returnData->m_Metadata->m_Size; ++$i) {
-    $result = $result . chr($returnData->m_CallInfo[$i]);
-}
+// $result = "";
+// for ($i = 0; $i < $returnData->m_Metadata->m_Size; ++$i) {
+//     $result = $result . chr($returnData->m_CallInfo[$i]);
+// }
 
 // echo $result . "\n";
-// }
 
 $requestInfoPtr = FFI::addr($returnInfo->m_ConnectResponseInformation);
 

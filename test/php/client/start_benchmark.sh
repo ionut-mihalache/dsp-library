@@ -1,93 +1,149 @@
-rm /dev/shm/*
+runAQUAClientBenchmark() {
+    rm /dev/shm/*
 
-qType=$1
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/dsp-library
 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/dsp-library
+    cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation
+    make clean
+    make
+    make run PAYLOAD_TYPE=${qType} &
+    aquaPid=$!
+    sleep 2
+    cd -
 
-cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation
-make clean
-make
-make run PAYLOAD_TYPE=${qType} &
-aquaPid=$!
-sleep 2
-cd -
+    for i in $(seq 1 9);
+    do
+        ./benchmark.sh false $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+    done
 
-for i in $(seq 1 9);
-do
-    ./benchmark.sh false $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
-done
+    ./benchmark.sh true $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
 
-./benchmark.sh true $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+    kill $aquaPid
+}
 
-kill $aquaPid
+runAQUAThroughputBenchmark() {
+    qType=$1
+    export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/home/ubuntu/dsp-library
 
-cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/uds
-make clean
-make
-make run PAYLOAD_TYPE=${qType} &
-udsPid=$!
-sleep 2
-cd -
+    msgNumbers=(1000 4000 7000 10000 13000 16000 19000 22000)
 
-cd ./uds
+    for i in $(seq 1 9);
+    do
+        rm /dev/shm/*
 
-for i in $(seq 1 9);
-do
-    ./benchmark.sh false $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
-done
+        cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation
+        make clean
+        make
+        make throughput-run PAYLOAD_TYPE=${qType} &
+        aquaPid=$!
+        sleep 2
+        cd -
 
-./benchmark.sh true $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+        ./benchmark-throughput.sh false $qType $(pwd) 1000 4000 7000 10000 13000 16000 19000 22000
 
-cd -
+        kill $aquaPid
+    done
 
-kill $udsPid
+    rm /dev/shm/*
 
-cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/zeromq
-make clean
-make
-make run PAYLOAD_TYPE=${qType} &
-zeromqPid=$!
-sleep 2
-cd -
+    cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation
+    make clean
+    make
+    make throughput-run PAYLOAD_TYPE=${qType} &
+    aquaPid=$!
+    sleep 2
+    cd -
 
-cd ./zeromq
+    ./benchmark-throughput.sh true $qType $(pwd) 1000 4000 7000 10000 13000 16000 19000 22000
 
-for i in $(seq 1 9);
-do
-    ./benchmark.sh false $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
-done
+    kill $aquaPid
+}
 
-./benchmark.sh true $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+runUDSClientBenchmark() {
+    cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/uds
+    make clean
+    make
+    make run PAYLOAD_TYPE=${qType} &
+    udsPid=$!
+    sleep 2
+    cd -
 
-cd -
+    cd ./uds
 
-kill $zeromqPid
+    for i in $(seq 1 9);
+    do
+        ./benchmark.sh false $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+    done
 
+    ./benchmark.sh true $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
 
-lastAQUAbenchmark=$(ls benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
-lastUDSbenchmark=$(ls uds/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
-lastZMQbenchmark=$(ls zeromq/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
+    cd -
 
-metrics2Path=$2
-metrics3Path=$3
+    kill $udsPid
+}
 
-if [ ! -d ${metrics2Path} ]; then
-    mkdir -p ${metrics2Path}
-fi
-if [ ! -d ${metrics3Path} ]; then
-    mkdir -p ${metrics3Path}
-fi
+runZeroMQClientBenchmark() {
+    cd /home/ubuntu/dsp-library/test/java/service/xslt-transformation/src/zeromq
+    make clean
+    make
+    make run PAYLOAD_TYPE=${qType} &
+    zeromqPid=$!
+    sleep 2
+    cd -
 
-cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics2Path}/aqua_client_benchmark.csv
-cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics2Path}/uds_client_benchmark.csv
+    cd ./zeromq
 
-cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics3Path}/aqua_client_benchmark.csv
-cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics3Path}/uds_client_benchmark.csv
-cp zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv ${metrics3Path}/zeromq_client_benchmark.csv
+    for i in $(seq 1 9);
+    do
+        ./benchmark.sh false $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+    done
 
-source venv/bin/activate
-python3 create_combined_plots.py ${metrics2Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv
-python3 create_combined_plots.py ${metrics3Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv
-deactivate
+    ./benchmark.sh true $qType /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024
+
+    cd -
+
+    kill $zeromqPid
+}
+
+runClientBenchmark() {
+    runAQUAClientBenchmark
+    runUDSClientBenchmark
+    runZeroMQClientBenchmark
+
+    lastAQUAbenchmark=$(ls benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
+    lastUDSbenchmark=$(ls uds/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
+    lastZMQbenchmark=$(ls zeromq/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
+
+    metrics2Path=$2
+    metrics3Path=$3
+
+    if [ ! -d ${metrics2Path} ]; then
+        mkdir -p ${metrics2Path}
+    fi
+    if [ ! -d ${metrics3Path} ]; then
+        mkdir -p ${metrics3Path}
+    fi
+
+    cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics2Path}/aqua_client_benchmark.csv
+    cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics2Path}/uds_client_benchmark.csv
+
+    cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics3Path}/aqua_client_benchmark.csv
+    cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics3Path}/uds_client_benchmark.csv
+    cp zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv ${metrics3Path}/zeromq_client_benchmark.csv
+
+    source venv/bin/activate
+    python3 create_combined_plots.py ${metrics2Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv
+    python3 create_combined_plots.py ${metrics3Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv
+    deactivate
+}
+
+# qTypes=(SMB EMB QMB HMB MB DMB HGB GB)
+
+# for qType in "${qTypes[@]}";
+# do
+#     runAQUAThroughputBenchmark $qType
+# done
+
+runAQUAClientBenchmark SMB
 
 # ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) $(date +%s) 128 256 384 512 640 758 886 1024

@@ -1,5 +1,6 @@
 SOURCE_DIR=src
 MAIN_PACKAGE=main
+THROUGHPUT_PACKAGE=throughput
 OBJECTS_DIR=bin
 # OPTIONS=-XX:+PreserveFramePointer
 OPTIONS=
@@ -8,7 +9,7 @@ CLASSPATH=./$(SOURCE_DIR):./$(OBJECTS_DIR):lib/jna-5.15.0.jar:lib/saxon-he-12.5.
 
 .SUFFIXES: .java .class
 
-all: $(OBJECTS_DIR) build
+all: $(OBJECTS_DIR) build throughput-build
 
 $(OBJECTS_DIR):
 	mkdir $(OBJECTS_DIR)
@@ -16,9 +17,16 @@ $(OBJECTS_DIR):
 build:
 	javac -cp $(CLASSPATH) -d $(OBJECTS_DIR) $(SOURCE_DIR)/$(MAIN_PACKAGE)/Main.java
 
+throughput-build:
+	javac -cp $(CLASSPATH) -d $(OBJECTS_DIR) $(SOURCE_DIR)/$(THROUGHPUT_PACKAGE)/Main.java
+
 run:
 	cd $(OBJECTS_DIR)
-	java -cp $(CLASSPATH) $(OPTIONS) $(MAIN_PACKAGE)/Main $(PAYLOAD_TYPE)
+	java -cp $(CLASSPATH) $(OPTIONS) $(MAIN_PACKAGE)/Main $(PAYLOAD_TYPE) $(MSG_NUMBER)
+
+throughput-run:
+	cd $(OBJECTS_DIR)
+	java -cp $(CLASSPATH) $(OPTIONS) $(THROUGHPUT_PACKAGE)/Main $(PAYLOAD_TYPE) $(MSG_NUMBER)
 
 clean:
 	rm -rf $(OBJECTS_DIR)
