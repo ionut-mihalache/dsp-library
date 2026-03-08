@@ -463,7 +463,7 @@ public class Main {
             QTYPE = sm_GetQType(args[0]);
         }
 
-        ExecutorService executor = Executors.newFixedThreadPool(2 * THREAD_POOL_SIZE);
+        ExecutorService executor = Executors.newFixedThreadPool(THREAD_POOL_SIZE);
 
         ServiceConnectInfo connectInfo = new ServiceConnectInfo();
         ServiceCallInfo callInfo = new ServiceCallInfo();

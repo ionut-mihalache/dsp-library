@@ -83,6 +83,12 @@ $benchmark["call"] = measureFnExec(function () use ($fp, $payload, $payloadSize)
 
     while ($written < $payloadSize) {
         $partialWritten = fwrite($fp, substr($payload, $written));
+
+        if ($partialWritten === false || $partialWritten === 0) {
+            usleep(50);
+            continue;
+        }
+
         $written += $partialWritten;
     }
 });

@@ -112,35 +112,42 @@ runZeroMQClientBenchmark() {
 }
 
 runClientBenchmark() {
-    runAQUAClientBenchmark HMB
-    runUDSClientBenchmark HMB
-    runZeroMQClientBenchmark HMB
+    # qTypes=(SMB EMB QMB HMB MB DMB HGB GB)
+    qTypes=(SMB EMB QMB HMB MB)
 
-    lastAQUAbenchmark=$(ls benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
-    lastUDSbenchmark=$(ls uds/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
-    lastZMQbenchmark=$(ls zeromq/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
+    for qType in "${qTypes[@]}";
+    do
+        runAQUAClientBenchmark ${qType}
+        runUDSClientBenchmark ${qType}
+        runZeroMQClientBenchmark ${qType}
 
-    metrics2Path="metrics2_hmb"
-    metrics3Path="metrics3_hmb"
+        lastAQUAbenchmark=$(ls benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
+        lastUDSbenchmark=$(ls uds/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
+        lastZMQbenchmark=$(ls zeromq/benchmark_results/clients/ | grep -o "[0-9]\+" | sort -rn | head -n 1)
 
-    if [ ! -d ${metrics2Path} ]; then
-        mkdir -p ${metrics2Path}
-    fi
-    if [ ! -d ${metrics3Path} ]; then
-        mkdir -p ${metrics3Path}
-    fi
+        qTypeLower=${qType,,}
+        metrics2Path="metrics2_${qTypeLower}"
+        metrics3Path="metrics3_${qTypeLower}"
 
-    cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics2Path}/aqua_client_benchmark.csv
-    cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics2Path}/uds_client_benchmark.csv
+        if [ ! -d ${metrics2Path} ]; then
+            mkdir -p ${metrics2Path}
+        fi
+        if [ ! -d ${metrics3Path} ]; then
+            mkdir -p ${metrics3Path}
+        fi
 
-    cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics3Path}/aqua_client_benchmark.csv
-    cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics3Path}/uds_client_benchmark.csv
-    cp zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv ${metrics3Path}/zeromq_client_benchmark.csv
+        cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics2Path}/aqua_client_benchmark.csv
+        cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics2Path}/uds_client_benchmark.csv
 
-    source venv/bin/activate
-    python3 create_combined_plots.py ${metrics2Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv
-    python3 create_combined_plots.py ${metrics3Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv
-    deactivate
+        cp benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv ${metrics3Path}/aqua_client_benchmark.csv
+        cp uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv ${metrics3Path}/uds_client_benchmark.csv
+        cp zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv ${metrics3Path}/zeromq_client_benchmark.csv
+
+        source venv/bin/activate
+        python3 create_combined_plots.py ${metrics2Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv
+        python3 create_combined_plots.py ${metrics3Path} benchmark_results/clients/$lastAQUAbenchmark/client_benchmark.csv uds/benchmark_results/clients/$lastUDSbenchmark/client_benchmark.csv zeromq/benchmark_results/clients/$lastZMQbenchmark/client_benchmark.csv
+        deactivate
+    done
 }
 
 # qTypes=(SMB EMB QMB HMB MB DMB HGB GB)
