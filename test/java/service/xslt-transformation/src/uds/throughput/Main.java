@@ -1,4 +1,4 @@
-package uds;
+package uds.throughput;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -46,39 +46,39 @@ class ProcessCallThread implements Runnable {
     }
 
     public void run() {
-        try {
-            m_Buf.flip();
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                m_Buf.flip();
 
-            int xmlLength = m_Buf.getInt();
-            byte[] xmlBytes = new byte[xmlLength];
-            m_Buf.get(xmlBytes);
+                int xmlLength = m_Buf.getInt();
+                byte[] xmlBytes = new byte[xmlLength];
+                m_Buf.get(xmlBytes);
 
-            // System.out.println("Received: " + new String(m_Buf.array(), 0,
-            // m_Buf.limit()));
+                // System.out.println("Received: " + new String(m_Buf.array(), 0,
+                // m_Buf.limit()));
 
-            // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
-            // byte[] xsltData = Files.readAllBytes(xsltPath);
+                // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
+                // byte[] xsltData = Files.readAllBytes(xsltPath);
 
-            ByteBuffer response = ByteBuffer.allocateDirect(Main.PAYLOAD_SIZE);
-            // String result = mf_GetXmlTransformed(xmlBytes, xsltData);
+                ByteBuffer response = ByteBuffer.allocateDirect(Main.PAYLOAD_SIZE);
+                // String result = mf_GetXmlTransformed(xmlBytes, xsltData);
 
-            // response.putInt(result.length());
-            response.putInt(xmlLength);
-            // response.put(result.getBytes(StandardCharsets.UTF_8));
-            response.put(xmlBytes);
+                // response.putInt(result.length());
+                response.putInt(xmlLength);
+                // response.put(result.getBytes(StandardCharsets.UTF_8));
+                response.put(xmlBytes);
 
-            while (response.hasRemaining()) {
-                response.put((byte) 0);
+                while (response.hasRemaining()) {
+                    response.put((byte) 0);
+                }
+
+                response.flip();
+                while (response.hasRemaining()) {
+                    m_Client.write(response);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
-
-            response.flip();
-            while (response.hasRemaining()) {
-                m_Client.write(response);
-            }
-
-            m_Client.close();
-        } catch (Exception e) {
-            e.printStackTrace();
         }
     }
 
@@ -110,46 +110,69 @@ class ProcessCallThread implements Runnable {
 
 class ProcessCallThread1 implements Runnable {
     private SocketChannel m_Client;
+    private ByteBuffer buf = ByteBuffer.allocateDirect(Main.PAYLOAD_SIZE);
+    private ByteBuffer response = ByteBuffer.allocateDirect(Main.PAYLOAD_SIZE);
 
     ProcessCallThread1(SocketChannel p_Client) {
         m_Client = p_Client;
     }
 
     public void run() {
+        while (!Thread.currentThread().isInterrupted()) {
+            try {
+                // ByteBuffer buf = ByteBuffer.allocateDirect(Main.PAYLOAD_SIZE);
+
+                buf.clear();
+
+                while (buf.hasRemaining()) {
+                    int read = m_Client.read(buf);
+
+                    if (read == -1) {
+                        System.err.println("Connection lost!");
+                        return;
+                    }
+
+                    if (read == 0) {
+                        Thread.onSpinWait();
+                        continue;
+                    }
+                }
+
+                buf.flip();
+
+                int xmlLength = buf.getInt();
+                byte[] xmlBytes = new byte[xmlLength];
+                buf.get(xmlBytes);
+
+                // System.out.println("Received: " + new String(m_Buf.array(), 0,
+                // m_Buf.limit()));
+
+                // Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
+                // byte[] xsltData = Files.readAllBytes(xsltPath);
+
+                // ByteBuffer response = ByteBuffer.allocateDirect(Main.PAYLOAD_SIZE);
+                // String result = mf_GetXmlTransformed(xmlBytes, xsltData);
+
+                response.clear();
+                // response.putInt(result.length());
+                response.putInt(xmlLength);
+                // response.put(result.getBytes(StandardCharsets.UTF_8));
+                response.put(xmlBytes);
+
+                while (response.hasRemaining()) {
+                    response.put((byte) 0);
+                }
+
+                response.flip();
+                while (response.hasRemaining()) {
+                    m_Client.write(response);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
         try {
-            ByteBuffer buf = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
-
-            while (buf.hasRemaining()) {
-                m_Client.read(buf);
-            }
-
-            buf.flip();
-
-            int xmlLength = buf.getInt();
-            byte[] xmlBytes = new byte[xmlLength];
-            buf.get(xmlBytes);
-
-            // System.out.println("Received: " + new String(m_Buf.array(), 0,
-            // m_Buf.limit()));
-
-            Path xsltPath = Paths.get("../../transformations/transform_version_v7.xsl");
-            byte[] xsltData = Files.readAllBytes(xsltPath);
-
-            ByteBuffer response = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
-            String result = mf_GetXmlTransformed(xmlBytes, xsltData);
-
-            response.putInt(result.length());
-            response.put(result.getBytes(StandardCharsets.UTF_8));
-
-            while (response.hasRemaining()) {
-                response.put((byte) 0);
-            }
-
-            response.flip();
-            while (response.hasRemaining()) {
-                m_Client.write(response);
-            }
-
             m_Client.close();
         } catch (Exception e) {
             e.printStackTrace();
@@ -235,14 +258,8 @@ public class Main {
             while (!Thread.currentThread().isInterrupted()) {
                 SocketChannel client = server.accept();
 
-                ByteBuffer buf = ByteBuffer.allocate(Main.PAYLOAD_SIZE);
-
-                while (buf.hasRemaining()) {
-                    client.read(buf);
-                }
-
-                executor.submit(new ProcessCallThread(client, buf));
-                // executor.submit(new ProcessCallThread1(client));
+                // executor.submit(new ProcessCallThread(client, buf));
+                executor.submit(new ProcessCallThread1(client));
                 // ProcessCallThread processCallThread = new ProcessCallThread(client, buf);
                 // processCallThread.setName("CallThread-" + client.hashCode());
                 // processCallThread.start();

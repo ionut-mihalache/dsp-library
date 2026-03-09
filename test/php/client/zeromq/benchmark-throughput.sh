@@ -2,7 +2,7 @@
 # # Example: ./benchmark.sh /path/to/flamegraph /path/to/profiler /path/to/client 1 2 4 8 16 32 64 128 256 512 1024
 # It is expected that the flamegraph used is https://github.com/brendangregg/Flamegraph
 if [ "$#" -lt 4 ]; then
-    echo "Usage: $0 flamegraph_absolute_path profiler_absolute_path client_absolute_path msgNumber1 msgNumber2 ..."
+    echo "Usage: $0 flamegraph_absolute_path profiler_absolute_path client_absolute_path clientsNr1 clientsNr2 ..."
     exit 1
 fi
 
@@ -10,17 +10,17 @@ runThroughput() {
     writeToFile=$1
     clientPath=$2
     msgNumber=$3
-    qType=$4
+    payloadType=$4
 
     echo "Running $msgNumber messages with client path: $clientPath"
 
-    php $clientPath/throughput.php ${writeToFile} ${msgNumber} ${qType} > /dev/null
+    php $clientPath/throughput.php $writeToFile ${msgNumber} ${payloadType} > /dev/null
 }
 
 runBenchmark() {
     writeToFile=$1
     shift
-    qType=$1
+    payloadType=$1
     shift
     clientAbsolutePath=$1
     shift
@@ -42,22 +42,21 @@ runBenchmark() {
             fi
         fi
 
-        runThroughput $writeToFile $clientAbsolutePath $msgNumber $qType
+        runThroughput $writeToFile $clientAbsolutePath $msgNumber $payloadType
 
         wait
 
-        # cat benchmark_results/throughput/${msgNumber}/* | wc -l
         if [ $writeToFile == "true" ]; then
             cat benchmark_results/throughput/${msgNumber}/* >> ./benchmark_results/throughput/${timestamp}/throughput_benchmark.csv
             rm -rf benchmark_results/throughput/${msgNumber}
         fi
 
-        echo "All $msgNumber messages sent."
+        echo "All $msgNumber throughput have finished."
     done
 
     if [ $writeToFile == "true" ]; then
-        source venv/bin/activate
-        # python3 create_plots.py ./benchmark_results/throughput/${timestamp} benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}_alloc_sampling_table ./benchmark_results/throughput/${timestamp}/throughput_benchmark.csv
+        source ../venv/bin/activate
+        # python3 create_plots.py ./benchmark_results/throughput/${timestamp} benchmark_results/${timestamp}_cpu_sampling_table benchmark_results/${timestamp}_alloc_sampling_table ./benchmark_results/throughput/${timestamp}/client_benchmark.csv
         deactivate
     fi
 
@@ -71,5 +70,3 @@ runBenchmark $@
 # git clone https://github.com/brendangregg/FlameGraph.git
 # git clone https://github.com/async-profiler/async-profiler.git
 # ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 500 750 1000 1500 2000 2500 3250 4000 5000 6000
-# ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 2 4 6 8 10 12 14 16 18 20 22 24 26 28 30 32
-# ./benchmark.sh /home/$(whoami)/FlameGraph /home/$(whoami)/async-profiler $(pwd) 128 256 384 512 640 758 886 1024

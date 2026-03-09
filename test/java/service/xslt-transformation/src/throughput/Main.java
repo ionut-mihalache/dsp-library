@@ -406,41 +406,42 @@ class ProcessCallThread3 implements Runnable {
     private final ServiceConnectInfo m_ConnectInfo;
     private final ServiceCallInfo m_CallInfo;
     private final ServiceReturnInfo m_ServiceReturnInfo;
+    private final Call m_CallData;
 
     ProcessCallThread3(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo,
             ServiceReturnInfo p_ServiceReturnInfo) {
         m_ConnectInfo = p_ConnectInfo;
         m_CallInfo = p_CallInfo;
         m_ServiceReturnInfo = p_ServiceReturnInfo;
+
+        m_CallData = switch (Main.QTYPE) {
+            case Constants.SMBQ -> new SMBCall();
+            case Constants.EMBQ -> new EMBCall();
+            case Constants.QMBQ -> new QMBCall();
+            case Constants.HMBQ -> new HMBCall();
+            case Constants.MBQ -> new MBCall();
+            case Constants.DMBQ -> new DMBCall();
+            case Constants.HGBQ -> new HGBCall();
+            case Constants.GBQ -> new GBCall();
+            default -> {
+                System.err.println("Return queue type not recognized!");
+                yield null;
+            }
+        };
     }
 
     public void run() {
         int cnt = 0;
         while (!Thread.currentThread().isInterrupted()) {
             // if (cnt == Main.MSG_NUMBER) {
-            //     break;
+            // break;
             // }
             try {
-                Call callData = switch (Main.QTYPE) {
-                    case Constants.SMBQ -> new SMBCall();
-                    case Constants.EMBQ -> new EMBCall();
-                    case Constants.QMBQ -> new QMBCall();
-                    case Constants.HMBQ -> new HMBCall();
-                    case Constants.MBQ -> new MBCall();
-                    case Constants.DMBQ -> new DMBCall();
-                    case Constants.HGBQ -> new HGBCall();
-                    case Constants.GBQ -> new GBCall();
-                    default -> {
-                        System.err.println("Return queue type not recognized!");
-                        yield null;
-                    }
-                };
+                LibDSP.INSTANCE.receiveCall(m_CallData.getPointer(), m_CallInfo);
 
-                LibDSP.INSTANCE.receiveCall(callData.getPointer(), m_CallInfo);
+                m_CallData.read();
 
-                callData.read();
-
-                byte[] iiaData = Arrays.copyOfRange(callData.getCallInfo(), 0, callData.getMetadata().m_Size);
+                byte[] iiaData = Arrays.copyOfRange(m_CallData.getCallInfo(), 0, m_CallData.getMetadata().m_Size);
 
                 // Path xsltPath = Paths.get("transformations/transform_version_v7.xsl");
                 // byte[] xsltData = Files.readAllBytes(xsltPath);
@@ -472,9 +473,9 @@ class ProcessCallThread3 implements Runnable {
                 // System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0,
                 // resByteArr.length);
                 // returnData.getMetadata().m_Size = resByteArr.length;
-                System.arraycopy(iiaData, 0, returnData.getCallInfo(), 0, callData.getMetadata().m_Size);
-                returnData.getMetadata().m_Size = callData.getMetadata().m_Size;
-                returnData.getMetadata().m_ConnId = callData.getMetadata().m_ConnId;
+                System.arraycopy(iiaData, 0, returnData.getCallInfo(), 0, m_CallData.getMetadata().m_Size);
+                returnData.getMetadata().m_Size = m_CallData.getMetadata().m_Size;
+                returnData.getMetadata().m_ConnId = m_CallData.getMetadata().m_ConnId;
 
                 returnData.write();
 
