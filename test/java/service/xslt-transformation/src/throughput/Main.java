@@ -407,6 +407,7 @@ class ProcessCallThread3 implements Runnable {
     private final ServiceCallInfo m_CallInfo;
     private final ServiceReturnInfo m_ServiceReturnInfo;
     private final Call m_CallData;
+    private final Call m_ReturnData;
 
     ProcessCallThread3(ServiceConnectInfo p_ConnectInfo, ServiceCallInfo p_CallInfo,
             ServiceReturnInfo p_ServiceReturnInfo) {
@@ -428,6 +429,26 @@ class ProcessCallThread3 implements Runnable {
                 yield null;
             }
         };
+
+        m_ReturnData = switch (m_ServiceReturnInfo.m_Q.m_Type) {
+            case Constants.SMBQ -> new SMBReturn();
+            case Constants.EMBQ -> new EMBReturn();
+            case Constants.QMBQ -> new QMBReturn();
+            case Constants.HMBQ -> new HMBReturn();
+            case Constants.MBQ -> new MBReturn();
+            case Constants.DMBQ -> new DMBReturn();
+            case Constants.HGBQ -> new HGBReturn();
+            case Constants.GBQ -> new GBReturn();
+            default -> {
+                System.err.println("Return queue type not recognized!");
+                yield null;
+            }
+        };
+
+        if (m_ReturnData == null) {
+            System.err.println("Return data type not recognized!");
+            return;
+        }
     }
 
     public void run() {
@@ -450,36 +471,16 @@ class ProcessCallThread3 implements Runnable {
 
                 // byte[] resByteArr = result.getBytes(StandardCharsets.UTF_8);
 
-                Call returnData = switch (m_ServiceReturnInfo.m_Q.m_Type) {
-                    case Constants.SMBQ -> new SMBReturn();
-                    case Constants.EMBQ -> new EMBReturn();
-                    case Constants.QMBQ -> new QMBReturn();
-                    case Constants.HMBQ -> new HMBReturn();
-                    case Constants.MBQ -> new MBReturn();
-                    case Constants.DMBQ -> new DMBReturn();
-                    case Constants.HGBQ -> new HGBReturn();
-                    case Constants.GBQ -> new GBReturn();
-                    default -> {
-                        System.err.println("Return queue type not recognized!");
-                        yield null;
-                    }
-                };
-
-                if (returnData == null) {
-                    System.err.println("Return data type not recognized!");
-                    return;
-                }
-
                 // System.arraycopy(resByteArr, 0, returnData.getCallInfo(), 0,
                 // resByteArr.length);
                 // returnData.getMetadata().m_Size = resByteArr.length;
-                System.arraycopy(iiaData, 0, returnData.getCallInfo(), 0, m_CallData.getMetadata().m_Size);
-                returnData.getMetadata().m_Size = m_CallData.getMetadata().m_Size;
-                returnData.getMetadata().m_ConnId = m_CallData.getMetadata().m_ConnId;
+                System.arraycopy(iiaData, 0, m_ReturnData.getCallInfo(), 0, m_CallData.getMetadata().m_Size);
+                m_ReturnData.getMetadata().m_Size = m_CallData.getMetadata().m_Size;
+                m_ReturnData.getMetadata().m_ConnId = m_CallData.getMetadata().m_ConnId;
 
-                returnData.write();
+                m_ReturnData.write();
 
-                LibDSP.INSTANCE.sendReturn(m_ServiceReturnInfo, returnData.getPointer());
+                LibDSP.INSTANCE.sendReturn(m_ServiceReturnInfo, m_ReturnData.getPointer());
 
                 cnt++;
             } catch (Exception e) {
