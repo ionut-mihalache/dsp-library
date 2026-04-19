@@ -325,7 +325,9 @@ def create_combined_client_exec_time_plot3(output_dir, csv_a, csv_b, csv_c, labe
     plt.savefig(f"{output_dir}/combined_client_metrics_time_per_clients3.pdf", format="pdf")
 
 def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, label_a="AQUA", label_b="ZeroMQ", label_c="UDS"):
-    time_columns = ["connect", "call", "return", "disconnect"]
+    # time_columns = ["connect", "call", "return", "disconnect"]
+    time_columns = ["call", "return"]
+    # time_columns = ["connect", "disconnect"]
 
     df_a = load_and_prepare(csv_a, time_columns)
     df_b = load_and_prepare(csv_b, time_columns)
@@ -338,10 +340,12 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
     fig, axs = plt.subplots(len(time_columns), 1, figsize=(10, 10), sharex=True)
 
     for i, col in enumerate(time_columns):
-        y_a = (df_a[col] / df_b[col]).to_numpy()
+        # y_a = (df_a[col] / df_b[col]).to_numpy()
+        y_a = (df_b[col] / df_a[col]).to_numpy()
         y_b = np.ones_like(y_a)
         # y_b = (df_b[col] / df_b[col]).to_numpy()
-        y_c = (df_c[col] / df_b[col]).to_numpy()
+        # y_c = (df_c[col] / df_b[col]).to_numpy()
+        y_c = (df_b[col] / df_c[col]).to_numpy()
 
         # axs[i].bar(x - width*1.05, y_a, width, label=f"{col.capitalize()} ({label_a})", hatch="|||")
         # axs[i].bar(x,             y_b, width, label=f"{col.capitalize()} ({label_b})", hatch="xxx")
@@ -370,7 +374,7 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
 
         axs[i].axhline(1, linewidth=1.1)
         # axs[i].set_ylabel("Relative to UDS")
-        axs[i].set_ylabel(col.capitalize())
+        axs[i].set_ylabel(col.capitalize(), fontsize=20)
 
         all_vals = np.concatenate([y_a, y_b, y_c])
         all_vals = all_vals[np.isfinite(all_vals)]
@@ -383,6 +387,9 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
         if ratio > 20:
             axs[i].set_yscale("log")
 
+        axs[i].tick_params(axis='y', labelsize=18)
+        axs[i].tick_params(axis='x', labelsize=18)
+
         axs[i].grid(True, linestyle=":", axis="y")
 
         handles, labels = axs[0].get_legend_handles_labels()
@@ -392,7 +399,8 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
             loc="upper center",
             ncol=3,
             frameon=False,
-            bbox_to_anchor=(0.5, 0.96)   # ← mai jos decât înainte
+            fontsize=20,
+            bbox_to_anchor=(0.5, 0.99)
         )
 
         # all_vals = np.concatenate([y_a, y_b, y_c])
@@ -402,16 +410,16 @@ def create_combined_client_exec_time_plot3_bar(output_dir, csv_a, csv_b, csv_c, 
 
         # axs[i].legend(frameon=False)
 
-    axs[-1].set_xlabel("Number of Clients")
+    axs[-1].set_xlabel("Number of Clients", fontsize=20)
     axs[-1].set_xticks(x)
     axs[-1].set_xticklabels(clients)
 
     # Ridicăm titlul puțin mai sus
-    fig.suptitle(
-        "Client Metrics vs Number of Clients (Three Datasets, Averaged, ms)",
-        fontsize=14,
-        y=0.995
-    )
+    # fig.suptitle(
+    #     "Client Metrics vs Number of Clients (Three Datasets, Averaged, ms)",
+    #     fontsize=14,
+    #     y=0.995
+    # )
 
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.savefig(f"{output_dir}/combined_client_metrics_time_per_clients3_bar.pdf", format="pdf")

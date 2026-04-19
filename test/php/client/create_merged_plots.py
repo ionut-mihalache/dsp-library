@@ -3,8 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 
-TIME_COLUMNS = ["connect", "call", "return", "disconnect"]
 # TIME_COLUMNS = ["connect", "call", "return", "disconnect"]
+# TIME_COLUMNS = ["connect", "call", "return", "disconnect"]
+TIME_COLUMNS = ["call", "return"]
 
 
 def load_and_prepare(csv_path, time_columns):
@@ -186,9 +187,11 @@ def create_bar_plot3(
         for col_idx, col in enumerate(TIME_COLUMNS):
             ax = axs[row, col_idx]
 
-            y_a = (df_a[col] / df_b[col]).to_numpy()
+            # y_a = (df_a[col] / df_b[col]).to_numpy()
+            y_a = (df_b[col] / df_a[col]).to_numpy()
             y_b = np.ones_like(y_a)
-            y_c = (df_c[col] / df_b[col]).to_numpy()
+            # y_c = (df_c[col] / df_b[col]).to_numpy()
+            y_c = (df_b[col] / df_c[col]).to_numpy()
 
             ax.bar(
                 x - width,
@@ -288,57 +291,87 @@ def create_bar_plot3(
 
 
 if __name__ == "__main__":
-    create_bar_plot2(
-        {
-            "64KB": (
-                "metrics2_64KB/aqua_client_benchmark.csv",
-                "metrics2_64KB/uds_client_benchmark.csv",
-            ),
-            "128KB": (
-                "metrics2_128KB/aqua_client_benchmark.csv",
-                "metrics2_128KB/uds_client_benchmark.csv",
-            ),
-            "256KB": (
-                "metrics2_256KB/aqua_client_benchmark.csv",
-                "metrics2_256KB/uds_client_benchmark.csv",
-            ),
-            "512KB": (
-                "metrics2_512KB/aqua_client_benchmark.csv",
-                "metrics2_512KB/uds_client_benchmark.csv",
-            ),
-            "1MB": (
-                "metrics2_1MB/aqua_client_benchmark.csv",
-                "metrics2_1MB/uds_client_benchmark.csv",
-            ),
-        }
-    )
+    # create_bar_plot2(
+    #     {
+    #         "64KB": (
+    #             "metrics2_64KB/aqua_client_benchmark.csv",
+    #             "metrics2_64KB/uds_client_benchmark.csv",
+    #         ),
+    #         "128KB": (
+    #             "metrics2_128KB/aqua_client_benchmark.csv",
+    #             "metrics2_128KB/uds_client_benchmark.csv",
+    #         ),
+    #         "256KB": (
+    #             "metrics2_256KB/aqua_client_benchmark.csv",
+    #             "metrics2_256KB/uds_client_benchmark.csv",
+    #         ),
+    #         "512KB": (
+    #             "metrics2_512KB/aqua_client_benchmark.csv",
+    #             "metrics2_512KB/uds_client_benchmark.csv",
+    #         ),
+    #         "1MB": (
+    #             "metrics2_1MB/aqua_client_benchmark.csv",
+    #             "metrics2_1MB/uds_client_benchmark.csv",
+    #         ),
+    #     }
+    # )
+
+    # create_bar_plot3(
+    #     {
+    #         "64KB": (
+    #             "metrics3_64KB/aqua_client_benchmark.csv",
+    #             "metrics3_64KB/uds_client_benchmark.csv",
+    #             "metrics3_64KB/zeromq_client_benchmark.csv",
+    #         ),
+    #         "128KB": (
+    #             "metrics3_128KB/aqua_client_benchmark.csv",
+    #             "metrics3_128KB/uds_client_benchmark.csv",
+    #             "metrics3_128KB/zeromq_client_benchmark.csv",
+    #         ),
+    #         "256KB": (
+    #             "metrics3_256KB/aqua_client_benchmark.csv",
+    #             "metrics3_256KB/uds_client_benchmark.csv",
+    #             "metrics3_256KB/zeromq_client_benchmark.csv",
+    #         ),
+    #         "512KB": (
+    #             "metrics3_512KB/aqua_client_benchmark.csv",
+    #             "metrics3_512KB/uds_client_benchmark.csv",
+    #             "metrics3_512KB/zeromq_client_benchmark.csv",
+    #         ),
+    #         "1MB": (
+    #             "metrics3_1MB/aqua_client_benchmark.csv",
+    #             "metrics3_1MB/uds_client_benchmark.csv",
+    #             "metrics3_1MB/zeromq_client_benchmark.csv",
+    #         ),
+    #     }
+    # )
 
     create_bar_plot3(
         {
             "64KB": (
-                "metrics3_64KB/aqua_client_benchmark.csv",
-                "metrics3_64KB/uds_client_benchmark.csv",
-                "metrics3_64KB/zeromq_client_benchmark.csv",
+                "metrics3_smb/aqua_client_benchmark.csv",
+                "metrics3_smb/uds_client_benchmark.csv",
+                "metrics3_smb/zeromq_client_benchmark.csv",
             ),
-            "128KB": (
-                "metrics3_128KB/aqua_client_benchmark.csv",
-                "metrics3_128KB/uds_client_benchmark.csv",
-                "metrics3_128KB/zeromq_client_benchmark.csv",
-            ),
+            # "128KB": (
+            #     "metrics3_128KB/aqua_client_benchmark.csv",
+            #     "metrics3_128KB/uds_client_benchmark.csv",
+            #     "metrics3_128KB/zeromq_client_benchmark.csv",
+            # ),
             "256KB": (
-                "metrics3_256KB/aqua_client_benchmark.csv",
-                "metrics3_256KB/uds_client_benchmark.csv",
-                "metrics3_256KB/zeromq_client_benchmark.csv",
+                "metrics3_qmb/aqua_client_benchmark.csv",
+                "metrics3_qmb/uds_client_benchmark.csv",
+                "metrics3_qmb/zeromq_client_benchmark.csv",
             ),
-            "512KB": (
-                "metrics3_512KB/aqua_client_benchmark.csv",
-                "metrics3_512KB/uds_client_benchmark.csv",
-                "metrics3_512KB/zeromq_client_benchmark.csv",
-            ),
+            # "512KB": (
+            #     "metrics3_512KB/aqua_client_benchmark.csv",
+            #     "metrics3_512KB/uds_client_benchmark.csv",
+            #     "metrics3_512KB/zeromq_client_benchmark.csv",
+            # ),
             "1MB": (
-                "metrics3_1MB/aqua_client_benchmark.csv",
-                "metrics3_1MB/uds_client_benchmark.csv",
-                "metrics3_1MB/zeromq_client_benchmark.csv",
+                "metrics3_mb/aqua_client_benchmark.csv",
+                "metrics3_mb/uds_client_benchmark.csv",
+                "metrics3_mb/zeromq_client_benchmark.csv",
             ),
         }
     )
