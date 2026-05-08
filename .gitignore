@@ -1,4 +1,9 @@
 *.o
 *.so
+*.so.*
 .vscode/
+.cache/
+.fleet/
+.zed/
+.idea/
 build/

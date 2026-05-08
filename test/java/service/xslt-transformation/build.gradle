@@ -1,0 +1,49 @@
+plugins {
+    id 'java'
+    id 'application'
+    id 'eclipse'
+}
+
+layout.buildDirectory.set(file("bin"))
+
+repositories {
+    mavenCentral()
+}
+
+sourceSets {
+    named("main") {
+        java.srcDirs("src")
+    }
+}
+
+dependencies {
+    implementation files("lib/jna-5.15.0.jar")
+    implementation files("lib/saxon-he-12.5.jar")
+    implementation files("lib/xmlresoler-6.0.11.jar")
+    implementation files("lib/jeromq-0.6.0.jar")
+}
+
+// Configure the main class for running your application.
+application {
+    mainClass = 'main.Main'
+}
+
+eclipse {
+    classpath {
+        file {
+            whenMerged { classpath ->
+                // This adds your lib/*.jar as entries in the classpath file
+                def libDir = file('lib')
+                if (libDir.exists()) {
+                    libDir.listFiles(new FilenameFilter() {
+                        boolean accept(File dir, String name) {
+                            name.endsWith('.jar')
+                        }
+                    }).each { jarFile ->
+                        classpath.entries.add(new org.gradle.plugins.ide.eclipse.model.Library(fileReference(jarFile)))
+                    }
+                }
+            }
+        }
+    }
+}

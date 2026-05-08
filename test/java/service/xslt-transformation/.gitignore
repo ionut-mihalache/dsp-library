@@ -1,0 +1,12 @@
+*.log
+bin/*
+.fleet/
+.gradle/
+.vscode/
+.zed/
+gradle/
+gradlew
+gradlew.bat
+.project
+.classpath
+.settings
