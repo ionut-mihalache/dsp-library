@@ -15,6 +15,7 @@
 #include "log.h"
 #include "macros.h"
 #include "platform.h"
+#include "system-values.h"
 
 static struct InstallSharedData *installShdata = NULL;
 
@@ -29,8 +30,11 @@ void initService() {
     DIE(installShdFd < 0, "Could not create install shared memory object");
 
     // installShdata = mmap(0, sizeof(struct InstallSharedData),
-    //                      PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd, 0);
-    installShdata = Allocator.memmap();
+    //                      PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd,
+    //                      0);
+    installShdata = Allocator.memmap(0, sizeof(struct InstallSharedData),
+                                     AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE,
+                                     AQUA_MEM_SHARED, installShdFd, 0);
     DIE(installShdata == MAP_FAILED || installShdata == NULL,
         "Could not mmap install shared data object");
 
@@ -61,9 +65,14 @@ void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
+    // struct InstallInfo *installMemZone =
+    //     mmap(installShdata, sizeof(struct InstallInfo), PROT_READ |
+    //     PROT_WRITE,
+    //          MAP_SHARED, installShmFd, 0);
     struct InstallInfo *installMemZone =
-        mmap(installShdata, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
-             MAP_SHARED, installShmFd, 0);
+        Allocator.memmap(installShdata, sizeof(struct InstallInfo),
+                         AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE,
+                         AQUA_MEM_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 
     int32_t freeIdx = -1;
@@ -98,15 +107,15 @@ check_free_index:
 spin_lock_unlock:
     pthread_spin_unlock(&installShdata->m_InstallMZoneLk);
 
-    rc = munmap(installMemZone, sizeof(struct InstallInfo));
+    rc = Allocator.memunmap(installMemZone, sizeof(struct InstallInfo));
     DIE(rc != 0, "Could not unmap install memory zone");
 
     /**
      * Map only the information of the service
      */
-    struct InstallInformation *installInfo = (struct InstallInformation *)mmap(
-        NULL, sizeof(struct InstallInformation), PROT_READ | PROT_WRITE,
-        MAP_SHARED, installShmFd,
+    struct InstallInformation *installInfo = Allocator.memmap(
+        NULL, sizeof(struct InstallInformation),
+        AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, AQUA_MEM_SHARED, installShmFd,
         freeByteIdx * sizeof(struct InstallInformation));
     DIE(installInfo == MAP_FAILED, "Could not map service information");
 

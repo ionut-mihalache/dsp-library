@@ -14,6 +14,7 @@
 #include "log.h"
 #include "macros.h"
 #include "platform.h"
+#include "system-values.h"
 
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,
@@ -133,7 +134,10 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     // struct InstallInfo *installMemZone =
     //     mmap(NULL, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
     //          MAP_SHARED, installShmFd, 0);
-    struct InstallInfo *installMemZone = Allocator.memmap();
+    struct InstallInfo *installMemZone =
+        Allocator.memmap(NULL, sizeof(struct InstallInfo),
+                         AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE,
+                         AQUA_MEM_SHARED, installShmFd, 0);
 
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 
@@ -157,15 +161,16 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
         return;
     }
 
-    rc = munmap(installMemZone, sizeof(struct InstallInfo));
+    rc = Allocator.memunmap(installMemZone, sizeof(struct InstallInfo));
     DIE(rc != 0, "Could not unmap install memory zone");
 
     /**
      * Map only the information of the service
      */
-    installInfo = (struct InstallInformation *)mmap(
-        NULL, sizeof(struct InstallInformation), PROT_READ | PROT_WRITE,
-        MAP_SHARED, installShmFd, i * sizeof(struct InstallInformation));
+    installInfo = Allocator.memmap(NULL, sizeof(struct InstallInformation),
+                                   AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE,
+                                   AQUA_MEM_SHARED, installShmFd,
+                                   i * sizeof(struct InstallInformation));
     DIE(installInfo == MAP_FAILED, "Could not map service information");
 
     configureClientConnectInformation(p_ConnectInfo, installInfo);

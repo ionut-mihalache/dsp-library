@@ -6,7 +6,9 @@
 #include "commons.h"
 #include "install.h"
 #include "macros.h"
+#include "platform.h"
 #include "return.h"
+#include "system-values.h"
 
 int32_t initializeServiceConnections(struct InstallInformation *p_InstallInfo) {
     int32_t rc = 0;
@@ -131,13 +133,15 @@ s_ReceiveDisconnectRequest(struct ServiceConnectInfo *p_ConnectInfo) {
             connId = queue->m_Data[idx].m_ConnectionIdx;
         } while (0));
 
-    rc = munmap(p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
-                p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
+    rc = Allocator.memunmap(
+        p_ConnectInfo->m_Connections[connId].m_RequestResponseQ,
+        p_ConnectInfo->m_Connections[connId].m_RequestResponseQMapSize);
     DIE(rc < 0, "Could not unmap request response queue");
     p_ConnectInfo->m_Connections[connId].m_RequestResponseQ = NULL;
 
-    rc = munmap(p_ConnectInfo->m_Connections[connId].m_ReturnQ,
-                p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
+    rc = Allocator.memunmap(
+        p_ConnectInfo->m_Connections[connId].m_ReturnQ,
+        p_ConnectInfo->m_Connections[connId].m_ReturnQMapSize);
     DIE(rc < 0, "Could not unmap return queue");
     p_ConnectInfo->m_Connections[connId].m_ReturnQ = NULL;
 
@@ -182,7 +186,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     struct ConnectRequest *connectQ;
     createQ((void **)&connectQ,
             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-            PROT_READ | PROT_WRITE, connectQFd);
+            AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, connectQFd);
 
     triggerKernelPageInit(connectQ,
                           CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
@@ -199,7 +203,7 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     struct ConnectRequest *disconnectQ;
     createQ((void **)&disconnectQ,
             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-            PROT_READ | PROT_WRITE, connectQFd);
+            AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, connectQFd);
 
     triggerKernelPageInit(disconnectQ,
                           CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),

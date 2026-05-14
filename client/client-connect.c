@@ -7,6 +7,8 @@
 #include "client-connect.h"
 #include "commons.h"
 #include "macros.h"
+#include "platform.h"
+#include "system-values.h"
 
 static int32_t s_ReturnFnSMBHelper(void *p_ReturnData,
                                    struct DSPQueue *p_Queue) {
@@ -236,11 +238,16 @@ static int32_t s_ProcessConnectionRequest(
         true);
     DIE(requestResponseQFd < 0, "Could not create shared memory object");
 
-    struct ConnectResponseInformation *requestResponseQ =
-        mmap(NULL,
-             p_ConnectInformation->m_ResponseQSize *
-                 sizeof(struct ConnectResponseInformation),
-             PROT_READ, MAP_SHARED, requestResponseQFd, 0);
+    // struct ConnectResponseInformation *requestResponseQ =
+    //     mmap(NULL,
+    //          p_ConnectInformation->m_ResponseQSize *
+    //              sizeof(struct ConnectResponseInformation),
+    //          PROT_READ, MAP_SHARED, requestResponseQFd, 0);
+    struct ConnectResponseInformation *requestResponseQ = Allocator.memmap(
+        NULL,
+        p_ConnectInformation->m_ResponseQSize *
+            sizeof(struct ConnectResponseInformation),
+        AQUA_MEM_PROT_READ, AQUA_MEM_SHARED, requestResponseQFd, 0);
     DIE(requestResponseQ == MAP_FAILED,
         "Could not map request response queue memory");
 
@@ -257,56 +264,56 @@ static int32_t s_ProcessConnectionRequest(
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct SMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct EMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct QMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct HMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct MBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct DMBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct HGBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_ConnectInformation->m_ReturnQSize * sizeof(struct GBCall);
-        qProt = PROT_READ;
+        qProt = AQUA_MEM_PROT_READ;
 
         break;
     default:
@@ -454,9 +461,13 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), false);
 
-    struct ConnectRequest *connectQ =
-        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-             PROT_READ | PROT_WRITE, MAP_SHARED, connectQFd, 0);
+    // struct ConnectRequest *connectQ =
+    //     mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+    //          PROT_READ | PROT_WRITE, MAP_SHARED, connectQFd, 0);
+    struct ConnectRequest *connectQ = Allocator.memmap(
+        NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+        AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, AQUA_MEM_SHARED, connectQFd,
+        0);
     DIE(connectQ == MAP_FAILED, "Could not map connectQ");
 
     rc = close(connectQFd);
@@ -467,9 +478,13 @@ configureClientConnectInformation(struct ClientConnectInfo *p_ConnectInfo,
         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), false);
 
-    struct ConnectRequest *disconnectQ =
-        mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-             PROT_READ | PROT_WRITE, MAP_SHARED, disconnectQFd, 0);
+    // struct ConnectRequest *disconnectQ =
+    //     mmap(NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+    //          PROT_READ | PROT_WRITE, MAP_SHARED, disconnectQFd, 0);
+    struct ConnectRequest *disconnectQ = Allocator.memmap(
+        NULL, CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+        AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, AQUA_MEM_SHARED,
+        disconnectQFd, 0);
     DIE(disconnectQ == MAP_FAILED, "Could not map disconnect queue memory");
 
     rc = close(disconnectQFd);

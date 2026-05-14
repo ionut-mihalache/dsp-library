@@ -6,6 +6,8 @@
 #include "commons.h"
 #include "log.h"
 #include "macros.h"
+#include "platform.h"
+#include "system-values.h"
 #include "return.h"
 
 static int32_t s_SendReturnFnSMBHelper(struct DSPQueue *p_Queue,
@@ -225,56 +227,56 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct SMBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct EMBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct QMBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct HMBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct MBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct DMBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct HGBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = p_Request->m_ReturnQSize * sizeof(struct GBCall);
-        qProt = PROT_WRITE | PROT_READ;
+        qProt = AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE;
 
         break;
     default:
@@ -294,10 +296,16 @@ configureServiceReturnInformation(struct ServiceReturnInfo *p_ReturnInfo,
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");
 
-    struct ConnectResponseInformation *requestResponseQ = mmap(
+    // struct ConnectResponseInformation *requestResponseQ = mmap(
+    //     NULL,
+    //     p_Request->m_ResponseQSize * sizeof(struct
+    //     ConnectResponseInformation), PROT_WRITE | PROT_READ, MAP_SHARED,
+    //     requestResponseQFd, 0);
+    struct ConnectResponseInformation *requestResponseQ = Allocator.memmap(
         NULL,
         p_Request->m_ResponseQSize * sizeof(struct ConnectResponseInformation),
-        PROT_WRITE | PROT_READ, MAP_SHARED, requestResponseQFd, 0);
+        AQUA_MEM_PROT_WRITE | AQUA_MEM_PROT_READ, AQUA_MEM_SHARED,
+        requestResponseQFd, 0);
     DIE(requestResponseQ == MAP_FAILED,
         "Could not map request response queue memory");
 

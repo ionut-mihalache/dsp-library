@@ -13,6 +13,9 @@
 
 #include "log/log.h"
 #include "macros/macros.h"
+#include "platform-types.h"
+#include "platform.h"
+#include "system-values.h"
 
 int createShmObject(const char *p_Name, int p_Oflag, mode_t p_Mode,
                     loff_t p_Size, uint8_t p_Unlink) {
@@ -61,8 +64,11 @@ end:
     return shmFd;
 }
 
-void createQ(void **p_QPtrRes, size_t p_Size, int p_Prot, int p_Fd) {
-    *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED | MAP_POPULATE, p_Fd, 0);
+void createQ(void **p_QPtrRes, aqua_size_t p_Size, int p_Prot, int p_Fd) {
+    // *p_QPtrRes = mmap(NULL, p_Size, p_Prot, MAP_SHARED | MAP_POPULATE, p_Fd,
+    // 0);
+    *p_QPtrRes =
+        Allocator.memmap(NULL, p_Size, p_Prot, AQUA_MEM_SHARED, p_Fd, 0);
     DIE(*p_QPtrRes == MAP_FAILED, "Could not map return queue memory");
 }
 

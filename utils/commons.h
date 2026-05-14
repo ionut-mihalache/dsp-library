@@ -7,6 +7,7 @@
 #ifndef DSP_COMMONS_H
 #define DSP_COMMONS_H
 
+#include "platform-types.h"
 #define _FILE_OFFSET_BITS 64
 
 #include <stdint.h>
@@ -20,7 +21,7 @@
 int createShmObject(const char *name, int oflag, mode_t mode, loff_t size,
                     uint8_t unlink);
 
-void createQ(void **ptrRes, size_t size, int prot, int fd);
+void createQ(void **ptrRes, aqua_size_t size, int prot, int fd);
 
 void triggerKernelPageInit(void *p_MemoryAddr, size_t p_Size, int p_Prot);
 

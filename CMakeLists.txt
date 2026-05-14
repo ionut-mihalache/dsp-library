@@ -63,6 +63,19 @@ PRIVATE
         platform/include
 )
 
+if (UNIX AND NOT APPLE)
+        target_include_directories(${LIB_NAME}
+        PRIVATE
+                platform/linux/include
+        )
+elseif(WIN32)
+        target_include_directories(${LIB_NAME}
+        PRIVATE
+                platform/windows/include
+        )
+endif()
+
+
 target_compile_options(${LIB_NAME} PRIVATE
         -Wall -Wextra -Werror -O3
 )

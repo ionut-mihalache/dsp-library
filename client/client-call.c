@@ -7,6 +7,7 @@
 #include "client-call.h"
 #include "commons.h"
 #include "macros.h"
+#include "system-values.h"
 
 static int32_t s_SMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {
     int32_t rc = 0;
@@ -179,56 +180,56 @@ configureClientCallInformation(struct ClientCallInfo *p_CallInfo,
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = SMB_Q_MAX_SIZE * sizeof(struct SMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     case EMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = EMB_Q_MAX_SIZE * sizeof(struct EMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     case QMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = QMB_Q_MAX_SIZE * sizeof(struct QMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     case HMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = HMB_Q_MAX_SIZE * sizeof(struct HMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     case MBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = MB_Q_MAX_SIZE * sizeof(struct MBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     case DMBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = DMB_Q_MAX_SIZE * sizeof(struct DMBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     case HGBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = HGB_Q_MAX_SIZE * sizeof(struct HGBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     case GBQ:
         qFlag = O_RDWR;
         qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
         qSize = GB_Q_MAX_SIZE * sizeof(struct GBCall);
-        qProt = PROT_WRITE;
+        qProt = AQUA_MEM_PROT_WRITE;
 
         break;
     default:
