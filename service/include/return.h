@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 #ifndef __DSP_SERVICE_RETURN_H
 #define __DSP_SERVICE_RETURN_H
 

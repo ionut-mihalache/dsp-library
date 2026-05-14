@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 //
 // Created by ionut on 02.06.2024.
 //

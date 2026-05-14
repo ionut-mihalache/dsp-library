@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+
 cmake_minimum_required(VERSION 3.25.1)
 
 project(dsp-library C)
@@ -14,7 +16,7 @@ set(LIB_NAME dsp)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 file(MAKE_DIRECTORY ${CMAKE_LIBRARY_OUTPUT_DIRECTORY})
 
-add_library(${LIB_NAME} SHARED
+set(CORE_SOURCES
         service/dsp-service.c
         service/install.c
         service/call.c
@@ -25,13 +27,29 @@ add_library(${LIB_NAME} SHARED
         utils/commons.c
 )
 
+if (UNIX AND NOT APPLE)
+        set(PLATFORM_SOURCES
+                platform/linux/alloc/alloc.c
+        )
+elseif(WIN32)
+        set(PLATFORM_SOURCES
+                platform/windows/alloc/alloc.c
+        )
+endif()
+
+add_library(${LIB_NAME} SHARED
+        ${CORE_SOURCES}
+        ${PLATFORM_SOURCES}
+)
+
 set_target_properties(${LIB_NAME} PROPERTIES
         VERSION ${LIB_VERSION}
         SOVERSION ${LIB_VERSION}
         POSITION_INDEPENDENT_CODE ON
 )
 
-target_include_directories(${LIB_NAME} PUBLIC
+target_include_directories(${LIB_NAME}
+PUBLIC
         utils
         utils/macros
         utils/hashmap
@@ -40,6 +58,9 @@ target_include_directories(${LIB_NAME} PUBLIC
         include
         service/include
         client/include
+
+PRIVATE
+        platform/include
 )
 
 target_compile_options(${LIB_NAME} PRIVATE
@@ -51,16 +72,6 @@ target_compile_definitions(${LIB_NAME} PRIVATE
         _GNU_SOURCE
 )
 
-# Symlink libdsp.so -> lib/libdsp.so.X.Y.Z în build root
-#add_custom_command(
-#        TARGET ${LIB_NAME}
-#        POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E create_symlink
-#        lib/$<TARGET_FILE_NAME:${LIB_NAME}>
-#        ${CMAKE_BINARY_DIR}/libdsp.so
-#        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-#        COMMENT "Creating libdsp.so symlink in build root"
-#)
 add_custom_command(
         TARGET ${LIB_NAME}
         POST_BUILD

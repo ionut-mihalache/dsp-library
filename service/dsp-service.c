@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 #include "dsp-service.h"
 
 #include <stdbool.h>
@@ -12,6 +14,7 @@
 #include "install.h"
 #include "log.h"
 #include "macros.h"
+#include "platform.h"
 
 static struct InstallSharedData *installShdata = NULL;
 
@@ -25,8 +28,9 @@ void initService() {
                                    sizeof(struct InstallSharedData), true);
     DIE(installShdFd < 0, "Could not create install shared memory object");
 
-    installShdata = mmap(0, sizeof(struct InstallSharedData),
-                         PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd, 0);
+    // installShdata = mmap(0, sizeof(struct InstallSharedData),
+    //                      PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd, 0);
+    installShdata = Allocator.memmap();
     DIE(installShdata == MAP_FAILED || installShdata == NULL,
         "Could not mmap install shared data object");
 

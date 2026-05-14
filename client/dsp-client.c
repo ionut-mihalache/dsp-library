@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: LGPL-2.1-or-later
+
 #include <stdbool.h>
 #include <string.h>
 #include <sys/shm.h>
@@ -11,6 +13,7 @@
 #include "dsp-client.h"
 #include "log.h"
 #include "macros.h"
+#include "platform.h"
 
 void sendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
                         struct ClientConnectInfo *p_ConnectInfo,
@@ -127,9 +130,11 @@ void dspConnect(struct ClientConnectInfo *p_ConnectInfo,
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
-    struct InstallInfo *installMemZone =
-        mmap(NULL, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
-             MAP_SHARED, installShmFd, 0);
+    // struct InstallInfo *installMemZone =
+    //     mmap(NULL, sizeof(struct InstallInfo), PROT_READ | PROT_WRITE,
+    //          MAP_SHARED, installShmFd, 0);
+    struct InstallInfo *installMemZone = Allocator.memmap();
+
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
 
     for (i = 0; i < SERVICES_NUMBER; ++i) {
