@@ -386,7 +386,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
      *  WIP: wait for the service to establish the connection on its side
      */
     // pthread_spin_lock(p_ConnectInfo->m_ConnectLock);
-    pthread_mutex_lock(p_ConnectInfo->m_ConnectLock);
+    Sync.mutexLock(p_ConnectInfo->m_ConnectLock);
     for (connId = 0; connId < OPENED_CONNECTIONS; ++connId) {
         if (!p_ConnectInfo->m_Connections[connId].m_Connected) {
             p_ConnectInfo->m_Connections[connId].m_Connected = true;
@@ -394,7 +394,7 @@ s_SendConnectRequest(struct ClientReturnInfo *p_ReturnInfo,
         }
     }
     // pthread_spin_unlock(p_ConnectInfo->m_ConnectLock);
-    pthread_mutex_unlock(p_ConnectInfo->m_ConnectLock);
+    Sync.mutexUnlock(p_ConnectInfo->m_ConnectLock);
 
     QPUSH(
         queue, CONNECTQ_MAX_SIZE, do {

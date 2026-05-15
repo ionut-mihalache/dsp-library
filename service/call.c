@@ -6,6 +6,7 @@
 #include "call.h"
 #include "commons.h"
 #include "macros.h"
+#include "platform.h"
 #include "system-values.h"
 
 static int32_t s_SMBPopHelper(void *p_CallInfo, struct DSPQueue *p_Queue) {
@@ -222,28 +223,32 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
     p_CallInfo->m_Q.m_Metadata.m_Size = &p_InstallInfo->m_CallQSize;
     p_CallInfo->m_Q.m_Type = p_InstallInfo->m_CallQType;
 
-    pthread_mutexattr_t attr;
-    rc = pthread_mutexattr_init(&attr);
-    DIE(rc != 0, "Could not init mutex attribute");
+    Sync.createMutex(&p_InstallInfo->m_CallQMutex, "");
+    Sync.createCond(&p_InstallInfo->m_CallQFullCond, "");
+    Sync.createCond(&p_InstallInfo->m_CallQEmptyCond, "");
 
-    rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
-    DIE(rc != 0, "Could not set pshread for mutex attribute");
+    // pthread_mutexattr_t attr;
+    // rc = pthread_mutexattr_init(&attr);
+    // DIE(rc != 0, "Could not init mutex attribute");
 
-    rc = pthread_mutex_init(&p_InstallInfo->m_CallQMutex, &attr);
-    DIE(rc != 0, "Could not init call mutex");
+    // rc = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    // DIE(rc != 0, "Could not set pshread for mutex attribute");
 
-    rc = pthread_mutexattr_destroy(&attr);
-    DIE(rc != 0, "Could not destroy mutex attribute");
+    // rc = pthread_mutex_init(&p_InstallInfo->m_CallQMutex, &attr);
+    // DIE(rc != 0, "Could not init call mutex");
 
-    pthread_condattr_t condAttr;
-    pthread_condattr_init(&condAttr);
+    // rc = pthread_mutexattr_destroy(&attr);
+    // DIE(rc != 0, "Could not destroy mutex attribute");
 
-    pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
+    // pthread_condattr_t condAttr;
+    // pthread_condattr_init(&condAttr);
 
-    pthread_cond_init(&p_InstallInfo->m_CallQFullCond, &condAttr);
-    pthread_cond_init(&p_InstallInfo->m_CallQEmptyCond, &condAttr);
+    // pthread_condattr_setpshared(&condAttr, PTHREAD_PROCESS_SHARED);
 
-    pthread_condattr_destroy(&condAttr);
+    // pthread_cond_init(&p_InstallInfo->m_CallQFullCond, &condAttr);
+    // pthread_cond_init(&p_InstallInfo->m_CallQEmptyCond, &condAttr);
+
+    // pthread_condattr_destroy(&condAttr);
 
     p_CallInfo->m_Q.m_Metadata.m_Lock = &p_InstallInfo->m_CallQMutex;
     p_CallInfo->m_Q.m_Metadata.m_FullCond = &p_InstallInfo->m_CallQFullCond;

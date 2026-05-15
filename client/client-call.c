@@ -7,6 +7,7 @@
 #include "client-call.h"
 #include "commons.h"
 #include "macros.h"
+#include "platform.h"
 #include "system-values.h"
 
 static int32_t s_SMBPushHelper(struct DSPQueue *p_Queue, void *p_CallData) {

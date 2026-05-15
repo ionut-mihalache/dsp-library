@@ -3,6 +3,7 @@
 #ifndef __DSP_H_
 #define __DSP_H_
 
+#include "aqua-sync.h"
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -97,13 +98,13 @@ struct ConnectionInformation {
     char m_ReturnQName[RETURNQ_NAME_MAX_SIZE];
     char m_RequestResponseQName[RETURNQ_NAME_MAX_SIZE];
 
-    pthread_cond_t m_ReturnQFullCond;
-    pthread_cond_t m_ReturnQEmptyCond;
-    pthread_cond_t m_RequestResponseQFullCond;
-    pthread_cond_t m_RequestResponseQEmptyCond;
+    aqua_cond_t m_ReturnQFullCond;
+    aqua_cond_t m_ReturnQEmptyCond;
+    aqua_cond_t m_RequestResponseQFullCond;
+    aqua_cond_t m_RequestResponseQEmptyCond;
 
-    pthread_mutex_t m_ReturnQMutex;
-    pthread_mutex_t m_RequestResponseQMutex;
+    aqua_mutex_t m_ReturnQMutex;
+    aqua_mutex_t m_RequestResponseQMutex;
 
     void *m_RequestResponseQ, *m_ReturnQ;
     size_t m_RequestResponseQMapSize, m_ReturnQMapSize;
@@ -125,18 +126,17 @@ struct InstallInformation {
     char m_StrId[STRING_ID_MAX_LENGTH];
     char m_Version[VERSION_MAX_LENGTH];
 
-    pthread_cond_t m_CallQFullCond;
-    pthread_cond_t m_CallQEmptyCond;
-    pthread_cond_t m_ConnectQFullCond;
-    pthread_cond_t m_ConnectQEmptyCond;
-    pthread_cond_t m_DisconnectQFullCond;
-    pthread_cond_t m_DisconnectQEmptyCond;
+    aqua_cond_t m_CallQFullCond;
+    aqua_cond_t m_CallQEmptyCond;
+    aqua_cond_t m_ConnectQFullCond;
+    aqua_cond_t m_ConnectQEmptyCond;
+    aqua_cond_t m_DisconnectQFullCond;
+    aqua_cond_t m_DisconnectQEmptyCond;
 
-    pthread_mutex_t m_CallQMutex;
-    pthread_mutex_t m_ConnectQMutex;
-    pthread_mutex_t m_DisconnectQMutex;
-    // pthread_spinlock_t m_ConnectListLock;
-    pthread_mutex_t m_ConnectListLock;
+    aqua_mutex_t m_CallQMutex;
+    aqua_mutex_t m_ConnectQMutex;
+    aqua_mutex_t m_DisconnectQMutex;
+    aqua_mutex_t m_ConnectListLock;
 
     uint32_t m_CallQPushIdx, m_CallQPopIdx, m_CallQSize;
     uint32_t m_ConnectQPushIdx, m_ConnectQPopIdx, m_ConnectQSize;
@@ -155,9 +155,9 @@ struct InstallInfo {
 } __attribute__((aligned(PAGE_SIZE)));
 
 struct DSPQueueMetadata {
-    pthread_cond_t *m_FullCond;
-    pthread_cond_t *m_EmptyCond;
-    pthread_mutex_t *m_Lock;
+    aqua_cond_t *m_FullCond;
+    aqua_cond_t *m_EmptyCond;
+    aqua_mutex_t *m_Lock;
     uint32_t *m_PushIdxPtr;
     uint32_t *m_PopIdxPtr;
     uint32_t *m_Size;

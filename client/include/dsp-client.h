@@ -3,6 +3,7 @@
 #ifndef __DSP_CLIENT_H_
 #define __DSP_CLIENT_H_
 
+#include "aqua-sync.h"
 #include "dsp.h"
 
 struct ClientCallInfo {
@@ -35,7 +36,7 @@ struct ClientConnectInfo {
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
     // pthread_spinlock_t *m_ConnectLock;
-    pthread_mutex_t *m_ConnectLock;
+    aqua_mutex_t *m_ConnectLock;
     int32_t (*m_SendConnectRequest)(struct ClientReturnInfo *,
                                     struct ClientConnectInfo *,
                                     struct ClientConnectRequestInformation *);

@@ -4,6 +4,8 @@
 #define __AQUA_LINUX_TYPES_H_
 
 #include <fcntl.h>
+#include <pthread.h>
+#include <semaphore.h>
 #include <stdint.h>
 #include <sys/types.h>
 

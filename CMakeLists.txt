@@ -30,10 +30,12 @@ set(CORE_SOURCES
 if (UNIX AND NOT APPLE)
         set(PLATFORM_SOURCES
                 platform/linux/alloc/alloc.c
+                platform/linux/sync/sync.c
         )
 elseif(WIN32)
         set(PLATFORM_SOURCES
                 platform/windows/alloc/alloc.c
+                platform/windows/sync/sync.c
         )
 endif()
 

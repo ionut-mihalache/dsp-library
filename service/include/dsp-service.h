@@ -3,6 +3,7 @@
 #ifndef __DSP_SERVICE_H
 #define __DSP_SERVICE_H
 
+#include "aqua-sync.h"
 #include "dsp.h"
 
 #define INSTALL_SHD "/install-shared-data"
@@ -34,7 +35,7 @@ struct ServiceConnectInfo {
     struct DisconnectQueue m_DisconnectQ;
     struct ConnectionInformation *m_Connections;
     // pthread_spinlock_t *m_ConnectLock;
-    pthread_mutex_t *m_ConnectLock;
+    aqua_mutex_t *m_ConnectLock;
     int32_t (*m_ReceiveConnectRequest)(struct ServiceReturnInfo *,
                                        struct ServiceConnectInfo *);
     int32_t (*m_ReceiveDisconnectRequest)(struct ServiceConnectInfo *);

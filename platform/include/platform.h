@@ -3,6 +3,7 @@
 #ifndef __AQUA_PLATFORM_H_
 #define __AQUA_PLATFORM_H_
 
+#include "aqua-sync.h"
 #include "aqua-types.h"
 #include "platform-types.h"
 
@@ -13,6 +14,21 @@ struct AQUA_Allocator {
     aqua_int_t (*memunmap)(aqua_void_ptr_t addr, aqua_size_t len);
 };
 
+struct AQUA_Sync {
+    aqua_void_t (*createMutex)(aqua_mutex_t *mutex, const char *name);
+    aqua_void_t (*createCond)(aqua_cond_t *cond, const char *name);
+    aqua_void_t (*createSemaphore)(aqua_sem_t *sem, const char *name);
+    aqua_void_t (*destroyMutex)(aqua_mutex_t *mutex);
+    aqua_void_t (*destroyCond)(aqua_cond_t *cond);
+    aqua_void_t (*destroySemaphore)(aqua_sem_t *sem);
+
+    aqua_void_t (*mutexLock)(aqua_mutex_t *mutex);
+    aqua_void_t (*mutexUnlock)(aqua_mutex_t *mutex);
+    aqua_void_t (*condWait)(aqua_cond_t *cond, aqua_mutex_t *mutex);
+    aqua_void_t (*condBroadcast)(aqua_cond_t *cond);
+};
+
 extern struct AQUA_Allocator Allocator;
+extern struct AQUA_Sync Sync;
 
 #endif // __AQUA_PLATFORM_H_
