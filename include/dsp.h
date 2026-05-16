@@ -4,6 +4,7 @@
 #define __DSP_H_
 
 #include "aqua-sync.h"
+#include "aqua-types.h"
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdbool.h>
@@ -12,6 +13,11 @@
 #include <sys/stat.h>
 #include <sys/user.h>
 #include <unistd.h>
+
+#define AQUA_ALIGN_UP(x, align) (((x) + ((align) - 1)) & ~((align) - 1))
+#define AQUA_SLOT_PADDING(type, align)                                         \
+    (AQUA_ALIGN_UP(sizeof(type), align) - sizeof(type))
+#define AQUA_MMAP_GRANULARITY 65536 // 64KB
 
 #define SHMEM_PATH "/shared_memory"
 #define CONNECT_REQS "/conn-reqs"
@@ -146,13 +152,20 @@ struct InstallInformation {
 
     pid_t m_ProcId;
     uint8_t m_Available;
-} __attribute__((aligned(PAGE_SIZE)));
+}; // __attribute__((aligned(PAGE_SIZE)));
+
+struct InstallInformationChannel {
+    struct InstallInformation info;
+
+    aqua_u8_t __pad[AQUA_SLOT_PADDING(struct InstallInformation,
+                                      AQUA_MMAP_GRANULARITY)];
+};
 
 struct InstallInfo {
     struct InstallInformation m_Info[SERVICES_NUMBER];
     uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
     uint8_t m_BytesNr;
-} __attribute__((aligned(PAGE_SIZE)));
+};
 
 struct DSPQueueMetadata {
     aqua_cond_t *m_FullCond;
