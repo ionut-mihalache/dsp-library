@@ -18,8 +18,7 @@
 
 #define DSP_UNUSED __attribute__((unused))
 
-int createShmObject(const char *name, int oflag, mode_t mode, loff_t size,
-                    uint8_t unlink);
+aqua_size_t alignUp(aqua_size_t base, aqua_size_t alignment);
 
 void createQ(void **ptrRes, aqua_size_t size, int prot, int fd);
 

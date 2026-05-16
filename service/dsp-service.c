@@ -8,6 +8,7 @@
 #include <sys/mman.h>
 #include <sys/shm.h>
 
+#include "aqua-types.h"
 #include "call.h"
 #include "commons.h"
 #include "dsp.h"
@@ -21,17 +22,16 @@ static struct InstallSharedData *installShdata = NULL;
 
 void initService() {
     int rc;
-    int installShdFd;
+    aqua_file_handle_t installShdFd;
 
-    installShdFd = createShmObject(INSTALL_MZONE, O_RDWR,
-                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                                       S_IROTH | S_IWOTH,
-                                   sizeof(struct InstallSharedData), true);
+    installShdFd = SharedMemoryObject.create(
+        INSTALL_MZONE, AQUA_FILE_PERM_RDWR,
+        AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+            AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+            AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE,
+        sizeof(struct InstallSharedData), true);
     DIE(installShdFd < 0, "Could not create install shared memory object");
 
-    // installShdata = mmap(0, sizeof(struct InstallSharedData),
-    //                      PROT_READ | PROT_WRITE, MAP_SHARED, installShdFd,
-    //                      0);
     installShdata = Allocator.memmap(0, sizeof(struct InstallSharedData),
                                      AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE,
                                      AQUA_MEM_SHARED, installShdFd, 0);
@@ -49,28 +49,52 @@ void initService() {
     DIE(rc != 0, "Could not init install shared spinlock");
 }
 
+static aqua_size_t sf_GetInstallArenaSize() {
+    aqua_size_t mapGranularity = Memory.getMapGranularity();
+
+    aqua_size_t alignedHeaderSize =
+        alignUp(sizeof(struct InstallInfo), mapGranularity);
+
+    aqua_size_t alignedServiceSize =
+        alignUp(sizeof(struct InstallInformation), mapGranularity);
+
+    return alignedHeaderSize + alignedServiceSize * SERVICES_NUMBER;
+}
+
+static aqua_size_t sf_GetServiceOff(uint16_t i) {
+    aqua_size_t mapGranularity = Memory.getMapGranularity();
+
+    size_t alignedHeaderSize =
+        alignUp(sizeof(struct InstallInfo), mapGranularity);
+
+    aqua_size_t alignedServiceSize =
+        alignUp(sizeof(struct InstallInformation), mapGranularity);
+
+    return alignedHeaderSize + i * alignedServiceSize;
+}
+
 void dspInstall(struct ServiceConnectInfo *p_ConnectInfo,
                 struct ServiceCallInfo *p_CallInfo, const char *p_StrId,
                 const char *p_Version, int p_CallQType) {
     int rc;
-    int installShmFd;
+    aqua_file_handle_t installShmFd;
     uint8_t bytesnr = SERVICES_NUMBER >> 3;
 
     initService();
 
-    installShmFd = createShmObject(INSTALL_MZONE, O_RDWR,
-                                   S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP |
-                                       S_IROTH | S_IWOTH,
-                                   sizeof(struct InstallInfo), true);
+    aqua_size_t installArenaSize = sf_GetInstallArenaSize();
+
+    installShmFd = SharedMemoryObject.create(
+        INSTALL_MZONE, AQUA_FILE_PERM_RDWR,
+        AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+            AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+            AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE,
+        installArenaSize, true);
     DIE(installShmFd < 0,
         "Could not open install memory zone shared memory object");
 
-    // struct InstallInfo *installMemZone =
-    //     mmap(installShdata, sizeof(struct InstallInfo), PROT_READ |
-    //     PROT_WRITE,
-    //          MAP_SHARED, installShmFd, 0);
     struct InstallInfo *installMemZone =
-        Allocator.memmap(installShdata, sizeof(struct InstallInfo),
+        Allocator.memmap(installShdata, installArenaSize,
                          AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE,
                          AQUA_MEM_SHARED, installShmFd, 0);
     DIE(installMemZone == MAP_FAILED, "Could not mmap install memory zone");
@@ -114,9 +138,10 @@ spin_lock_unlock:
      * Map only the information of the service
      */
     struct InstallInformation *installInfo = Allocator.memmap(
-        NULL, sizeof(struct InstallInformation),
+        NULL,
+        alignUp(sizeof(struct InstallInformation), Memory.getMapGranularity()),
         AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, AQUA_MEM_SHARED, installShmFd,
-        freeByteIdx * sizeof(struct InstallInformation));
+        sf_GetServiceOff(freeByteIdx));
     DIE(installInfo == MAP_FAILED, "Could not map service information");
 
     rc = close(installShmFd);

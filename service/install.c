@@ -5,6 +5,7 @@
 
 #include "commons.h"
 #include "install.h"
+#include "dsp.h"
 #include "macros.h"
 #include "platform.h"
 #include "return.h"
@@ -187,9 +188,11 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     p_InstallInfo->m_DisconnectQPopIdx = 0;
     p_InstallInfo->m_DisconnectQSize = 0;
 
-    connectQFd = createShmObject(
-        p_InstallInfo->m_ConnectQName, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+    connectQFd = SharedMemoryObject.create(
+        p_InstallInfo->m_ConnectQName, AQUA_FILE_PERM_RDWR,
+        AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+            AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+            AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
     struct ConnectRequest *connectQ;
@@ -204,9 +207,11 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
     rc = close(connectQFd);
     DIE(rc != 0, "Could not close connectQFd");
 
-    disconnectQFd = createShmObject(
-        p_InstallInfo->m_DisconnectQName, O_RDWR,
-        S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH,
+    disconnectQFd = SharedMemoryObject.create(
+        p_InstallInfo->m_DisconnectQName, AQUA_FILE_PERM_RDWR,
+        AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+            AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+            AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE,
         CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest), true);
 
     struct ConnectRequest *disconnectQ;

@@ -14,5 +14,6 @@ typedef ssize_t aqua_ssize_t;
 
 typedef off_t aqua_off_t;
 typedef off64_t aqua_off64_t;
+typedef loff_t aqua_loff_t;
 
 #endif // __AQUA_LINUX_TYPES_H_

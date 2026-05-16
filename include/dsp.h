@@ -152,19 +152,17 @@ struct InstallInformation {
 
     pid_t m_ProcId;
     uint8_t m_Available;
-}; // __attribute__((aligned(PAGE_SIZE)));
-
-struct InstallInformationChannel {
-    struct InstallInformation info;
-
-    aqua_u8_t __pad[AQUA_SLOT_PADDING(struct InstallInformation,
-                                      AQUA_MMAP_GRANULARITY)];
 };
 
+// struct InstallInfo {
+//     struct InstallInformation m_Info[SERVICES_NUMBER];
+//     uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
+//     uint8_t m_BytesNr;
+// };
+
 struct InstallInfo {
-    struct InstallInformation m_Info[SERVICES_NUMBER];
-    uint8_t m_InstallMap[SERVICES_NUMBER >> 3];
-    uint8_t m_BytesNr;
+    aqua_u8_t m_InstallMap[SERVICES_NUMBER >> 3];
+    aqua_u8_t m_BytesNr;
 };
 
 struct DSPQueueMetadata {

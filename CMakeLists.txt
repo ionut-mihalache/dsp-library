@@ -29,13 +29,17 @@ set(CORE_SOURCES
 
 if (UNIX AND NOT APPLE)
         set(PLATFORM_SOURCES
+                platform/linux/memory/memory.c
                 platform/linux/alloc/alloc.c
                 platform/linux/sync/sync.c
+                platform/linux/shared-memory-object/shared-memory-object.c
         )
 elseif(WIN32)
         set(PLATFORM_SOURCES
+                platform/windows/memory/memory.c
                 platform/windows/alloc/alloc.c
                 platform/windows/sync/sync.c
+                platform/windows/shared-memory-object/shared-memory-object.c
         )
 endif()
 

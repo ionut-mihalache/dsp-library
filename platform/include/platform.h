@@ -7,6 +7,11 @@
 #include "aqua-types.h"
 #include "platform-types.h"
 
+struct AQUA_Memory {
+    aqua_size_t (*getPageSize)();
+    aqua_size_t (*getMapGranularity)();
+};
+
 struct AQUA_Allocator {
     aqua_void_ptr_t (*memmap)(aqua_void_ptr_t addr, aqua_size_t len,
                               aqua_mem_prot_t prot, aqua_mem_flags_t flags,
@@ -28,7 +33,16 @@ struct AQUA_Sync {
     aqua_void_t (*condBroadcast)(aqua_cond_t *cond);
 };
 
+struct AQUA_SharedMemoryObject {
+    aqua_file_handle_t (*create)(const char *name, aqua_file_flags_t flags,
+                                 aqua_file_mode_t mode, aqua_off_t size,
+                                 aqua_bool_t unlink);
+    aqua_void_t (*destroy)();
+};
+
+extern struct AQUA_Memory Memory;
 extern struct AQUA_Allocator Allocator;
 extern struct AQUA_Sync Sync;
+extern struct AQUA_SharedMemoryObject SharedMemoryObject;
 
 #endif // __AQUA_PLATFORM_H_

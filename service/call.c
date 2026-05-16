@@ -144,57 +144,73 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
 
     switch (p_InstallInfo->m_CallQType) {
     case SMBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = SMB_Q_MAX_SIZE * sizeof(struct SMBCall);
         qProt = AQUA_MEM_PROT_READ;
 
         break;
     case EMBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = EMB_Q_MAX_SIZE * sizeof(struct EMBCall);
         qProt = AQUA_MEM_PROT_READ;
 
         break;
     case QMBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = QMB_Q_MAX_SIZE * sizeof(struct QMBCall);
         qProt = AQUA_MEM_PROT_READ;
 
         break;
     case HMBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = HMB_Q_MAX_SIZE * sizeof(struct HMBCall);
         qProt = AQUA_MEM_PROT_READ;
 
         break;
     case MBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = MB_Q_MAX_SIZE * sizeof(struct MBCall);
         qProt = AQUA_MEM_PROT_READ;
 
         break;
     case DMBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = DMB_Q_MAX_SIZE * sizeof(struct DMBCall);
         qProt = AQUA_MEM_PROT_READ;
 
         break;
     case HGBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = HGB_Q_MAX_SIZE * sizeof(struct HGBCall);
         qProt = AQUA_MEM_PROT_READ;
 
         break;
     case GBQ:
-        qFlag = O_RDWR;
-        qMode = S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
+        qFlag = AQUA_FILE_PERM_RDWR;
+        qMode = AQUA_FILE_MODE_USER_READ | AQUA_FILE_MODE_USER_WRITE |
+                AQUA_FILE_MODE_GROUP_READ | AQUA_FILE_MODE_GROUP_WRITE |
+                AQUA_FILE_MODE_OTHER_READ | AQUA_FILE_MODE_OTHER_WRITE;
         qSize = GB_Q_MAX_SIZE * sizeof(struct GBCall);
         qProt = AQUA_MEM_PROT_READ;
 
@@ -206,8 +222,8 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
         DIE(true, "QType is not recognized");
     }
 
-    callQFd =
-        createShmObject(p_InstallInfo->m_CallQName, qFlag, qMode, qSize, true);
+    callQFd = SharedMemoryObject.create(p_InstallInfo->m_CallQName, qFlag,
+                                        qMode, qSize, true);
 
     createQ(&callQ, qSize, qProt, callQFd);
 

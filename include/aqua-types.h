@@ -21,9 +21,12 @@ typedef uint32_t aqua_u32_t;
 typedef int64_t aqua_i64_t;
 typedef uint64_t aqua_u64_t;
 
-typedef uint8_t aqua_mem_prot_t;
-typedef uint8_t aqua_mem_flags_t;
-typedef uint16_t aqua_mem_perm_t;
+typedef aqua_u8_t aqua_mem_prot_t;
+typedef aqua_u8_t aqua_mem_flags_t;
+typedef aqua_u8_t aqua_file_flags_t;
+typedef aqua_u32_t aqua_file_mode_t;
+typedef aqua_u16_t aqua_mem_perm_t;
+typedef aqua_u8_t aqua_bool_t;
 
 typedef int aqua_file_handle_t;
 

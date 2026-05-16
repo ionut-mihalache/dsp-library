@@ -9,7 +9,6 @@
 #include "system-values.h"
 
 static int mapProt(aqua_mem_prot_t p_Prot) {
-
     int prot = 0;
 
     if (p_Prot & AQUA_MEM_PROT_READ) {
