@@ -10,6 +10,7 @@
 struct AQUA_Memory {
     aqua_size_t (*getPageSize)();
     aqua_size_t (*getMapGranularity)();
+    aqua_void_t (*triggerPageFaults)(aqua_void_t *addr, aqua_size_t size, aqua_mem_perm_t perm);
 };
 
 struct AQUA_Allocator {

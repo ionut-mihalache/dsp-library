@@ -227,7 +227,8 @@ configureServiceCallInformation(struct ServiceCallInfo *p_CallInfo,
 
     createQ(&callQ, qSize, qProt, callQFd);
 
-    triggerKernelPageInit(callQ, qSize, qProt);
+    // triggerKernelPageInit(callQ, qSize, qProt);
+    Memory.triggerPageFaults(callQ, qSize, qProt);
 
     rc = close(callQFd);
     DIE(rc != 0, "Could not close callQFd");

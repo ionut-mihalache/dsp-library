@@ -249,10 +249,14 @@ static int32_t s_ProcessConnectionRequest(
     DIE(requestResponseQ == MAP_FAILED,
         "Could not map request response queue memory");
 
-    triggerKernelPageInit(requestResponseQ,
-                          p_ConnectInformation->m_ResponseQSize *
-                              sizeof(struct ConnectResponseInformation),
-                          PROT_READ);
+    // triggerKernelPageInit(requestResponseQ,
+    //                       p_ConnectInformation->m_ResponseQSize *
+    //                           sizeof(struct ConnectResponseInformation),
+    //                       PROT_READ);
+    Memory.triggerPageFaults(requestResponseQ,
+                             p_ConnectInformation->m_ResponseQSize *
+                                 sizeof(struct ConnectResponseInformation),
+                             AQUA_MEM_PROT_READ);
 
     rc = close(requestResponseQFd);
     DIE(rc != 0, "Could not close requestResponseQFd");
@@ -342,7 +346,8 @@ static int32_t s_ProcessConnectionRequest(
 
     createQ(&returnQ, qSize, qProt, returnQFd);
 
-    triggerKernelPageInit(returnQ, qSize, qProt);
+    // triggerKernelPageInit(returnQ, qSize, qProt);
+    Memory.triggerPageFaults(returnQ, qSize, qProt);
 
     rc = close(returnQFd);
     DIE(rc != 0, "Could not close returnQFd");

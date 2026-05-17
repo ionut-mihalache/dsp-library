@@ -200,9 +200,12 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
             AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, connectQFd);
 
-    triggerKernelPageInit(connectQ,
-                          CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-                          PROT_READ | PROT_WRITE);
+    // triggerKernelPageInit(connectQ,
+    //                       CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+    //                       PROT_READ | PROT_WRITE);
+    Memory.triggerPageFaults(connectQ,
+                             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+                             AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE);
 
     rc = close(connectQFd);
     DIE(rc != 0, "Could not close connectQFd");
@@ -219,9 +222,12 @@ configureServiceConnectInformation(struct ServiceConnectInfo *p_ConnectInfo,
             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
             AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE, connectQFd);
 
-    triggerKernelPageInit(disconnectQ,
-                          CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
-                          PROT_READ | PROT_WRITE);
+    // triggerKernelPageInit(disconnectQ,
+    //                       CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+    //                       PROT_READ | PROT_WRITE);
+    Memory.triggerPageFaults(disconnectQ,
+                             CONNECTQ_MAX_SIZE * sizeof(struct ConnectRequest),
+                             AQUA_MEM_PROT_READ | AQUA_MEM_PROT_WRITE);
 
     rc = close(disconnectQFd);
     DIE(rc != 0, "Could not close disconnectQFd");
